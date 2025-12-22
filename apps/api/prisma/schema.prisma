@@ -1,0 +1,115 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = "postgresql://inventaire:inventaire_pwd@localhost:5432/inventaire"
+}
+
+enum Role {
+  ADMIN
+  GESTIONNAIRE
+  LECTURE
+}
+
+enum AssetStatus {
+  EN_STOCK
+  PRETE
+  HS
+  REPARATION
+}
+
+enum LoanStatus {
+  OPEN
+  CLOSED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(GESTIONNAIRE)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  actions      Loan[]   @relation("LoanCreatedBy")
+}
+
+model Employee {
+  id        String   @id @default(cuid())
+  firstName String
+  lastName  String
+  email     String?  @unique
+  dept      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  loans     Loan[]
+}
+
+model AssetModel {
+  id        String   @id @default(cuid())
+  type      String
+  brand     String
+  modelName String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items     AssetItem[]
+}
+
+model AssetItem {
+  id           String      @id @default(cuid())
+  assetModelId String
+  assetTag     String?     @unique
+  serial       String?     @unique
+  status       AssetStatus @default(EN_STOCK)
+  notes        String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  assetModel   AssetModel  @relation(fields: [assetModelId], references: [id])
+  loanLines    LoanLine[]
+}
+
+model StockItem {
+  id        String   @id @default(cuid())
+  name      String
+  quantity  Int      @default(0)
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  loanLines LoanLine[]
+}
+
+model Loan {
+  id                  String     @id @default(cuid())
+  employeeId          String
+  status              LoanStatus @default(OPEN)
+  createdById         String
+  openedAt            DateTime   @default(now())
+  closedAt            DateTime?
+
+  pickupSignatureUrl  String?
+  returnSignatureUrl  String?
+  pickupSignedAt      DateTime?
+  returnSignedAt      DateTime?
+
+  employee            Employee   @relation(fields: [employeeId], references: [id])
+  createdBy           User       @relation("LoanCreatedBy", fields: [createdById], references: [id])
+  lines               LoanLine[]
+}
+
+model LoanLine {
+  id          String   @id @default(cuid())
+  loanId      String
+  assetItemId String?
+  stockItemId String?
+  quantity    Int      @default(1)
+
+  loan        Loan       @relation(fields: [loanId], references: [id])
+  assetItem   AssetItem? @relation(fields: [assetItemId], references: [id])
+  stockItem   StockItem? @relation(fields: [stockItemId], references: [id])
+}
