@@ -8,9 +8,15 @@ import type {
 
 export async function getAllEmployeesApi(): Promise<Employee[]> {
   const response = await apiClient.get<any>('/employees')
+  console.log('🌐 API Response:', response.data)
   // Handle both formats: direct array or {employees, pagination}
   const data = response.data.data
-  return Array.isArray(data) ? data : data.employees
+  console.log('📦 Data extracted:', data)
+  console.log('📊 Is array?', Array.isArray(data))
+  console.log('📈 Data length:', Array.isArray(data) ? data.length : 'not an array')
+  const result = Array.isArray(data) ? data : data.employees
+  console.log('✅ Final result length:', result?.length)
+  return result
 }
 
 export async function getEmployeeApi(id: string): Promise<Employee> {

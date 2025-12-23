@@ -17,6 +17,8 @@ export async function getAllEmployees() {
     }
   });
 
+  console.log('🔍 Service - Total employees from DB:', employees.length);
+
   return employees;
 }
 

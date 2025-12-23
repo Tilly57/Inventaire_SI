@@ -23,6 +23,15 @@ export function LoansTable({ loans }: LoansTableProps) {
   const navigate = useNavigate()
   const [deletingLoan, setDeletingLoan] = useState<Loan | null>(null)
 
+  const handleRowClick = (loanId: string) => {
+    navigate(`/loans/${loanId}`)
+  }
+
+  const handleDeleteClick = (e: React.MouseEvent, loan: Loan) => {
+    e.stopPropagation() // Empêche la navigation lors du clic sur supprimer
+    setDeletingLoan(loan)
+  }
+
   return (
     <>
       <Table>
@@ -45,7 +54,11 @@ export function LoansTable({ loans }: LoansTableProps) {
             </TableRow>
           ) : (
             loans.map((loan) => (
-              <TableRow key={loan.id}>
+              <TableRow
+                key={loan.id}
+                onClick={() => handleRowClick(loan.id)}
+                className="cursor-pointer hover:bg-muted/50 transition-colors"
+              >
                 <TableCell className="font-medium">
                   {loan.employee
                     ? formatFullName(loan.employee.firstName, loan.employee.lastName)
@@ -64,14 +77,19 @@ export function LoansTable({ loans }: LoansTableProps) {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => navigate(`/loans/${loan.id}`)}
+                      onClick={(e) => {
+                        e.stopPropagation() // Empêche la navigation lors du clic sur voir
+                        navigate(`/loans/${loan.id}`)
+                      }}
+                      title="Voir les détails"
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setDeletingLoan(loan)}
+                      onClick={(e) => handleDeleteClick(e, loan)}
+                      title="Supprimer le prêt"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
