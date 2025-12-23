@@ -5,43 +5,19 @@ import prisma from '../config/database.js';
 import { NotFoundError, ConflictError, ValidationError } from '../utils/errors.js';
 
 /**
- * Get all employees with pagination and search
+ * Get all employees
  */
-export async function getAllEmployees(page = 1, limit = 20, search = '') {
-  const skip = (page - 1) * limit;
-
-  const where = search ? {
-    OR: [
-      { firstName: { contains: search, mode: 'insensitive' } },
-      { lastName: { contains: search, mode: 'insensitive' } },
-      { email: { contains: search, mode: 'insensitive' } }
-    ]
-  } : {};
-
-  const [employees, total] = await Promise.all([
-    prisma.employee.findMany({
-      where,
-      skip,
-      take: limit,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        _count: {
-          select: { loans: true }
-        }
+export async function getAllEmployees() {
+  const employees = await prisma.employee.findMany({
+    orderBy: { createdAt: 'desc' },
+    include: {
+      _count: {
+        select: { loans: true }
       }
-    }),
-    prisma.employee.count({ where })
-  ]);
-
-  return {
-    employees,
-    pagination: {
-      page,
-      limit,
-      total,
-      pages: Math.ceil(total / limit)
     }
-  };
+  });
+
+  return employees;
 }
 
 /**

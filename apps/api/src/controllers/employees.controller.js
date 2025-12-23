@@ -8,17 +8,11 @@ import * as employeesService from '../services/employees.service.js';
  * GET /api/employees
  */
 export const getAllEmployees = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 20, search = '' } = req.query;
-
-  const result = await employeesService.getAllEmployees(
-    parseInt(page),
-    parseInt(limit),
-    search
-  );
+  const employees = await employeesService.getAllEmployees();
 
   res.json({
     success: true,
-    data: result
+    data: employees
   });
 });
 

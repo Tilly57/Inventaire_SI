@@ -1,34 +1,83 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QUERY_STALE_TIME } from '@/lib/utils/constants'
+import { Toaster } from '@/components/ui/toaster'
+
+// Layout
+import { AppLayout } from '@/components/layout/AppLayout'
+import { ProtectedRoute } from '@/components/layout/ProtectedRoute'
+
+// Pages
+import { LoginPage } from '@/pages/LoginPage'
+import { DashboardPage } from '@/pages/DashboardPage'
+import { UsersListPage } from '@/pages/UsersListPage'
+import { EmployeesListPage } from '@/pages/EmployeesListPage'
+import { AssetModelsListPage } from '@/pages/AssetModelsListPage'
+import { AssetItemsListPage } from '@/pages/AssetItemsListPage'
+import { StockItemsListPage } from '@/pages/StockItemsListPage'
+import { LoansListPage } from '@/pages/LoansListPage'
+
+// Enums
+import { UserRole } from '@/lib/types/enums.ts'
+
+// Create React Query client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: QUERY_STALE_TIME,
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+})
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <QueryClientProvider client={queryClient}>
+      <Toaster />
+      <BrowserRouter>
+        <Routes>
+          {/* Public routes */}
+          <Route path="/login" element={<LoginPage />} />
+
+          {/* Protected routes */}
+          <Route element={<ProtectedRoute />}>
+            <Route element={<AppLayout />}>
+              {/* Redirect root to dashboard */}
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
+              {/* Dashboard - accessible to all roles */}
+              <Route path="/dashboard" element={<DashboardPage />} />
+
+              {/* Users - ADMIN only */}
+              <Route
+                element={<ProtectedRoute allowedRoles={[UserRole.ADMIN]} />}
+              >
+                <Route path="/users" element={<UsersListPage />} />
+              </Route>
+
+              {/* Employees, Assets, Stock, Loans - ADMIN and GESTIONNAIRE */}
+              <Route
+                element={
+                  <ProtectedRoute
+                    allowedRoles={[UserRole.ADMIN, UserRole.GESTIONNAIRE]}
+                  />
+                }
+              >
+                <Route path="/employees" element={<EmployeesListPage />} />
+                <Route path="/assets/models" element={<AssetModelsListPage />} />
+                <Route path="/assets/items" element={<AssetItemsListPage />} />
+                <Route path="/stock" element={<StockItemsListPage />} />
+                <Route path="/loans" element={<LoansListPage />} />
+              </Route>
+            </Route>
+          </Route>
+
+          {/* 404 - Catch all */}
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </QueryClientProvider>
   )
 }
 

@@ -16,7 +16,7 @@ services:
       DATABASE_URL: postgresql://inventaire:inventaire_pwd@db:5432/inventaire
       JWT_ACCESS_SECRET: change_me_access
       JWT_REFRESH_SECRET: change_me_refresh
-      CORS_ORIGIN: http://localhost:5173
+      CORS_ORIGIN: http://localhost:5175
       SIGNATURES_DIR: /app/uploads/signatures
     depends_on:
       - db

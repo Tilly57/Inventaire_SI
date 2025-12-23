@@ -1,0 +1,79 @@
+import { useState } from 'react'
+import { useAssetModels } from '@/lib/hooks/useAssetModels'
+import { AssetModelsTable } from '@/components/assets/AssetModelsTable'
+import { AssetModelFormDialog } from '@/components/assets/AssetModelFormDialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Plus, Search } from 'lucide-react'
+
+export function AssetModelsListPage() {
+  const { data: models, isLoading, error } = useAssetModels()
+  const [isCreating, setIsCreating] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
+
+  const modelsList = Array.isArray(models) ? models : []
+
+  const filteredModels = modelsList.filter(
+    (model) =>
+      model.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      model.modelName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      model.type?.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Chargement...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <p className="text-destructive">Erreur lors du chargement des modèles</p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold">Modèles d'équipements</h1>
+        <p className="text-muted-foreground mt-2">
+          Gérez les modèles d'équipements disponibles
+        </p>
+      </div>
+
+      <div className="flex items-center gap-4">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Rechercher par marque, modèle ou type..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <Button onClick={() => setIsCreating(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Nouveau modèle
+        </Button>
+      </div>
+
+      <div className="border rounded-lg">
+        <AssetModelsTable models={filteredModels} />
+      </div>
+
+      <AssetModelFormDialog
+        open={isCreating}
+        onClose={() => setIsCreating(false)}
+      />
+    </div>
+  )
+}
