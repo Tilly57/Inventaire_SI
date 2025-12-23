@@ -4,7 +4,7 @@ Ce document détaille la stratégie de documentation du code pour le projet Inve
 
 ## Fichiers Déjà Commentés ✅
 
-### Backend (7 fichiers)
+### Backend (10 fichiers)
 1. **apps/api/src/services/loans.service.js** - Service de gestion des prêts (le plus complexe)
 2. **apps/api/src/services/auth.service.js** - Service d'authentification
 3. **apps/api/src/services/employees.service.js** - Service de gestion des employés
@@ -12,6 +12,9 @@ Ce document détaille la stratégie de documentation du code pour le projet Inve
 5. **apps/api/src/services/assetModels.service.js** - Service de gestion des modèles d'équipements
 6. **apps/api/src/services/assetItems.service.js** - Service de gestion des équipements individuels
 7. **apps/api/src/services/stockItems.service.js** - Service de gestion du stock consommables
+8. **apps/api/src/middleware/auth.js** - Middleware authentification JWT
+9. **apps/api/src/middleware/errorHandler.js** - Middleware gestion d'erreurs globale
+10. **apps/api/src/middleware/rbac.js** - Middleware contrôle d'accès par rôles
 
 ### Frontend (2 fichiers)
 1. **apps/web/src/lib/api/client.ts** - Configuration Axios avec refresh token
@@ -108,9 +111,9 @@ interface InterfaceName {
 - [ ] **apps/api/src/controllers/employees.controller.js**
 
 #### Middleware
-- [ ] **apps/api/src/middleware/auth.js** - Vérification JWT
-- [ ] **apps/api/src/middleware/errorHandler.js** - Gestion d'erreurs globale
-- [ ] **apps/api/src/middleware/rbac.js** - Contrôle d'accès par rôles
+- [x] **apps/api/src/middleware/auth.js** - Vérification JWT ✅
+- [x] **apps/api/src/middleware/errorHandler.js** - Gestion d'erreurs globale ✅
+- [x] **apps/api/src/middleware/rbac.js** - Contrôle d'accès par rôles ✅
 
 #### Utils
 - [ ] **apps/api/src/utils/errors.js** - Classes d'erreurs custom
@@ -371,20 +374,20 @@ const [loanLine] = await prisma.$transaction([
 ## Prochaines Étapes
 
 1. ✅ ~~Commenter les services backend restants~~ **TERMINÉ**
-2. Commenter les middlewares critiques (auth, errorHandler, rbac)
-3. Commenter les controllers critiques
-4. Commenter tous les API clients frontend
-5. Commenter tous les hooks React Query
-6. Commenter les composants complexes
+2. ✅ ~~Commenter les middlewares critiques~~ **TERMINÉ**
+3. Commenter tous les API clients frontend (8 fichiers)
+4. Commenter tous les hooks React Query (8 fichiers)
+5. Commenter les composants complexes (optionnel)
 
 ## Statistiques
 
 - **Total de fichiers à commenter (Option 2):** ~40 fichiers
-- **Fichiers commentés:** 9/40 (22.5%)
+- **Fichiers commentés:** 12/40 (30%)
   - Backend: 7 services ✅
-  - Frontend: 2 fichiers (client.ts, authStore.ts)
-- **Fichiers restants:** 31
-- **Prochaine catégorie:** Middlewares (3 fichiers)
+  - Backend: 3 middlewares ✅
+  - Frontend: 2 fichiers (client.ts, authStore.ts) ✅
+- **Fichiers restants:** 28
+- **Prochaine catégorie:** API clients frontend (8 fichiers)
 
 ---
 
