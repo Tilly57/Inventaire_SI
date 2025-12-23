@@ -34,7 +34,7 @@ export function Sidebar() {
   )
 
   return (
-    <aside className="w-64 bg-card border-r border-border min-h-screen flex flex-col">
+    <aside className="hidden md:flex w-64 bg-card border-r border-border min-h-screen flex-col">
       {/* Logo */}
       <div className="p-6 border-b border-border">
         <h1 className="text-xl font-bold text-primary">Inventaire SI</h1>

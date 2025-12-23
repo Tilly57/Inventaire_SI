@@ -9,6 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { MobileNav } from './MobileNav'
 import { User, LogOut, Settings } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
@@ -24,9 +25,15 @@ export function Header() {
   if (!user) return null
 
   return (
-    <header className="h-16 border-b border-border bg-card flex items-center justify-between px-6">
-      {/* Page title or breadcrumb can go here */}
-      <div className="flex-1">
+    <header className="h-16 border-b border-border bg-card flex items-center justify-between px-4 md:px-6">
+      {/* Mobile menu */}
+      <MobileNav />
+
+      {/* Logo on mobile, title on desktop */}
+      <div className="flex-1 md:hidden">
+        <h1 className="text-lg font-bold text-primary">Inventaire SI</h1>
+      </div>
+      <div className="flex-1 hidden md:block">
         <h2 className="text-lg font-semibold text-foreground">
           {/* This will be dynamically updated based on current page */}
         </h2>

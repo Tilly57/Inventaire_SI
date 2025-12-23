@@ -4,15 +4,22 @@ import { fr } from 'date-fns/locale'
 /**
  * Format a date string or Date object to French locale
  */
-export function formatDate(date: string | Date, formatStr: string = 'dd/MM/yyyy'): string {
-  const dateObj = typeof date === 'string' ? parseISO(date) : date
-  return format(dateObj, formatStr, { locale: fr })
+export function formatDate(date: string | Date | null | undefined, formatStr: string = 'dd/MM/yyyy'): string {
+  if (!date) return '-'
+
+  try {
+    const dateObj = typeof date === 'string' ? parseISO(date) : date
+    return format(dateObj, formatStr, { locale: fr })
+  } catch (error) {
+    console.error('Invalid date format:', date, error)
+    return '-'
+  }
 }
 
 /**
  * Format a date string to include time
  */
-export function formatDateTime(date: string | Date): string {
+export function formatDateTime(date: string | Date | null | undefined): string {
   return formatDate(date, 'dd/MM/yyyy à HH:mm')
 }
 

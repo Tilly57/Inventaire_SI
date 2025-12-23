@@ -16,6 +16,7 @@ import { AssetModelsListPage } from '@/pages/AssetModelsListPage'
 import { AssetItemsListPage } from '@/pages/AssetItemsListPage'
 import { StockItemsListPage } from '@/pages/StockItemsListPage'
 import { LoansListPage } from '@/pages/LoansListPage'
+import { LoanDetailsPage } from '@/pages/LoanDetailsPage'
 
 // Enums
 import { UserRole } from '@/lib/types/enums.ts'
@@ -69,6 +70,7 @@ function App() {
                 <Route path="/assets/items" element={<AssetItemsListPage />} />
                 <Route path="/stock" element={<StockItemsListPage />} />
                 <Route path="/loans" element={<LoansListPage />} />
+                <Route path="/loans/:id" element={<LoanDetailsPage />} />
               </Route>
             </Route>
           </Route>
