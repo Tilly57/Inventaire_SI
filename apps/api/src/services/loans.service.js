@@ -1,6 +1,14 @@
 /**
- * Loans service - Business logic for loan management
+ * @fileoverview Loans service - Business logic for loan management
+ *
+ * This service handles the complete loan workflow including:
+ * - Creating and managing loans
+ * - Adding/removing loan lines (asset items and stock items)
+ * - Digital signature uploads (pickup and return)
+ * - Loan status management and closure
+ * - Stock quantity and asset status synchronization
  */
+
 import prisma from '../config/database.js';
 import { NotFoundError, ValidationError } from '../utils/errors.js';
 import path from 'path';
@@ -10,11 +18,24 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 /**
- * Get all loans with filters
+ * Get all loans with optional filters
+ *
+ * @param {Object} filters - Optional filters for querying loans
+ * @param {string} [filters.status] - Filter by loan status (OPEN/CLOSED)
+ * @param {string} [filters.employeeId] - Filter by employee ID
+ * @returns {Promise<Array>} Array of loan objects with employee, creator, and line details
+ *
+ * @example
+ * // Get all open loans
+ * const openLoans = await getAllLoans({ status: 'OPEN' });
+ *
+ * // Get all loans for a specific employee
+ * const employeeLoans = await getAllLoans({ employeeId: 'cuid123' });
  */
 export async function getAllLoans(filters = {}) {
   const { status, employeeId } = filters;
 
+  // Build dynamic WHERE clause based on provided filters
   const where = {};
 
   if (status) {
@@ -29,19 +50,19 @@ export async function getAllLoans(filters = {}) {
     where,
     orderBy: { openedAt: 'desc' },
     include: {
-      employee: true,
-      createdBy: {
+      employee: true,  // Include full employee details
+      createdBy: {     // Include user who created the loan
         select: {
           id: true,
           email: true,
           role: true
         }
       },
-      lines: {
+      lines: {         // Include all loan lines with asset/stock details
         include: {
           assetItem: {
             include: {
-              assetModel: true
+              assetModel: true  // Include equipment model information
             }
           },
           stockItem: true
@@ -54,7 +75,14 @@ export async function getAllLoans(filters = {}) {
 }
 
 /**
- * Get loan by ID
+ * Get a single loan by ID with full details
+ *
+ * @param {string} id - The loan ID (CUID format)
+ * @returns {Promise<Object>} Loan object with employee, creator, and line details
+ * @throws {NotFoundError} If loan doesn't exist
+ *
+ * @example
+ * const loan = await getLoanById('clijrn9ht0000...');
  */
 export async function getLoanById(id) {
   const loan = await prisma.loan.findUnique({
@@ -89,10 +117,21 @@ export async function getLoanById(id) {
 }
 
 /**
- * Create new loan
+ * Create a new loan for an employee
+ *
+ * Initial loan is created with status OPEN and no lines.
+ * Lines must be added separately using addLoanLine().
+ *
+ * @param {string} employeeId - The employee ID who is borrowing
+ * @param {string} createdById - The user ID creating the loan
+ * @returns {Promise<Object>} Newly created loan object
+ * @throws {NotFoundError} If employee doesn't exist
+ *
+ * @example
+ * const loan = await createLoan('employee_cuid', 'user_cuid');
  */
 export async function createLoan(employeeId, createdById) {
-  // Check if employee exists
+  // Validate employee exists before creating loan
   const employee = await prisma.employee.findUnique({ where: { id: employeeId } });
   if (!employee) {
     throw new NotFoundError('Employé non trouvé');
@@ -102,7 +141,7 @@ export async function createLoan(employeeId, createdById) {
     data: {
       employeeId,
       createdById,
-      status: 'OPEN'
+      status: 'OPEN'  // New loans always start as OPEN
     },
     include: {
       employee: true,
@@ -121,7 +160,29 @@ export async function createLoan(employeeId, createdById) {
 }
 
 /**
- * Add line to loan
+ * Add a line (item) to an existing loan
+ *
+ * Can add either an asset item (unique equipment) or stock item (consumables).
+ * Automatically handles:
+ * - Asset status updates (EN_STOCK → PRETE)
+ * - Stock quantity decrements
+ * - Transaction atomicity for data consistency
+ *
+ * @param {string} loanId - The loan ID to add line to
+ * @param {Object} data - Line data
+ * @param {string} [data.assetItemId] - Asset item ID (for unique equipment)
+ * @param {string} [data.stockItemId] - Stock item ID (for consumables)
+ * @param {number} [data.quantity] - Quantity (for stock items, default 1)
+ * @returns {Promise<Object>} Created loan line with item details
+ * @throws {NotFoundError} If loan, asset, or stock item not found
+ * @throws {ValidationError} If loan is closed, item unavailable, or insufficient stock
+ *
+ * @example
+ * // Add an asset item (laptop)
+ * await addLoanLine('loan123', { assetItemId: 'asset456' });
+ *
+ * // Add stock items (3 HDMI cables)
+ * await addLoanLine('loan123', { stockItemId: 'stock789', quantity: 3 });
  */
 export async function addLoanLine(loanId, data) {
   // Check if loan exists and is open
@@ -133,28 +194,31 @@ export async function addLoanLine(loanId, data) {
     throw new ValidationError('Impossible d\'ajouter des articles à un prêt fermé');
   }
 
-  // Validate that either assetItemId or stockItemId is provided
+  // Validate that either assetItemId or stockItemId is provided (but not both)
   if (!data.assetItemId && !data.stockItemId) {
     throw new ValidationError('Vous devez spécifier soit un article d\'équipement soit un article de stock');
   }
 
-  // If asset item, check availability and update status
+  // Handle Asset Item (unique equipment like laptops, monitors)
   if (data.assetItemId) {
     const assetItem = await prisma.assetItem.findUnique({ where: { id: data.assetItemId } });
     if (!assetItem) {
       throw new NotFoundError('Article d\'équipement non trouvé');
     }
+
+    // Verify asset is available for loan
     if (assetItem.status !== 'EN_STOCK') {
       throw new ValidationError('Cet article n\'est pas disponible');
     }
 
-    // Create loan line and update asset status in transaction
+    // Use transaction to ensure atomicity:
+    // Both loan line creation AND asset status update must succeed
     const [loanLine] = await prisma.$transaction([
       prisma.loanLine.create({
         data: {
           loanId,
           assetItemId: data.assetItemId,
-          quantity: 1
+          quantity: 1  // Asset items always have quantity of 1
         },
         include: {
           assetItem: {
@@ -166,14 +230,14 @@ export async function addLoanLine(loanId, data) {
       }),
       prisma.assetItem.update({
         where: { id: data.assetItemId },
-        data: { status: 'PRETE' }
+        data: { status: 'PRETE' }  // Mark asset as loaned
       })
     ]);
 
     return loanLine;
   }
 
-  // If stock item, check quantity and decrement
+  // Handle Stock Item (consumables like cables, adapters)
   if (data.stockItemId) {
     const stockItem = await prisma.stockItem.findUnique({ where: { id: data.stockItemId } });
     if (!stockItem) {
@@ -181,11 +245,14 @@ export async function addLoanLine(loanId, data) {
     }
 
     const quantity = data.quantity || 1;
+
+    // Verify sufficient quantity available
     if (stockItem.quantity < quantity) {
       throw new ValidationError('Quantité insuffisante en stock');
     }
 
-    // Create loan line and decrement stock in transaction
+    // Use transaction to ensure atomicity:
+    // Both loan line creation AND stock decrement must succeed
     const [loanLine] = await prisma.$transaction([
       prisma.loanLine.create({
         data: {
@@ -199,7 +266,7 @@ export async function addLoanLine(loanId, data) {
       }),
       prisma.stockItem.update({
         where: { id: data.stockItemId },
-        data: { quantity: stockItem.quantity - quantity }
+        data: { quantity: stockItem.quantity - quantity }  // Decrement stock
       })
     ]);
 
@@ -208,7 +275,20 @@ export async function addLoanLine(loanId, data) {
 }
 
 /**
- * Remove line from loan
+ * Remove a line from a loan
+ *
+ * Automatically reverts:
+ * - Asset status (PRETE → EN_STOCK)
+ * - Stock quantities (increment back)
+ *
+ * @param {string} loanId - The loan ID
+ * @param {string} lineId - The loan line ID to remove
+ * @returns {Promise<Object>} Success message
+ * @throws {NotFoundError} If loan or line not found
+ * @throws {ValidationError} If loan is closed
+ *
+ * @example
+ * await removeLoanLine('loan123', 'line456');
  */
 export async function removeLoanLine(loanId, lineId) {
   // Check if loan exists and is open
@@ -220,7 +300,7 @@ export async function removeLoanLine(loanId, lineId) {
     throw new ValidationError('Impossible de modifier un prêt fermé');
   }
 
-  // Get loan line
+  // Get loan line with item details
   const loanLine = await prisma.loanLine.findUnique({
     where: { id: lineId },
     include: {
@@ -229,28 +309,29 @@ export async function removeLoanLine(loanId, lineId) {
     }
   });
 
+  // Verify line exists and belongs to this loan
   if (!loanLine || loanLine.loanId !== loanId) {
     throw new NotFoundError('Ligne de prêt non trouvée');
   }
 
-  // If asset item, update status back to EN_STOCK
+  // If asset item, restore status to EN_STOCK
   if (loanLine.assetItemId) {
     await prisma.$transaction([
       prisma.loanLine.delete({ where: { id: lineId } }),
       prisma.assetItem.update({
         where: { id: loanLine.assetItemId },
-        data: { status: 'EN_STOCK' }
+        data: { status: 'EN_STOCK' }  // Mark asset as available again
       })
     ]);
   }
 
-  // If stock item, increment quantity back
+  // If stock item, restore quantity
   if (loanLine.stockItemId) {
     await prisma.$transaction([
       prisma.loanLine.delete({ where: { id: lineId } }),
       prisma.stockItem.update({
         where: { id: loanLine.stockItemId },
-        data: { quantity: { increment: loanLine.quantity } }
+        data: { quantity: { increment: loanLine.quantity } }  // Return stock to inventory
       })
     ]);
   }
@@ -259,7 +340,19 @@ export async function removeLoanLine(loanId, lineId) {
 }
 
 /**
- * Upload pickup signature
+ * Upload pickup signature for a loan
+ *
+ * Records the signature image and timestamp when employee
+ * picks up/receives the loaned items.
+ *
+ * @param {string} loanId - The loan ID
+ * @param {Object} file - Multer file object containing signature image
+ * @param {string} file.filename - Generated filename for the signature
+ * @returns {Promise<Object>} Updated loan with signature URL
+ * @throws {NotFoundError} If loan doesn't exist
+ *
+ * @example
+ * const updatedLoan = await uploadPickupSignature('loan123', req.file);
  */
 export async function uploadPickupSignature(loanId, file) {
   // Check if loan exists
@@ -268,7 +361,7 @@ export async function uploadPickupSignature(loanId, file) {
     throw new NotFoundError('Prêt non trouvé');
   }
 
-  // Generate signature URL
+  // Generate signature URL path (accessible via static file serving)
   const signatureUrl = `/uploads/signatures/${file.filename}`;
 
   // Update loan with pickup signature
@@ -276,7 +369,7 @@ export async function uploadPickupSignature(loanId, file) {
     where: { id: loanId },
     data: {
       pickupSignatureUrl: signatureUrl,
-      pickupSignedAt: new Date()
+      pickupSignedAt: new Date()  // Record exact timestamp
     },
     include: {
       employee: true,
@@ -297,7 +390,19 @@ export async function uploadPickupSignature(loanId, file) {
 }
 
 /**
- * Upload return signature
+ * Upload return signature for a loan
+ *
+ * Records the signature image and timestamp when employee
+ * returns the loaned items.
+ *
+ * @param {string} loanId - The loan ID
+ * @param {Object} file - Multer file object containing signature image
+ * @param {string} file.filename - Generated filename for the signature
+ * @returns {Promise<Object>} Updated loan with signature URL
+ * @throws {NotFoundError} If loan doesn't exist
+ *
+ * @example
+ * const updatedLoan = await uploadReturnSignature('loan123', req.file);
  */
 export async function uploadReturnSignature(loanId, file) {
   // Check if loan exists
@@ -306,7 +411,7 @@ export async function uploadReturnSignature(loanId, file) {
     throw new NotFoundError('Prêt non trouvé');
   }
 
-  // Generate signature URL
+  // Generate signature URL path
   const signatureUrl = `/uploads/signatures/${file.filename}`;
 
   // Update loan with return signature
@@ -314,7 +419,7 @@ export async function uploadReturnSignature(loanId, file) {
     where: { id: loanId },
     data: {
       returnSignatureUrl: signatureUrl,
-      returnSignedAt: new Date()
+      returnSignedAt: new Date()  // Record exact timestamp
     },
     include: {
       employee: true,
@@ -335,10 +440,22 @@ export async function uploadReturnSignature(loanId, file) {
 }
 
 /**
- * Close loan
+ * Close a loan transaction
+ *
+ * Marks the loan as CLOSED and restores all asset items to EN_STOCK status.
+ * Stock items are NOT restored (they were consumed).
+ * This is the final step in the loan workflow.
+ *
+ * @param {string} loanId - The loan ID to close
+ * @returns {Promise<Object>} Updated closed loan
+ * @throws {NotFoundError} If loan doesn't exist
+ * @throws {ValidationError} If loan is already closed
+ *
+ * @example
+ * const closedLoan = await closeLoan('loan123');
  */
 export async function closeLoan(loanId) {
-  // Check if loan exists
+  // Get loan with lines to process asset status updates
   const loan = await prisma.loan.findUnique({
     where: { id: loanId },
     include: {
@@ -358,22 +475,25 @@ export async function closeLoan(loanId) {
     throw new ValidationError('Ce prêt est déjà fermé');
   }
 
-  // Update loan status and asset items statuses in transaction
+  // Prepare asset status updates for all loaned equipment
+  // Note: Stock items are NOT restored (they were consumed)
   const assetItemUpdates = loan.lines
-    .filter(line => line.assetItemId)
+    .filter(line => line.assetItemId)  // Only process asset items
     .map(line =>
       prisma.assetItem.update({
         where: { id: line.assetItemId },
-        data: { status: 'EN_STOCK' }
+        data: { status: 'EN_STOCK' }  // Mark assets as available again
       })
     );
 
+  // Use transaction to ensure atomicity:
+  // Loan closure and ALL asset status updates must succeed together
   const [updatedLoan] = await prisma.$transaction([
     prisma.loan.update({
       where: { id: loanId },
       data: {
         status: 'CLOSED',
-        closedAt: new Date()
+        closedAt: new Date()  // Record closure timestamp
       },
       include: {
         employee: true,
@@ -396,17 +516,28 @@ export async function closeLoan(loanId) {
         }
       }
     }),
-    ...assetItemUpdates
+    ...assetItemUpdates  // Execute all asset updates in same transaction
   ]);
 
   return updatedLoan;
 }
 
 /**
- * Delete loan
+ * Delete a loan
+ *
+ * Can only delete OPEN loans without signatures.
+ * Automatically reverts all asset statuses and stock quantities.
+ *
+ * @param {string} loanId - The loan ID to delete
+ * @returns {Promise<Object>} Success message
+ * @throws {NotFoundError} If loan doesn't exist
+ * @throws {ValidationError} If loan is closed or has signatures
+ *
+ * @example
+ * await deleteLoan('loan123');
  */
 export async function deleteLoan(loanId) {
-  // Check if loan exists
+  // Get loan with lines to process reversions
   const loan = await prisma.loan.findUnique({
     where: { id: loanId },
     include: {
@@ -423,19 +554,21 @@ export async function deleteLoan(loanId) {
     throw new NotFoundError('Prêt non trouvé');
   }
 
-  // Can only delete OPEN loans without signatures
+  // Business rule: Cannot delete closed loans (preserve history)
   if (loan.status === 'CLOSED') {
     throw new ValidationError('Impossible de supprimer un prêt fermé');
   }
 
+  // Business rule: Cannot delete loans with signatures (preserve audit trail)
   if (loan.pickupSignatureUrl || loan.returnSignatureUrl) {
     throw new ValidationError('Impossible de supprimer un prêt avec des signatures');
   }
 
-  // Revert asset statuses and stock quantities in transaction
+  // Prepare reversion updates for all loaned items
   const updates = [];
 
   for (const line of loan.lines) {
+    // Restore asset status
     if (line.assetItemId) {
       updates.push(
         prisma.assetItem.update({
@@ -444,6 +577,8 @@ export async function deleteLoan(loanId) {
         })
       );
     }
+
+    // Restore stock quantity
     if (line.stockItemId) {
       updates.push(
         prisma.stockItem.update({
@@ -454,6 +589,8 @@ export async function deleteLoan(loanId) {
     }
   }
 
+  // Use transaction to ensure atomicity:
+  // Loan deletion and ALL reversions must succeed together
   await prisma.$transaction([
     prisma.loan.delete({ where: { id: loanId } }),
     ...updates
