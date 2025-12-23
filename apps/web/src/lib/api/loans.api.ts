@@ -7,7 +7,7 @@ import type {
 } from '@/lib/types/models.types'
 
 export async function getAllLoansApi(): Promise<Loan[]> {
-  const response = await apiClient.get<any>('/loans')
+  const response = await apiClient.get<any>('/loans?limit=1000')
   const data = response.data.data
   return Array.isArray(data) ? data : data.loans || []
 }

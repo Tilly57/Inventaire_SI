@@ -1,17 +1,20 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useStockItems } from '@/lib/hooks/useStockItems'
 import { StockItemsTable } from '@/components/stock/StockItemsTable'
 import { StockItemFormDialog } from '@/components/stock/StockItemFormDialog'
+import { Pagination } from '@/components/common/Pagination'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Plus, Search, AlertTriangle } from 'lucide-react'
-import { LOW_STOCK_THRESHOLD } from '@/lib/utils/constants'
+import { LOW_STOCK_THRESHOLD, DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS } from '@/lib/utils/constants'
 
 export function StockItemsListPage() {
   const { data: items, isLoading, error } = useStockItems()
   const [isCreating, setIsCreating] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
 
   const itemsList = Array.isArray(items) ? items : []
 
@@ -22,6 +25,25 @@ export function StockItemsListPage() {
   )
 
   const lowStockItems = itemsList.filter(item => item.quantity < LOW_STOCK_THRESHOLD)
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm])
+
+  const totalItems = filteredItems.length
+  const totalPages = Math.ceil(totalItems / pageSize)
+  const startIndex = (currentPage - 1) * pageSize
+  const endIndex = startIndex + pageSize
+  const paginatedItems = filteredItems.slice(startIndex, endIndex)
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+  }
+
+  const handlePageSizeChange = (newPageSize: number) => {
+    setPageSize(newPageSize)
+    setCurrentPage(1)
+  }
 
   if (isLoading) {
     return (
@@ -81,7 +103,19 @@ export function StockItemsListPage() {
       </div>
 
       <div className="border rounded-lg">
-        <StockItemsTable items={filteredItems} />
+        <StockItemsTable items={paginatedItems} />
+
+        {totalItems > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            totalItems={totalItems}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
+            pageSizeOptions={PAGE_SIZE_OPTIONS}
+          />
+        )}
       </div>
 
       <StockItemFormDialog

@@ -7,16 +7,11 @@ import type {
 } from '@/lib/types/models.types'
 
 export async function getAllEmployeesApi(): Promise<Employee[]> {
-  const response = await apiClient.get<any>('/employees')
-  console.log('🌐 API Response:', response.data)
+  // Request all employees with a high limit to bypass pagination
+  const response = await apiClient.get<any>('/employees?limit=1000')
   // Handle both formats: direct array or {employees, pagination}
   const data = response.data.data
-  console.log('📦 Data extracted:', data)
-  console.log('📊 Is array?', Array.isArray(data))
-  console.log('📈 Data length:', Array.isArray(data) ? data.length : 'not an array')
-  const result = Array.isArray(data) ? data : data.employees
-  console.log('✅ Final result length:', result?.length)
-  return result
+  return Array.isArray(data) ? data : data.employees
 }
 
 export async function getEmployeeApi(id: string): Promise<Employee> {

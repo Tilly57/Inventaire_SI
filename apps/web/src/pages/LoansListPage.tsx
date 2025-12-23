@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLoans } from '@/lib/hooks/useLoans'
 import { LoansTable } from '@/components/loans/LoansTable'
 import { LoanFormDialog } from '@/components/loans/LoanFormDialog'
+import { Pagination } from '@/components/common/Pagination'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -14,6 +15,7 @@ import {
 } from '@/components/ui/select'
 import { Plus, Search } from 'lucide-react'
 import { LoanStatus } from '@/lib/types/enums'
+import { DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS } from '@/lib/utils/constants'
 
 export function LoansListPage() {
   const navigate = useNavigate()
@@ -21,6 +23,8 @@ export function LoansListPage() {
   const [isCreating, setIsCreating] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
 
   const loansList = Array.isArray(loans) ? loans : []
 
@@ -34,6 +38,25 @@ export function LoansListPage() {
 
     return matchesSearch && matchesStatus
   })
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm, statusFilter])
+
+  const totalItems = filteredLoans.length
+  const totalPages = Math.ceil(totalItems / pageSize)
+  const startIndex = (currentPage - 1) * pageSize
+  const endIndex = startIndex + pageSize
+  const paginatedLoans = filteredLoans.slice(startIndex, endIndex)
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+  }
+
+  const handlePageSizeChange = (newPageSize: number) => {
+    setPageSize(newPageSize)
+    setCurrentPage(1)
+  }
 
   const handleLoanCreated = (loanId: string) => {
     navigate(`/loans/${loanId}`)
@@ -98,7 +121,19 @@ export function LoansListPage() {
       </div>
 
       <div className="border rounded-lg">
-        <LoansTable loans={filteredLoans} />
+        <LoansTable loans={paginatedLoans} />
+
+        {totalItems > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            totalItems={totalItems}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
+            pageSizeOptions={PAGE_SIZE_OPTIONS}
+          />
+        )}
       </div>
 
       <LoanFormDialog

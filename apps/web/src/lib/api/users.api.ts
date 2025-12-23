@@ -8,8 +8,9 @@ import type {
 } from '@/lib/types/models.types'
 
 export async function getAllUsersApi(): Promise<User[]> {
-  const response = await apiClient.get<ApiResponse<User[]>>('/users')
-  return response.data.data
+  const response = await apiClient.get<any>('/users?limit=1000')
+  const data = response.data.data
+  return Array.isArray(data) ? data : data.users || data
 }
 
 export async function getUserApi(id: string): Promise<User> {

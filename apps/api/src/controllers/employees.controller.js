@@ -10,8 +10,6 @@ import * as employeesService from '../services/employees.service.js';
 export const getAllEmployees = asyncHandler(async (req, res) => {
   const employees = await employeesService.getAllEmployees();
 
-  console.log('🔍 Controller - Total employees to send:', employees.length);
-
   res.json({
     success: true,
     data: employees

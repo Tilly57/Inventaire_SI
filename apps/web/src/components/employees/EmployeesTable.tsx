@@ -32,9 +32,9 @@ export function EmployeesTable({
   const isAllSelected = employees.length > 0 && selectedEmployees.length === employees.length
   const isSomeSelected = selectedEmployees.length > 0 && selectedEmployees.length < employees.length
 
-  const handleSelectAll = (checked: boolean) => {
+  const handleSelectAll = (checked: boolean | 'indeterminate') => {
     if (onSelectionChange) {
-      onSelectionChange(checked ? employees.map(e => e.id) : [])
+      onSelectionChange(checked === true ? employees.map(e => e.id) : [])
     }
   }
 
@@ -55,8 +55,7 @@ export function EmployeesTable({
             {onSelectionChange && (
               <TableHead className="w-12">
                 <Checkbox
-                  checked={isAllSelected}
-                  indeterminate={isSomeSelected}
+                  checked={isSomeSelected ? 'indeterminate' : isAllSelected}
                   onCheckedChange={handleSelectAll}
                   aria-label="Sélectionner tout"
                 />

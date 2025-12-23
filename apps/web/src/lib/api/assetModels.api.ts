@@ -7,7 +7,7 @@ import type {
 } from '@/lib/types/models.types'
 
 export async function getAllAssetModelsApi(): Promise<AssetModel[]> {
-  const response = await apiClient.get<any>('/asset-models')
+  const response = await apiClient.get<any>('/asset-models?limit=1000')
   const data = response.data.data
   return Array.isArray(data) ? data : data.models || []
 }

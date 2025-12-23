@@ -7,7 +7,7 @@ import type {
 } from '@/lib/types/models.types'
 
 export async function getAllStockItemsApi(): Promise<StockItem[]> {
-  const response = await apiClient.get<any>('/stock-items')
+  const response = await apiClient.get<any>('/stock-items?limit=1000')
   const data = response.data.data
   return Array.isArray(data) ? data : data.items || []
 }

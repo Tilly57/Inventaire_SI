@@ -9,11 +9,11 @@ const LOW_STOCK_THRESHOLD = 5
  */
 export async function getDashboardStatsApi(): Promise<DashboardStats> {
   try {
-    // Fetch data from existing endpoints
+    // Fetch data from existing endpoints with high limit to get all items
     const [employeesRes, assetsRes, loansRes] = await Promise.all([
-      apiClient.get<ApiResponse<any>>('/employees'),
-      apiClient.get<ApiResponse<any>>('/assets/items'),
-      apiClient.get<ApiResponse<any>>('/loans'),
+      apiClient.get<ApiResponse<any>>('/employees?limit=1000'),
+      apiClient.get<ApiResponse<any>>('/asset-items?limit=1000'),
+      apiClient.get<ApiResponse<any>>('/loans?limit=1000'),
     ])
 
     // Extract data (handle both direct array and paginated responses)
@@ -54,7 +54,7 @@ export async function getDashboardStatsApi(): Promise<DashboardStats> {
  */
 export async function getRecentLoansApi(): Promise<Loan[]> {
   try {
-    const response = await apiClient.get<ApiResponse<any>>('/loans')
+    const response = await apiClient.get<ApiResponse<any>>('/loans?limit=1000')
     const data = response.data.data
     const loans: Loan[] = Array.isArray(data) ? data : data.loans || []
 
@@ -73,7 +73,7 @@ export async function getRecentLoansApi(): Promise<Loan[]> {
  */
 export async function getLowStockItemsApi(): Promise<StockItem[]> {
   try {
-    const response = await apiClient.get<ApiResponse<any>>('/stock')
+    const response = await apiClient.get<ApiResponse<any>>('/stock-items?limit=1000')
     const data = response.data.data
     const items: StockItem[] = Array.isArray(data) ? data : data.items || []
 

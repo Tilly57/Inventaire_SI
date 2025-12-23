@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAssetItems } from '@/lib/hooks/useAssetItems'
 import { useAssetModels } from '@/lib/hooks/useAssetModels'
 import { AssetItemsTable } from '@/components/assets/AssetItemsTable'
 import { AssetItemFormDialog } from '@/components/assets/AssetItemFormDialog'
+import { Pagination } from '@/components/common/Pagination'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -14,6 +15,7 @@ import {
 } from '@/components/ui/select'
 import { Plus, Search } from 'lucide-react'
 import { AssetStatus } from '@/lib/types/enums'
+import { DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS } from '@/lib/utils/constants'
 
 export function AssetItemsListPage() {
   const { data: items, isLoading, error } = useAssetItems()
@@ -22,6 +24,8 @@ export function AssetItemsListPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [modelFilter, setModelFilter] = useState<string>('all')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
 
   const itemsList = Array.isArray(items) ? items : []
   const modelsList = Array.isArray(models) ? models : []
@@ -38,6 +42,25 @@ export function AssetItemsListPage() {
 
     return matchesSearch && matchesStatus && matchesModel
   })
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm, statusFilter, modelFilter])
+
+  const totalItems = filteredItems.length
+  const totalPages = Math.ceil(totalItems / pageSize)
+  const startIndex = (currentPage - 1) * pageSize
+  const endIndex = startIndex + pageSize
+  const paginatedItems = filteredItems.slice(startIndex, endIndex)
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+  }
+
+  const handlePageSizeChange = (newPageSize: number) => {
+    setPageSize(newPageSize)
+    setCurrentPage(1)
+  }
 
   if (isLoading) {
     return (
@@ -118,7 +141,19 @@ export function AssetItemsListPage() {
       </div>
 
       <div className="border rounded-lg">
-        <AssetItemsTable items={filteredItems} />
+        <AssetItemsTable items={paginatedItems} />
+
+        {totalItems > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            totalItems={totalItems}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
+            pageSizeOptions={PAGE_SIZE_OPTIONS}
+          />
+        )}
       </div>
 
       <AssetItemFormDialog

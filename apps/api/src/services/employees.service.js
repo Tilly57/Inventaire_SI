@@ -17,8 +17,6 @@ export async function getAllEmployees() {
     }
   });
 
-  console.log('🔍 Service - Total employees from DB:', employees.length);
-
   return employees;
 }
 
@@ -95,12 +93,13 @@ export async function updateEmployee(id, data) {
  * Delete employee
  */
 export async function deleteEmployee(id) {
-  // Check if employee exists
+  // Check if employee exists and has any loans
   const existingEmployee = await prisma.employee.findUnique({
     where: { id },
     include: {
-      loans: {
-        where: { status: 'OPEN' }
+      loans: true,  // Include ALL loans (active and closed)
+      _count: {
+        select: { loans: true }
       }
     }
   });
@@ -109,9 +108,24 @@ export async function deleteEmployee(id) {
     throw new NotFoundError('Employé non trouvé');
   }
 
-  // Check if employee has active loans
-  if (existingEmployee.loans.length > 0) {
-    throw new ValidationError('Impossible de supprimer un employé avec des prêts actifs');
+  // Check if employee has any loans (active or closed)
+  if (existingEmployee._count.loans > 0) {
+    const activeLoans = existingEmployee.loans.filter(loan => loan.status === 'OPEN').length;
+    const closedLoans = existingEmployee.loans.filter(loan => loan.status === 'CLOSED').length;
+
+    if (activeLoans > 0 && closedLoans > 0) {
+      throw new ValidationError(
+        `Impossible de supprimer cet employé car il a ${activeLoans} prêt(s) actif(s) et ${closedLoans} prêt(s) fermé(s) dans l'historique.`
+      );
+    } else if (activeLoans > 0) {
+      throw new ValidationError(
+        `Impossible de supprimer cet employé car il a ${activeLoans} prêt(s) actif(s).`
+      );
+    } else {
+      throw new ValidationError(
+        `Impossible de supprimer cet employé car il a ${closedLoans} prêt(s) dans l'historique. Les employés avec un historique de prêts ne peuvent pas être supprimés.`
+      );
+    }
   }
 
   await prisma.employee.delete({ where: { id } });

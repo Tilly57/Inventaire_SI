@@ -1,17 +1,21 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useUsers } from '@/lib/hooks/useUsers'
 import { useAuth } from '@/lib/hooks/useAuth'
 import { UsersTable } from '@/components/users/UsersTable'
 import { UserFormDialog } from '@/components/users/UserFormDialog'
+import { Pagination } from '@/components/common/Pagination'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Plus, Search } from 'lucide-react'
+import { DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS } from '@/lib/utils/constants'
 
 export function UsersListPage() {
   const { data: users, isLoading, error } = useUsers()
   const { user: currentUser } = useAuth()
   const [isCreating, setIsCreating] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
 
   const usersList = Array.isArray(users) ? users : []
 
@@ -20,6 +24,27 @@ export function UsersListPage() {
       user.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email?.toLowerCase().includes(searchTerm.toLowerCase())
   )
+
+  // Reset to page 1 when search term changes
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm])
+
+  // Calculate pagination
+  const totalItems = filteredUsers.length
+  const totalPages = Math.ceil(totalItems / pageSize)
+  const startIndex = (currentPage - 1) * pageSize
+  const endIndex = startIndex + pageSize
+  const paginatedUsers = filteredUsers.slice(startIndex, endIndex)
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+  }
+
+  const handlePageSizeChange = (newPageSize: number) => {
+    setPageSize(newPageSize)
+    setCurrentPage(1)
+  }
 
   if (isLoading) {
     return (
@@ -68,7 +93,19 @@ export function UsersListPage() {
       </div>
 
       <div className="border rounded-lg">
-        <UsersTable users={filteredUsers} currentUserId={currentUser?.id} />
+        <UsersTable users={paginatedUsers} currentUserId={currentUser?.id} />
+
+        {totalItems > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            totalItems={totalItems}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
+            pageSizeOptions={PAGE_SIZE_OPTIONS}
+          />
+        )}
       </div>
 
       <UserFormDialog

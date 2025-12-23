@@ -25,12 +25,6 @@ export function EmployeesListPage() {
 
   const employeesList = Array.isArray(employees) ? employees : []
 
-  // Debug logs
-  console.log('🔍 DEBUG - employees:', employees)
-  console.log('🔍 DEBUG - employeesList length:', employeesList.length)
-  console.log('🔍 DEBUG - isLoading:', isLoading)
-  console.log('🔍 DEBUG - error:', error)
-
   const filteredEmployees = employeesList.filter(
     (employee) =>
       formatFullName(employee.firstName, employee.lastName)
@@ -72,13 +66,16 @@ export function EmployeesListPage() {
 
     let successCount = 0
     let errorCount = 0
+    const errors: string[] = []
 
     for (const employeeId of selectedEmployees) {
       try {
         await deleteEmployee.mutateAsync(employeeId)
         successCount++
-      } catch (error) {
+      } catch (error: any) {
         errorCount++
+        const errorMsg = error.response?.data?.error || 'Erreur inconnue'
+        errors.push(errorMsg)
       }
     }
 
@@ -90,10 +87,18 @@ export function EmployeesListPage() {
     }
 
     if (errorCount > 0 && successCount === 0) {
+      // Si tous les employés ont échoué, afficher le premier message d'erreur détaillé
       toast({
         variant: 'destructive',
-        title: 'Erreur',
-        description: `Impossible de supprimer les employés sélectionnés`,
+        title: 'Erreur de suppression',
+        description: errors[0] || 'Impossible de supprimer les employés sélectionnés',
+      })
+    } else if (errorCount > 0) {
+      // Si certains ont échoué, afficher un résumé
+      toast({
+        variant: 'destructive',
+        title: 'Certaines suppressions ont échoué',
+        description: `${errorCount} employé(s) n'ont pas pu être supprimés (probablement car ils ont des prêts associés)`,
       })
     }
 
