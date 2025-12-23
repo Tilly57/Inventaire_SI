@@ -4,10 +4,14 @@ Ce document détaille la stratégie de documentation du code pour le projet Inve
 
 ## Fichiers Déjà Commentés ✅
 
-### Backend (5 fichiers)
+### Backend (7 fichiers)
 1. **apps/api/src/services/loans.service.js** - Service de gestion des prêts (le plus complexe)
 2. **apps/api/src/services/auth.service.js** - Service d'authentification
 3. **apps/api/src/services/employees.service.js** - Service de gestion des employés
+4. **apps/api/src/services/users.service.js** - Service de gestion des utilisateurs système
+5. **apps/api/src/services/assetModels.service.js** - Service de gestion des modèles d'équipements
+6. **apps/api/src/services/assetItems.service.js** - Service de gestion des équipements individuels
+7. **apps/api/src/services/stockItems.service.js** - Service de gestion du stock consommables
 
 ### Frontend (2 fichiers)
 1. **apps/web/src/lib/api/client.ts** - Configuration Axios avec refresh token
@@ -93,10 +97,10 @@ interface InterfaceName {
 ### Backend (Priorité Haute)
 
 #### Services
-- [ ] **apps/api/src/services/users.service.js**
-- [ ] **apps/api/src/services/assetModels.service.js**
-- [ ] **apps/api/src/services/assetItems.service.js**
-- [ ] **apps/api/src/services/stockItems.service.js**
+- [x] **apps/api/src/services/users.service.js** ✅
+- [x] **apps/api/src/services/assetModels.service.js** ✅
+- [x] **apps/api/src/services/assetItems.service.js** ✅
+- [x] **apps/api/src/services/stockItems.service.js** ✅
 
 #### Controllers
 - [ ] **apps/api/src/controllers/auth.controller.js**
@@ -366,17 +370,21 @@ const [loanLine] = await prisma.$transaction([
 
 ## Prochaines Étapes
 
-1. Commenter les services backend restants (users, assetModels, assetItems, stockItems)
-2. Commenter les controllers critiques
-3. Commenter tous les API clients frontend
-4. Commenter tous les hooks React Query
-5. Commenter les composants complexes
+1. ✅ ~~Commenter les services backend restants~~ **TERMINÉ**
+2. Commenter les middlewares critiques (auth, errorHandler, rbac)
+3. Commenter les controllers critiques
+4. Commenter tous les API clients frontend
+5. Commenter tous les hooks React Query
+6. Commenter les composants complexes
 
 ## Statistiques
 
 - **Total de fichiers à commenter (Option 2):** ~40 fichiers
-- **Fichiers commentés:** 5/40 (12.5%)
-- **Fichiers restants:** 35
+- **Fichiers commentés:** 9/40 (22.5%)
+  - Backend: 7 services ✅
+  - Frontend: 2 fichiers (client.ts, authStore.ts)
+- **Fichiers restants:** 31
+- **Prochaine catégorie:** Middlewares (3 fichiers)
 
 ---
 
