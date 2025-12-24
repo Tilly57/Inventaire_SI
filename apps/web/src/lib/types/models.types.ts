@@ -117,6 +117,7 @@ export interface StockItem {
   name: string
   description: string | null
   quantity: number
+  loaned: number
   unitPrice: number | null
   createdAt: string
   updatedAt: string

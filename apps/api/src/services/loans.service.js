@@ -252,7 +252,7 @@ export async function addLoanLine(loanId, data) {
     }
 
     // Use transaction to ensure atomicity:
-    // Both loan line creation AND stock decrement must succeed
+    // Both loan line creation AND stock update must succeed
     const [loanLine] = await prisma.$transaction([
       prisma.loanLine.create({
         data: {
@@ -266,7 +266,10 @@ export async function addLoanLine(loanId, data) {
       }),
       prisma.stockItem.update({
         where: { id: data.stockItemId },
-        data: { quantity: stockItem.quantity - quantity }  // Decrement stock
+        data: {
+          quantity: stockItem.quantity - quantity,  // Decrement available stock
+          loaned: (stockItem.loaned || 0) + quantity  // Increment loaned quantity
+        }
       })
     ]);
 
@@ -325,13 +328,16 @@ export async function removeLoanLine(loanId, lineId) {
     ]);
   }
 
-  // If stock item, restore quantity
+  // If stock item, restore quantity and decrement loaned
   if (loanLine.stockItemId) {
     await prisma.$transaction([
       prisma.loanLine.delete({ where: { id: lineId } }),
       prisma.stockItem.update({
         where: { id: loanLine.stockItemId },
-        data: { quantity: { increment: loanLine.quantity } }  // Return stock to inventory
+        data: {
+          quantity: { increment: loanLine.quantity },  // Return stock to inventory
+          loaned: { decrement: loanLine.quantity }  // Decrement loaned quantity
+        }
       })
     ]);
   }

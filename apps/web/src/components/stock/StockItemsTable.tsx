@@ -32,6 +32,7 @@ export function StockItemsTable({ items }: StockItemsTableProps) {
             <TableHead>Nom</TableHead>
             <TableHead>Description</TableHead>
             <TableHead>Quantité</TableHead>
+            <TableHead>Prêté</TableHead>
             <TableHead>Prix unitaire</TableHead>
             <TableHead>Créé le</TableHead>
             <TableHead className="text-right">Actions</TableHead>
@@ -40,7 +41,7 @@ export function StockItemsTable({ items }: StockItemsTableProps) {
         <TableBody>
           {items.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={6} className="text-center text-muted-foreground">
+              <TableCell colSpan={7} className="text-center text-muted-foreground">
                 Aucun article de stock trouvé
               </TableCell>
             </TableRow>
@@ -68,6 +69,9 @@ export function StockItemsTable({ items }: StockItemsTableProps) {
                     <span className={isLowStock ? 'text-destructive font-semibold' : ''}>
                       {item.quantity}
                     </span>
+                  </TableCell>
+                  <TableCell>
+                    {item.loaned || 0}
                   </TableCell>
                   <TableCell>
                     {item.unitPrice ? `${item.unitPrice.toFixed(2)} €` : '-'}
