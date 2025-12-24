@@ -6,7 +6,7 @@ export const createAssetItemSchema = z.object({
   serialNumber: z.string().optional(),
   status: z.nativeEnum(AssetStatus, { errorMap: () => ({ message: 'Statut invalide' }) }).optional(),
   notes: z.string().optional(),
-  modelId: z.string().min(1, 'Le modèle est requis'),
+  assetModelId: z.string().min(1, 'Le modèle est requis'),
 })
 
 export const updateAssetItemSchema = z.object({
@@ -14,7 +14,7 @@ export const updateAssetItemSchema = z.object({
   serialNumber: z.string().optional().nullable(),
   status: z.nativeEnum(AssetStatus, { errorMap: () => ({ message: 'Statut invalide' }) }).optional(),
   notes: z.string().optional().nullable(),
-  modelId: z.string().min(1, 'Le modèle est requis').optional(),
+  assetModelId: z.string().min(1, 'Le modèle est requis').optional(),
 })
 
 export type CreateAssetItemFormData = z.infer<typeof createAssetItemSchema>

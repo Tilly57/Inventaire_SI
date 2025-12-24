@@ -9,6 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { MobileNav } from './MobileNav'
 import { User, LogOut, Settings } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
@@ -24,25 +25,45 @@ export function Header() {
   if (!user) return null
 
   return (
-    <header className="h-16 border-b border-border bg-card flex items-center justify-between px-6">
-      {/* Page title or breadcrumb can go here */}
-      <div className="flex-1">
-        <h2 className="text-lg font-semibold text-foreground">
-          {/* This will be dynamically updated based on current page */}
-        </h2>
+    <header className="h-16 border-b border-[#EE2722]/20 bg-[#231F20] flex items-center justify-between px-4 md:px-6">
+      {/* Mobile menu */}
+      <div className="md:hidden">
+        <MobileNav />
+      </div>
+
+      {/* Logo and Company Name - Centered */}
+      <div className="flex-1 flex items-center justify-center gap-3">
+        {/* Logo */}
+        <div className="flex items-center">
+          <img
+            src="/images/logo.jpg"
+            alt="Groupe Tilly Logo"
+            className="h-12 w-auto object-contain"
+            onError={(e) => {
+              // Fallback si le logo n'existe pas encore
+              e.currentTarget.style.display = 'none'
+            }}
+          />
+        </div>
+
+        {/* Company Name */}
+        <div className="flex flex-col">
+          <h1 className="text-xl font-bold text-[#EE2722] leading-tight">Groupe Tilly</h1>
+          <p className="text-xs text-gray-400 hidden md:block">Inventaire SI</p>
+        </div>
       </div>
 
       {/* User menu */}
       <div className="flex items-center gap-4">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="gap-2">
-              <div className="flex items-center justify-center h-8 w-8 rounded-full bg-primary text-primary-foreground">
+            <Button variant="ghost" className="gap-2 hover:bg-[#EE2722]/10">
+              <div className="flex items-center justify-center h-8 w-8 rounded-full bg-[#EE2722] text-white">
                 <User className="h-4 w-4" />
               </div>
               <div className="text-left hidden md:block">
-                <p className="text-sm font-medium">{user.username}</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-sm font-medium text-white">{user.username}</p>
+                <p className="text-xs text-gray-400">
                   {UserRoleLabels[user.role]}
                 </p>
               </div>

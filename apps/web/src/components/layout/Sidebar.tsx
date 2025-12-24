@@ -34,13 +34,14 @@ export function Sidebar() {
   )
 
   return (
-    <aside className="w-64 bg-card border-r border-border min-h-screen flex flex-col">
-      {/* Logo */}
-      <div className="p-6 border-b border-border">
-        <h1 className="text-xl font-bold text-primary">Inventaire SI</h1>
-        <p className="text-xs text-muted-foreground mt-1">
-          Gestion des équipements
-        </p>
+    <aside className="hidden md:flex w-64 bg-[#231F20] border-r border-[#EE2722]/20 min-h-screen flex-col">
+      {/* Header */}
+      <div className="p-6 border-b border-[#EE2722]/20">
+        <div className="flex flex-col items-center gap-3">
+          <p className="text-lg font-bold text-[#EE2722] text-center">
+            Gestion des équipements
+          </p>
+        </div>
       </div>
 
       {/* Navigation */}
@@ -55,10 +56,9 @@ export function Sidebar() {
               to={item.path}
               className={cn(
                 'flex items-center gap-3 px-4 py-3 rounded-md transition-colors',
-                'hover:bg-accent hover:text-accent-foreground',
                 isActive
-                  ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                  : 'text-muted-foreground'
+                  ? 'bg-[#EE2722] text-white hover:bg-[#EE2722]/90'
+                  : 'text-gray-400 hover:bg-[#EE2722]/10 hover:text-[#EE2722]'
               )}
             >
               <Icon className="h-5 w-5" />
@@ -69,9 +69,9 @@ export function Sidebar() {
       </nav>
 
       {/* User info */}
-      <div className="p-4 border-t border-border">
-        <div className="text-xs text-muted-foreground">
-          <p className="font-medium text-foreground">{user.username}</p>
+      <div className="p-4 border-t border-[#EE2722]/20">
+        <div className="text-xs text-gray-400">
+          <p className="font-medium text-white">{user.username}</p>
           <p className="truncate">{user.email}</p>
         </div>
       </div>
