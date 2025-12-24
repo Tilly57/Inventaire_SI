@@ -1,17 +1,15 @@
 import { z } from 'zod'
 
 export const createStockItemSchema = z.object({
-  name: z.string().min(2, 'Le nom doit contenir au moins 2 caractères'),
-  description: z.string().optional(),
+  assetModelId: z.string().min(1, 'Le modèle est requis'),
   quantity: z.number().min(0, 'La quantité doit être positive').int('La quantité doit être un nombre entier'),
-  unitPrice: z.number().min(0, 'Le prix doit être positif').optional(),
+  notes: z.string().optional(),
 })
 
 export const updateStockItemSchema = z.object({
-  name: z.string().min(2, 'Le nom doit contenir au moins 2 caractères').optional(),
-  description: z.string().optional().nullable(),
+  assetModelId: z.string().min(1, 'Le modèle est requis').optional(),
   quantity: z.number().min(0, 'La quantité doit être positive').int('La quantité doit être un nombre entier').optional(),
-  unitPrice: z.number().min(0, 'Le prix doit être positif').optional().nullable(),
+  notes: z.string().optional().nullable(),
 })
 
 export type CreateStockItemFormData = z.infer<typeof createStockItemSchema>

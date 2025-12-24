@@ -56,7 +56,8 @@ model AssetModel {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  items     AssetItem[]
+  items      AssetItem[]
+  stockItems StockItem[]
 }
 
 model AssetItem {
@@ -74,15 +75,16 @@ model AssetItem {
 }
 
 model StockItem {
-  id        String   @id @default(cuid())
-  name      String
-  quantity  Int      @default(0)
-  loaned    Int      @default(0)
-  notes     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String     @id @default(cuid())
+  assetModelId String
+  quantity     Int        @default(0)
+  loaned       Int        @default(0)
+  notes        String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 
-  loanLines LoanLine[]
+  assetModel AssetModel @relation(fields: [assetModelId], references: [id])
+  loanLines  LoanLine[]
 }
 
 model Loan {

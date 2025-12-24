@@ -120,7 +120,7 @@ export function AddLoanLineDialog({ loanId, open, onClose }: AddLoanLineDialogPr
                           ) : (
                             assetsList.map((asset) => (
                               <SelectItem key={asset.id} value={asset.id}>
-                                {asset.assetTag} - {asset.model?.brand} {asset.model?.modelName}
+                                {asset.assetTag} - {asset.assetModel?.brand} {asset.assetModel?.modelName}
                               </SelectItem>
                             ))
                           )}
@@ -148,7 +148,9 @@ export function AddLoanLineDialog({ loanId, open, onClose }: AddLoanLineDialogPr
                         <SelectContent>
                           {stockList.map((item) => (
                             <SelectItem key={item.id} value={item.id}>
-                              {item.name} (Stock: {item.quantity})
+                              {item.assetModel
+                                ? `${item.assetModel.brand} ${item.assetModel.modelName} (Stock: ${item.quantity})`
+                                : `Modèle inconnu (Stock: ${item.quantity})`}
                             </SelectItem>
                           ))}
                         </SelectContent>

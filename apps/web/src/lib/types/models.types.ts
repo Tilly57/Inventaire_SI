@@ -114,27 +114,25 @@ export interface UpdateAssetItemDto {
 // Stock Item types
 export interface StockItem {
   id: string
-  name: string
-  description: string | null
+  assetModelId: string
   quantity: number
   loaned: number
-  unitPrice: number | null
+  notes: string | null
   createdAt: string
   updatedAt: string
+  assetModel?: AssetModel
 }
 
 export interface CreateStockItemDto {
-  name: string
-  description?: string
+  assetModelId: string
   quantity: number
-  unitPrice?: number
+  notes?: string
 }
 
 export interface UpdateStockItemDto {
-  name?: string
-  description?: string | null
+  assetModelId?: string
   quantity?: number
-  unitPrice?: number | null
+  notes?: string | null
 }
 
 // Loan types
