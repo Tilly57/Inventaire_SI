@@ -12,8 +12,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useToast } from '@/lib/hooks/use-toast'
+import { useEmployees } from '@/lib/hooks/useEmployees'
 import { createEmployeeApi } from '@/lib/api/employees.api'
-import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
+import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, Loader2, Info } from 'lucide-react'
 
 interface ImportEmployeesDialogProps {
   open: boolean
@@ -30,6 +31,7 @@ interface EmployeeRow {
 
 interface ImportResult {
   success: number
+  skipped: number
   errors: { row: number; name: string; error: string }[]
 }
 
@@ -39,6 +41,7 @@ export function ImportEmployeesDialog({ open, onClose }: ImportEmployeesDialogPr
   const [result, setResult] = useState<ImportResult | null>(null)
   const queryClient = useQueryClient()
   const { toast } = useToast()
+  const { data: existingEmployees = [] } = useEmployees()
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0]
@@ -69,7 +72,7 @@ export function ImportEmployeesDialog({ open, onClose }: ImportEmployeesDialogPr
     }
 
     setIsImporting(true)
-    const importResult: ImportResult = { success: 0, errors: [] }
+    const importResult: ImportResult = { success: 0, skipped: 0, errors: [] }
 
     try {
       // Read Excel file
@@ -77,6 +80,11 @@ export function ImportEmployeesDialog({ open, onClose }: ImportEmployeesDialogPr
       const workbook = read(data)
       const worksheet = workbook.Sheets[workbook.SheetNames[0]]
       const rows: EmployeeRow[] = utils.sheet_to_json(worksheet)
+
+      // Build set of existing emails for fast lookup
+      const existingEmails = new Set(
+        existingEmployees.map(emp => emp.email.toLowerCase())
+      )
 
       // Import each employee
       for (let i = 0; i < rows.length; i++) {
@@ -98,6 +106,12 @@ export function ImportEmployeesDialog({ open, onClose }: ImportEmployeesDialogPr
           const firstName = sanitizeForEmail(row.Prénom)
           const lastName = sanitizeForEmail(row.Nom)
           const email = `${firstName}.${lastName}@groupetilly.com`
+
+          // Check if employee already exists
+          if (existingEmails.has(email.toLowerCase())) {
+            importResult.skipped++
+            continue
+          }
 
           // Create employee
           await createEmployeeApi({
@@ -121,9 +135,13 @@ export function ImportEmployeesDialog({ open, onClose }: ImportEmployeesDialogPr
       queryClient.invalidateQueries({ queryKey: ['employees'] })
 
       if (importResult.errors.length === 0) {
+        const message = importResult.skipped > 0
+          ? `${importResult.success} nouveau(x) employé(s) importé(s), ${importResult.skipped} déjà existant(s)`
+          : `${importResult.success} employé(s) importé(s) avec succès`
+
         toast({
           title: 'Import réussi',
-          description: `${importResult.success} employé(s) importé(s) avec succès`,
+          description: message,
         })
       }
     } catch (error: any) {
@@ -203,7 +221,17 @@ export function ImportEmployeesDialog({ open, onClose }: ImportEmployeesDialogPr
                 <Alert>
                   <CheckCircle className="h-4 w-4 text-green-600" />
                   <AlertDescription>
-                    <strong>{result.success}</strong> employé(s) importé(s) avec succès
+                    <strong>{result.success}</strong> nouveau(x) employé(s) importé(s) avec succès
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {/* Skipped (already exists) */}
+              {result.skipped > 0 && (
+                <Alert>
+                  <Info className="h-4 w-4 text-blue-600" />
+                  <AlertDescription>
+                    <strong>{result.skipped}</strong> employé(s) ignoré(s) (déjà existants)
                   </AlertDescription>
                 </Alert>
               )}
