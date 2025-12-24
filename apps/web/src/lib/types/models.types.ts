@@ -100,7 +100,7 @@ export interface CreateAssetItemDto {
   serialNumber?: string
   status?: AssetStatus
   notes?: string
-  modelId: string
+  assetModelId: string
 }
 
 export interface UpdateAssetItemDto {
@@ -108,7 +108,7 @@ export interface UpdateAssetItemDto {
   serialNumber?: string | null
   status?: AssetStatus
   notes?: string | null
-  modelId?: string
+  assetModelId?: string
 }
 
 // Stock Item types

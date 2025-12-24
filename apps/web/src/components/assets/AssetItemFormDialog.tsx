@@ -54,7 +54,7 @@ export function AssetItemFormDialog({ item, open, onClose }: AssetItemFormDialog
       serialNumber: '',
       status: AssetStatus.EN_STOCK,
       notes: '',
-      modelId: '',
+      assetModelId: '',
     },
   })
 
@@ -65,7 +65,7 @@ export function AssetItemFormDialog({ item, open, onClose }: AssetItemFormDialog
         serialNumber: item.serialNumber || '',
         status: item.status,
         notes: item.notes || '',
-        modelId: item.modelId,
+        assetModelId: item.modelId,
       })
     } else {
       form.reset({
@@ -73,7 +73,7 @@ export function AssetItemFormDialog({ item, open, onClose }: AssetItemFormDialog
         serialNumber: '',
         status: AssetStatus.EN_STOCK,
         notes: '',
-        modelId: '',
+        assetModelId: '',
       })
     }
   }, [item, form])
@@ -140,7 +140,7 @@ export function AssetItemFormDialog({ item, open, onClose }: AssetItemFormDialog
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="modelId"
+                name="assetModelId"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Modèle *</FormLabel>
