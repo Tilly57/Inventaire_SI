@@ -30,7 +30,7 @@ export function AssetModelsTable({ models }: AssetModelsTableProps) {
             <TableHead>Type</TableHead>
             <TableHead>Marque</TableHead>
             <TableHead>Modèle</TableHead>
-            <TableHead>Nombre d'items</TableHead>
+            <TableHead>Quantité</TableHead>
             <TableHead>Créé le</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
