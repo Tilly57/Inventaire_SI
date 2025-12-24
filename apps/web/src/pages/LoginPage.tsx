@@ -35,7 +35,16 @@ export function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/40 p-4">
       <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
+        <CardHeader className="space-y-4">
+          {/* Logo */}
+          <div className="flex justify-center">
+            <img
+              src="/images/logo.jpg"
+              alt="Groupe Tilly Logo"
+              className="h-24 w-auto object-contain"
+            />
+          </div>
+
           <CardTitle className="text-2xl font-bold text-center">
             Inventaire SI
           </CardTitle>
