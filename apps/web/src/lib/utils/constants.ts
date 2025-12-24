@@ -18,7 +18,7 @@ export const MAX_SIGNATURE_SIZE = 5 * 1024 * 1024 // 5MB
 export const ALLOWED_SIGNATURE_TYPES = ['image/png', 'image/jpeg', 'image/jpg']
 
 // Low stock threshold
-export const LOW_STOCK_THRESHOLD = 5
+export const LOW_STOCK_THRESHOLD = 2
 
 // Navigation links
 export const NAVIGATION_ITEMS = [

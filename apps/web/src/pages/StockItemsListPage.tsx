@@ -1,31 +1,31 @@
 import { useState, useEffect } from 'react'
-import { useStockItems } from '@/lib/hooks/useStockItems'
+import { useAssetModels } from '@/lib/hooks/useAssetModels'
 import { StockItemsTable } from '@/components/stock/StockItemsTable'
-import { StockItemFormDialog } from '@/components/stock/StockItemFormDialog'
 import { Pagination } from '@/components/common/Pagination'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Plus, Search, AlertTriangle } from 'lucide-react'
 import { LOW_STOCK_THRESHOLD, DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS } from '@/lib/utils/constants'
+import { useNavigate } from 'react-router-dom'
 
 export function StockItemsListPage() {
-  const { data: items, isLoading, error } = useStockItems()
-  const [isCreating, setIsCreating] = useState(false)
+  const { data: models, isLoading, error } = useAssetModels()
+  const navigate = useNavigate()
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
 
-  const itemsList = Array.isArray(items) ? items : []
+  const itemsList = Array.isArray(models) ? models : []
 
   const filteredItems = itemsList.filter(
-    (item) =>
-      item.assetModel?.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.assetModel?.modelName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.notes?.toLowerCase().includes(searchTerm.toLowerCase())
+    (model) =>
+      model.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      model.modelName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      model.type?.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  const lowStockItems = itemsList.filter(item => item.quantity < LOW_STOCK_THRESHOLD)
+  const lowStockItems = itemsList.filter(item => (item._count?.items || 0) < LOW_STOCK_THRESHOLD)
 
   useEffect(() => {
     setCurrentPage(1)
@@ -72,7 +72,7 @@ export function StockItemsListPage() {
       <div>
         <h1 className="text-3xl font-bold">Stock</h1>
         <p className="text-muted-foreground mt-2">
-          Gestion des articles en stock (consommables)
+          Vue consolidée de tous les équipements et consommables
         </p>
       </div>
 
@@ -81,7 +81,7 @@ export function StockItemsListPage() {
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Alerte stock bas</AlertTitle>
           <AlertDescription>
-            {lowStockItems.length} article{lowStockItems.length > 1 ? 's ont' : ' a'} une quantité
+            {lowStockItems.length} modèle{lowStockItems.length > 1 ? 's ont' : ' a'} une quantité
             inférieure à {LOW_STOCK_THRESHOLD} unités.
           </AlertDescription>
         </Alert>
@@ -91,15 +91,15 @@ export function StockItemsListPage() {
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Rechercher par nom ou description..."
+            placeholder="Rechercher par type, marque ou modèle..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
           />
         </div>
-        <Button onClick={() => setIsCreating(true)}>
+        <Button onClick={() => navigate('/asset-models')}>
           <Plus className="h-4 w-4 mr-2" />
-          Nouvel article
+          Nouveau modèle
         </Button>
       </div>
 
@@ -118,11 +118,6 @@ export function StockItemsListPage() {
           />
         )}
       </div>
-
-      <StockItemFormDialog
-        open={isCreating}
-        onClose={() => setIsCreating(false)}
-      />
     </div>
   )
 }

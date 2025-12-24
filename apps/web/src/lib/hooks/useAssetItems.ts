@@ -271,7 +271,9 @@ export function useDeleteAssetItem() {
     mutationFn: (id: string) => deleteAssetItemApi(id),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['assetItems'] })
+      await queryClient.invalidateQueries({ queryKey: ['assetModels'] })
       await queryClient.refetchQueries({ queryKey: ['assetItems'] })
+      await queryClient.refetchQueries({ queryKey: ['assetModels'] })
       toast({
         title: 'Équipement supprimé',
         description: 'L\'équipement a été supprimé avec succès',

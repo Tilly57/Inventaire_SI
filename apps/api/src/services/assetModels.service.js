@@ -65,7 +65,13 @@ export async function getAllAssetModels() {
     orderBy: { createdAt: 'desc' },
     include: {
       _count: {
-        select: { items: true }  // Count of physical items for this model
+        select: {
+          items: {
+            where: {
+              status: 'EN_STOCK'  // Count only available items
+            }
+          }
+        }
       }
     }
   });
@@ -94,7 +100,13 @@ export async function getAssetModelById(id) {
         orderBy: { createdAt: 'desc' }  // Newest items first
       },
       _count: {
-        select: { items: true }
+        select: {
+          items: {
+            where: {
+              status: 'EN_STOCK'  // Count only available items
+            }
+          }
+        }
       }
     }
   });
@@ -153,18 +165,34 @@ export async function createAssetModel(data) {
   // If quantity is provided, create items automatically
   if (quantity && quantity > 0) {
     const { type } = assetModel;
+    console.log('🔍 Type detected:', type);
+    console.log('🔍 Is UNIQUE_ASSET_TYPE?', UNIQUE_ASSET_TYPES.includes(type));
+    console.log('🔍 Is CONSUMABLE_TYPE?', CONSUMABLE_TYPES.includes(type));
 
     if (UNIQUE_ASSET_TYPES.includes(type)) {
       // Create individual AssetItems with auto-generated tags
       const tagPrefix = generateTagPrefix(type);
-      const assetItems = await createAssetItemsBulk({
+      console.log('🔍 Tag prefix generated:', tagPrefix);
+      console.log('🔍 Calling createAssetItemsBulk with:', {
         assetModelId: assetModel.id,
         tagPrefix,
-        quantity,
-        status: 'EN_STOCK',
-        notes: `Créé automatiquement depuis le modèle ${assetModel.brand} ${assetModel.modelName}`
+        quantity
       });
-      result.created.assetItems = assetItems;
+
+      try {
+        const assetItems = await createAssetItemsBulk({
+          assetModelId: assetModel.id,
+          tagPrefix,
+          quantity,
+          status: 'EN_STOCK',
+          notes: `Créé automatiquement depuis le modèle ${assetModel.brand} ${assetModel.modelName}`
+        });
+        console.log('✅ createAssetItemsBulk returned:', assetItems.length, 'items');
+        result.created.assetItems = assetItems;
+      } catch (error) {
+        console.error('❌ Error in createAssetItemsBulk:', error);
+        throw error;
+      }
     } else if (CONSUMABLE_TYPES.includes(type)) {
       // Create a single StockItem with the quantity
       const stockItem = await prisma.stockItem.create({

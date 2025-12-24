@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
-import { useAssetItems } from '@/lib/hooks/useAssetItems'
+import { useAssetItems, useDeleteAssetItem } from '@/lib/hooks/useAssetItems'
 import { useAssetModels } from '@/lib/hooks/useAssetModels'
 import { AssetItemsTable } from '@/components/assets/AssetItemsTable'
 import { AssetItemFormDialog } from '@/components/assets/AssetItemFormDialog'
 import { Pagination } from '@/components/common/Pagination'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
   Select,
   SelectContent,
@@ -13,19 +14,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Plus, Search } from 'lucide-react'
-import { AssetStatus } from '@/lib/types/enums'
+import { Plus, Search, Trash2 } from 'lucide-react'
+import { AssetStatus, AssetStatusLabels } from '@/lib/types/enums'
 import { DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS } from '@/lib/utils/constants'
+import { useToast } from '@/lib/hooks/use-toast'
 
 export function AssetItemsListPage() {
   const { data: items, isLoading, error } = useAssetItems()
   const { data: models } = useAssetModels()
+  const deleteItem = useDeleteAssetItem()
+  const { toast } = useToast()
   const [isCreating, setIsCreating] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [modelFilter, setModelFilter] = useState<string>('all')
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
+  const [selectedItems, setSelectedItems] = useState<string[]>([])
 
   const itemsList = Array.isArray(items) ? items : []
   const modelsList = Array.isArray(models) ? models : []
@@ -60,6 +65,54 @@ export function AssetItemsListPage() {
   const handlePageSizeChange = (newPageSize: number) => {
     setPageSize(newPageSize)
     setCurrentPage(1)
+  }
+
+  const handleBulkDelete = async () => {
+    if (selectedItems.length === 0) return
+
+    const confirmed = window.confirm(
+      `Voulez-vous vraiment supprimer ${selectedItems.length} équipement(s) ? Cette action est irréversible.`
+    )
+
+    if (!confirmed) return
+
+    let successCount = 0
+    let errorCount = 0
+    const errors: string[] = []
+
+    for (const itemId of selectedItems) {
+      try {
+        await deleteItem.mutateAsync(itemId)
+        successCount++
+      } catch (error: any) {
+        errorCount++
+        const errorMsg = error.response?.data?.error || 'Erreur inconnue'
+        errors.push(errorMsg)
+      }
+    }
+
+    if (successCount > 0) {
+      toast({
+        title: 'Suppression réussie',
+        description: `${successCount} équipement(s) supprimé(s) avec succès${errorCount > 0 ? `, ${errorCount} erreur(s)` : ''}`,
+      })
+    }
+
+    if (errorCount > 0 && successCount === 0) {
+      toast({
+        variant: 'destructive',
+        title: 'Erreur de suppression',
+        description: errors[0] || 'Impossible de supprimer les équipements sélectionnés',
+      })
+    } else if (errorCount > 0) {
+      toast({
+        variant: 'destructive',
+        title: 'Certaines suppressions ont échoué',
+        description: `${errorCount} équipement(s) n'ont pas pu être supprimés`,
+      })
+    }
+
+    setSelectedItems([])
   }
 
   if (isLoading) {
@@ -103,6 +156,12 @@ export function AssetItemsListPage() {
               className="pl-10"
             />
           </div>
+          {selectedItems.length > 0 && (
+            <Button variant="destructive" onClick={handleBulkDelete}>
+              <Trash2 className="h-4 w-4 mr-2" />
+              Supprimer ({selectedItems.length})
+            </Button>
+          )}
           <Button onClick={() => setIsCreating(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Nouvel équipement
@@ -118,7 +177,7 @@ export function AssetItemsListPage() {
               <SelectItem value="all">Tous les statuts</SelectItem>
               {Object.values(AssetStatus).map((status) => (
                 <SelectItem key={status} value={status}>
-                  {status}
+                  {AssetStatusLabels[status]}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -140,8 +199,20 @@ export function AssetItemsListPage() {
         </div>
       </div>
 
+      {selectedItems.length > 0 && (
+        <Alert>
+          <AlertDescription>
+            <strong>{selectedItems.length}</strong> équipement(s) sélectionné(s)
+          </AlertDescription>
+        </Alert>
+      )}
+
       <div className="border rounded-lg">
-        <AssetItemsTable items={paginatedItems} />
+        <AssetItemsTable
+          items={paginatedItems}
+          selectedItems={selectedItems}
+          onSelectionChange={setSelectedItems}
+        />
 
         {totalItems > 0 && (
           <Pagination

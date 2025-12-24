@@ -10,6 +10,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Pencil, Trash2 } from 'lucide-react'
 import { StatusBadge } from './StatusBadge'
 import { AssetItemFormDialog } from './AssetItemFormDialog'
@@ -17,17 +18,50 @@ import { DeleteAssetItemDialog } from './DeleteAssetItemDialog'
 
 interface AssetItemsTableProps {
   items: AssetItem[]
+  selectedItems?: string[]
+  onSelectionChange?: (selectedIds: string[]) => void
 }
 
-export function AssetItemsTable({ items }: AssetItemsTableProps) {
+export function AssetItemsTable({
+  items,
+  selectedItems = [],
+  onSelectionChange
+}: AssetItemsTableProps) {
   const [editingItem, setEditingItem] = useState<AssetItem | null>(null)
   const [deletingItem, setDeletingItem] = useState<AssetItem | null>(null)
+
+  const isAllSelected = items.length > 0 && selectedItems.length === items.length
+  const isSomeSelected = selectedItems.length > 0 && selectedItems.length < items.length
+
+  const handleSelectAll = (checked: boolean | 'indeterminate') => {
+    if (onSelectionChange) {
+      onSelectionChange(checked === true ? items.map(item => item.id) : [])
+    }
+  }
+
+  const handleSelectItem = (itemId: string, checked: boolean) => {
+    if (onSelectionChange) {
+      const newSelection = checked
+        ? [...selectedItems, itemId]
+        : selectedItems.filter(id => id !== itemId)
+      onSelectionChange(newSelection)
+    }
+  }
 
   return (
     <>
       <Table>
         <TableHeader>
           <TableRow>
+            {onSelectionChange && (
+              <TableHead className="w-12">
+                <Checkbox
+                  checked={isSomeSelected ? 'indeterminate' : isAllSelected}
+                  onCheckedChange={handleSelectAll}
+                  aria-label="Sélectionner tout"
+                />
+              </TableHead>
+            )}
             <TableHead>Tag</TableHead>
             <TableHead>Modèle</TableHead>
             <TableHead>N° série</TableHead>
@@ -40,13 +74,22 @@ export function AssetItemsTable({ items }: AssetItemsTableProps) {
         <TableBody>
           {items.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7} className="text-center text-muted-foreground">
+              <TableCell colSpan={onSelectionChange ? 8 : 7} className="text-center text-muted-foreground">
                 Aucun équipement trouvé
               </TableCell>
             </TableRow>
           ) : (
             items.map((item) => (
               <TableRow key={item.id}>
+                {onSelectionChange && (
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedItems.includes(item.id)}
+                      onCheckedChange={(checked) => handleSelectItem(item.id, checked as boolean)}
+                      aria-label={`Sélectionner ${item.assetTag}`}
+                    />
+                  </TableCell>
+                )}
                 <TableCell className="font-medium">{item.assetTag}</TableCell>
                 <TableCell>
                   {item.assetModel

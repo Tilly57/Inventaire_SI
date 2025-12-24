@@ -5,8 +5,8 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertTriangle, ArrowRight, Package } from 'lucide-react'
-
-const LOW_STOCK_THRESHOLD = 5
+import { LOW_STOCK_THRESHOLD } from '@/lib/utils/constants'
+import { AssetTypeLabels } from '@/lib/types/enums'
 
 export function LowStockAlert() {
   const navigate = useNavigate()
@@ -77,7 +77,7 @@ export function LowStockAlert() {
                   </div>
                   {item.assetModel && (
                     <p className="text-xs text-muted-foreground mt-1 ml-6">
-                      Type: {item.assetModel.type}
+                      Type: {AssetTypeLabels[item.assetModel.type] || item.assetModel.type}
                     </p>
                   )}
                 </div>

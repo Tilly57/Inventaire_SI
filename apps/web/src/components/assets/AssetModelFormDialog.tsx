@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import type { AssetModel } from '@/lib/types/models.types'
-import { AssetType } from '@/lib/types/enums'
+import { AssetType, AssetTypeLabels } from '@/lib/types/enums'
 import { createAssetModelSchema, updateAssetModelSchema } from '@/lib/schemas/assetModels.schema'
 import type { CreateAssetModelFormData, UpdateAssetModelFormData } from '@/lib/schemas/assetModels.schema'
 import { useCreateAssetModel, useUpdateAssetModel } from '@/lib/hooks/useAssetModels'
@@ -77,6 +77,7 @@ export function AssetModelFormDialog({ model, open, onClose }: AssetModelFormDia
       } else {
         await createModel.mutateAsync(data as CreateAssetModelFormData)
       }
+      form.reset()
       onClose()
     } catch (error) {
       // Error handled by mutation hooks
@@ -114,7 +115,7 @@ export function AssetModelFormDialog({ model, open, onClose }: AssetModelFormDia
                     <SelectContent>
                       {Object.values(AssetType).map((type) => (
                         <SelectItem key={type} value={type}>
-                          {type}
+                          {AssetTypeLabels[type]}
                         </SelectItem>
                       ))}
                     </SelectContent>
