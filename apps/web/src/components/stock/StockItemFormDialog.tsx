@@ -161,6 +161,7 @@ export function StockItemFormDialog({ item, open, onClose }: StockItemFormDialog
                       placeholder="Notes supplémentaires..."
                       className="resize-none"
                       {...field}
+                      value={field.value || ''}
                     />
                   </FormControl>
                   <FormMessage />

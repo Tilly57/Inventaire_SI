@@ -118,7 +118,7 @@ export function ImportEmployeesDialog({ open, onClose }: ImportEmployeesDialogPr
             firstName: row.Prénom.trim(),
             lastName: row.Nom.trim(),
             email: email,
-            dept: row.Agence?.trim() || null,
+            dept: row.Agence?.trim() || undefined,
           })
 
           importResult.success++

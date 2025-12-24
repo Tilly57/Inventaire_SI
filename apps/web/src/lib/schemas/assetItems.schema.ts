@@ -4,7 +4,7 @@ import { AssetStatus } from '@/lib/types/enums'
 export const createAssetItemSchema = z.object({
   assetTag: z.string().min(1, 'Le tag est requis'),
   serialNumber: z.string().optional(),
-  status: z.nativeEnum(AssetStatus, { errorMap: () => ({ message: 'Statut invalide' }) }).optional(),
+  status: z.nativeEnum(AssetStatus, { message: 'Statut invalide' }).optional(),
   notes: z.string().optional(),
   assetModelId: z.string().min(1, 'Le modèle est requis'),
 })
@@ -12,7 +12,7 @@ export const createAssetItemSchema = z.object({
 export const updateAssetItemSchema = z.object({
   assetTag: z.string().min(1, 'Le tag est requis').optional(),
   serialNumber: z.string().optional().nullable(),
-  status: z.nativeEnum(AssetStatus, { errorMap: () => ({ message: 'Statut invalide' }) }).optional(),
+  status: z.nativeEnum(AssetStatus, { message: 'Statut invalide' }).optional(),
   notes: z.string().optional().nullable(),
   assetModelId: z.string().min(1, 'Le modèle est requis').optional(),
 })
@@ -34,7 +34,7 @@ export const createBulkAssetItemsSchema = z.object({
 
 // Schema unifié pour le formulaire (mode conditionnel)
 export const assetItemFormSchema = z.object({
-  quantity: z.number().int().min(1).max(100).default(1),
+  quantity: z.number().int().min(1).max(100),
   assetModelId: z.string().min(1, 'Le modèle est requis'),
   status: z.nativeEnum(AssetStatus).optional(),
   notes: z.string().optional(),

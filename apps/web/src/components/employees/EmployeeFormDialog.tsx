@@ -140,7 +140,7 @@ export function EmployeeFormDialog({ employee, open, onClose }: EmployeeFormDial
                 <FormItem>
                   <FormLabel>Département (optionnel)</FormLabel>
                   <FormControl>
-                    <Input placeholder="Informatique" {...field} />
+                    <Input placeholder="Informatique" {...field} value={field.value || ''} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

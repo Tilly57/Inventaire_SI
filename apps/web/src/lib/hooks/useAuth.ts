@@ -66,8 +66,6 @@ export function useAuth() {
     isLoading,
     login: loginStore,
     logout: logoutStore,
-    setUser,
-    setLoading,
   } = useAuthStore()
 
   // Note: Auto-login check disabled for now

@@ -34,8 +34,8 @@ export function AssetItemsListPage() {
     const matchesSearch =
       item.assetTag?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.serialNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.model?.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.model?.modelName?.toLowerCase().includes(searchTerm.toLowerCase())
+      item.assetModel?.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.assetModel?.modelName?.toLowerCase().includes(searchTerm.toLowerCase())
 
     const matchesStatus = statusFilter === 'all' || item.status === statusFilter
     const matchesModel = modelFilter === 'all' || item.modelId === modelFilter

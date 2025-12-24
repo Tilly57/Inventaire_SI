@@ -45,7 +45,7 @@ export function AssetModelFormDialog({ model, open, onClose }: AssetModelFormDia
   const form = useForm<CreateAssetModelFormData | UpdateAssetModelFormData>({
     resolver: zodResolver(isEdit ? updateAssetModelSchema : createAssetModelSchema),
     defaultValues: {
-      type: AssetType.ORDINATEUR,
+      type: AssetType.LAPTOP,
       brand: '',
       modelName: '',
     },
@@ -60,7 +60,7 @@ export function AssetModelFormDialog({ model, open, onClose }: AssetModelFormDia
       })
     } else {
       form.reset({
-        type: AssetType.ORDINATEUR,
+        type: AssetType.LAPTOP,
         brand: '',
         modelName: '',
       })

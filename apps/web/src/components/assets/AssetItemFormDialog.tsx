@@ -70,8 +70,8 @@ export function AssetItemFormDialog({ item, open, onClose }: AssetItemFormDialog
   })
 
   // Watch pour détecter le mode
-  const quantity = form.watch('quantity')
-  const tagPrefix = form.watch('tagPrefix')
+  const quantity = form.watch('quantity') || 1
+  const tagPrefix = form.watch('tagPrefix') || ''
 
   useEffect(() => {
     setIsBulkMode(quantity > 1)
@@ -331,6 +331,7 @@ export function AssetItemFormDialog({ item, open, onClose }: AssetItemFormDialog
                       placeholder="Notes supplémentaires..."
                       className="resize-none"
                       {...field}
+                      value={field.value || ''}
                     />
                   </FormControl>
                   <FormMessage />

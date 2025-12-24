@@ -166,8 +166,8 @@ export function LoanDetailsPage() {
                     </TableCell>
                     <TableCell>
                       {line.assetItem
-                        ? `${line.assetItem.assetTag} - ${line.assetItem.model?.brand} ${line.assetItem.model?.modelName}`
-                        : line.stockItem?.name || 'Inconnu'}
+                        ? `${line.assetItem.assetTag} - ${line.assetItem.assetModel?.brand} ${line.assetItem.assetModel?.modelName}`
+                        : line.stockItem?.assetModel ? `${line.stockItem.assetModel.brand} ${line.stockItem.assetModel.modelName}` : 'Inconnu'}
                     </TableCell>
                     <TableCell>{line.quantity}</TableCell>
                     {isOpen && (

@@ -20,8 +20,9 @@ export function StockItemsListPage() {
 
   const filteredItems = itemsList.filter(
     (item) =>
-      item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.description?.toLowerCase().includes(searchTerm.toLowerCase())
+      item.assetModel?.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.assetModel?.modelName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.notes?.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   const lowStockItems = itemsList.filter(item => item.quantity < LOW_STOCK_THRESHOLD)
