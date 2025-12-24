@@ -141,14 +141,14 @@ interface InterfaceName {
 - [x] **apps/web/src/lib/api/dashboard.api.ts** ✅
 
 #### Hooks (8 fichiers)
-- [ ] **apps/web/src/lib/hooks/useAuth.ts**
-- [ ] **apps/web/src/lib/hooks/useEmployees.ts**
-- [ ] **apps/web/src/lib/hooks/useLoans.ts**
-- [ ] **apps/web/src/lib/hooks/useAssetModels.ts**
-- [ ] **apps/web/src/lib/hooks/useAssetItems.ts**
-- [ ] **apps/web/src/lib/hooks/useStockItems.ts**
-- [ ] **apps/web/src/lib/hooks/useUsers.ts**
-- [ ] **apps/web/src/lib/hooks/useDashboard.ts**
+- [x] **apps/web/src/lib/hooks/useAuth.ts** ✅
+- [x] **apps/web/src/lib/hooks/useEmployees.ts** ✅
+- [x] **apps/web/src/lib/hooks/useLoans.ts** ✅
+- [x] **apps/web/src/lib/hooks/useAssetModels.ts** ✅
+- [x] **apps/web/src/lib/hooks/useAssetItems.ts** ✅
+- [x] **apps/web/src/lib/hooks/useStockItems.ts** ✅
+- [x] **apps/web/src/lib/hooks/useUsers.ts** ✅
+- [x] **apps/web/src/lib/hooks/useDashboard.ts** ✅
 
 #### Composants Complexes
 - [ ] **apps/web/src/components/employees/ImportEmployeesDialog.tsx** - Import Excel
@@ -384,19 +384,20 @@ const [loanLine] = await prisma.$transaction([
 1. ✅ ~~Commenter les services backend restants~~ **TERMINÉ**
 2. ✅ ~~Commenter les middlewares critiques~~ **TERMINÉ**
 3. ✅ ~~Commenter tous les API clients frontend~~ **TERMINÉ**
-4. Commenter tous les hooks React Query (8 fichiers)
+4. ✅ ~~Commenter tous les hooks React Query (8 fichiers)~~ **TERMINÉ**
 5. Commenter les composants complexes (optionnel)
 
 ## Statistiques
 
 - **Total de fichiers à commenter (Option 2):** ~40 fichiers
-- **Fichiers commentés:** 20/40 (50%) 🎉
+- **Fichiers commentés:** 28/40 (70%) 🎉
   - Backend: 7 services ✅
   - Backend: 3 middlewares ✅
   - Frontend: 8 API clients ✅
   - Frontend: 2 fichiers (client.ts, authStore.ts) ✅
-- **Fichiers restants:** 20
-- **Prochaine catégorie:** Hooks React Query (8 fichiers)
+  - Frontend: 8 hooks ✅
+- **Fichiers restants:** 12
+- **Prochaine catégorie:** Controllers et composants complexes (optionnel)
 
 ---
 
