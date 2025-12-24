@@ -22,11 +22,14 @@ import {
   getAllAssetItemsApi,
   getAssetItemApi,
   createAssetItemApi,
+  createAssetItemsBulkApi,
+  previewBulkCreationApi,
   updateAssetItemApi,
   deleteAssetItemApi,
 } from '@/lib/api/assetItems.api'
 import type {
   CreateAssetItemDto,
+  CreateBulkAssetItemsDto,
   UpdateAssetItemDto,
 } from '@/lib/types/models.types'
 import { useToast } from '@/lib/hooks/use-toast'
@@ -280,6 +283,127 @@ export function useDeleteAssetItem() {
         title: 'Erreur',
         description: error.response?.data?.error || 'Impossible de supprimer l\'équipement',
       })
+    },
+  })
+}
+
+/**
+ * Hook to preview bulk asset creation
+ *
+ * Returns generated tags and conflicts before actual bulk creation.
+ * Useful for UI preview and validation. Cache is never stale (refetch on every call).
+ *
+ * Cache key: ['assetItems', 'bulk-preview', tagPrefix, quantity]
+ *
+ * @param tagPrefix - Tag prefix for generation (e.g., "KB-", "LAPTOP-")
+ * @param quantity - Number of items to create
+ * @param enabled - Whether the query should run (default: true)
+ * @returns React Query result with preview data
+ * @returns {string[]} data.tags - Array of tags that will be generated
+ * @returns {string[]} data.conflicts - Array of tags that already exist
+ * @returns {number} data.startNumber - Starting number for the sequence
+ *
+ * @example
+ * function BulkForm() {
+ *   const [prefix, setPrefix] = useState('KB-');
+ *   const [quantity, setQuantity] = useState(5);
+ *
+ *   const { data: preview, isLoading } = usePreviewBulkCreation(
+ *     prefix,
+ *     quantity,
+ *     !!prefix && quantity > 0
+ *   );
+ *
+ *   if (preview?.conflicts.length > 0) {
+ *     return <Alert>Conflits détectés: {preview.conflicts.join(', ')}</Alert>;
+ *   }
+ *
+ *   return <div>Tags: {preview?.tags.join(', ')}</div>;
+ * }
+ */
+export function usePreviewBulkCreation(
+  tagPrefix: string,
+  quantity: number,
+  enabled: boolean = true
+) {
+  return useQuery({
+    queryKey: ['assetItems', 'bulk-preview', tagPrefix, quantity],
+    queryFn: () => previewBulkCreationApi(tagPrefix, quantity),
+    enabled: enabled && !!tagPrefix && quantity > 0,
+    staleTime: 0, // Always fetch fresh data
+  })
+}
+
+/**
+ * Hook to create multiple asset items in bulk
+ *
+ * Creates multiple equipment items with auto-generated sequential tags.
+ * On success:
+ * - Invalidates and refetches asset items cache
+ * - Shows success toast with count
+ *
+ * On error:
+ * - Shows detailed error toast
+ * - For 409 conflicts: Special message with suggestion to try another prefix
+ *
+ * @returns React Query mutation with createAssetItemsBulk function
+ * @returns {Function} mutation.mutateAsync - Async function to trigger bulk creation
+ * @returns {boolean} mutation.isPending - Loading state
+ *
+ * @example
+ * function BulkCreateForm() {
+ *   const createBulk = useCreateAssetItemsBulk();
+ *
+ *   const handleSubmit = async (data) => {
+ *     await createBulk.mutateAsync({
+ *       assetModelId: 'modelId123',
+ *       tagPrefix: 'KB-',
+ *       quantity: 20,
+ *       status: 'EN_STOCK',
+ *       notes: 'Commande 2025-01'
+ *     });
+ *   };
+ *
+ *   return (
+ *     <form onSubmit={handleSubmit}>
+ *       <Button disabled={createBulk.isPending}>
+ *         {createBulk.isPending ? 'Création...' : 'Créer 20 équipements'}
+ *       </Button>
+ *     </form>
+ *   );
+ * }
+ */
+export function useCreateAssetItemsBulk() {
+  const queryClient = useQueryClient()
+  const { toast } = useToast()
+
+  return useMutation({
+    mutationFn: (data: CreateBulkAssetItemsDto) => createAssetItemsBulkApi(data),
+    onSuccess: async (data) => {
+      await queryClient.invalidateQueries({ queryKey: ['assetItems'] })
+      await queryClient.refetchQueries({ queryKey: ['assetItems'] })
+      toast({
+        title: 'Équipements créés',
+        description: `${data.length} équipement(s) créé(s) avec succès`,
+      })
+    },
+    onError: (error: any) => {
+      const message = error.response?.data?.error || 'Impossible de créer les équipements'
+
+      if (error.response?.status === 409) {
+        toast({
+          variant: 'destructive',
+          title: 'Tags déjà existants',
+          description: message + ' Essayez un autre préfixe.',
+          duration: 7000,
+        })
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Erreur',
+          description: message,
+        })
+      }
     },
   })
 }

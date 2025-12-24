@@ -79,3 +79,35 @@ export const deleteAssetItem = asyncHandler(async (req, res) => {
     data: result
   });
 });
+
+/**
+ * POST /api/asset-items/bulk
+ * Create multiple asset items in bulk with auto-generated tags
+ */
+export const createAssetItemsBulk = asyncHandler(async (req, res) => {
+  const assetItems = await assetItemsService.createAssetItemsBulk(req.body);
+
+  res.status(201).json({
+    success: true,
+    data: assetItems,
+    count: assetItems.length
+  });
+});
+
+/**
+ * GET /api/asset-items/bulk/preview
+ * Preview bulk creation - returns generated tags and conflicts
+ */
+export const previewBulkCreation = asyncHandler(async (req, res) => {
+  const { tagPrefix, quantity } = req.query;
+
+  const preview = await assetItemsService.previewBulkCreation(
+    tagPrefix,
+    parseInt(quantity, 10)
+  );
+
+  res.json({
+    success: true,
+    data: preview
+  });
+});

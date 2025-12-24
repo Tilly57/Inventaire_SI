@@ -13,7 +13,7 @@
  */
 
 import prisma from '../config/database.js';
-import { NotFoundError, ConflictError } from '../utils/errors.js';
+import { NotFoundError, ConflictError, ValidationError } from '../utils/errors.js';
 
 /**
  * Get all asset items with optional filters
@@ -322,4 +322,200 @@ export async function deleteAssetItem(id) {
   await prisma.assetItem.delete({ where: { id } });
 
   return { message: 'Article d\'équipement supprimé avec succès' };
+}
+
+/**
+ * Find next available number for a given tag prefix
+ *
+ * Searches all existing asset tags starting with the prefix and
+ * returns the next sequential number to use. Handles non-sequential
+ * numbering by finding the maximum number and incrementing it.
+ *
+ * @param {string} prefix - Tag prefix to search for (e.g., "KB-", "LAPTOP-")
+ * @returns {Promise<number>} Next available number in sequence
+ *
+ * @example
+ * // No existing tags with prefix "KB-"
+ * await findNextAvailableNumber('KB-'); // Returns 1
+ *
+ * @example
+ * // Existing tags: KB-001, KB-002, KB-005
+ * await findNextAvailableNumber('KB-'); // Returns 6 (max + 1)
+ */
+async function findNextAvailableNumber(prefix) {
+  const existingTags = await prisma.assetItem.findMany({
+    where: { assetTag: { startsWith: prefix } },
+    select: { assetTag: true }
+  });
+
+  if (existingTags.length === 0) {
+    return 1; // First in sequence
+  }
+
+  // Extract numbers from tags (e.g., "KB-005" → 5)
+  const numbers = existingTags
+    .map(item => {
+      const match = item.assetTag.match(/(\d+)$/);
+      return match ? parseInt(match[1], 10) : 0;
+    })
+    .filter(num => num > 0);
+
+  const maxNumber = numbers.length > 0 ? Math.max(...numbers) : 0;
+  return maxNumber + 1;
+}
+
+/**
+ * Generate sequential asset tags with 3-digit padding
+ *
+ * Creates an array of tags by combining the prefix with sequential
+ * numbers padded to 3 digits (e.g., 001, 002, 003).
+ *
+ * @param {string} prefix - Tag prefix (e.g., "KB-", "LAPTOP-")
+ * @param {number} startNumber - First number in sequence
+ * @param {number} count - How many tags to generate
+ * @returns {string[]} Array of generated tags
+ *
+ * @example
+ * generateTags('KB-', 1, 3);
+ * // Returns ['KB-001', 'KB-002', 'KB-003']
+ *
+ * @example
+ * generateTags('LAPTOP-', 42, 2);
+ * // Returns ['LAPTOP-042', 'LAPTOP-043']
+ */
+function generateTags(prefix, startNumber, count) {
+  return Array.from({ length: count }, (_, i) => {
+    const number = startNumber + i;
+    return `${prefix}${number.toString().padStart(3, '0')}`;
+  });
+}
+
+/**
+ * Preview bulk asset creation
+ *
+ * Returns generated tags and any conflicts before actual creation.
+ * Useful for UI preview and validation before committing to bulk create.
+ *
+ * @param {string} tagPrefix - Tag prefix for generation
+ * @param {number} quantity - Number of items to create
+ * @returns {Promise<Object>} Preview with tags, conflicts, and start number
+ * @returns {string[]} return.tags - Array of tags that will be generated
+ * @returns {string[]} return.conflicts - Array of tags that already exist
+ * @returns {number} return.startNumber - Starting number for the sequence
+ *
+ * @example
+ * const preview = await previewBulkCreation('KB-', 5);
+ * // Returns:
+ * // {
+ * //   tags: ['KB-001', 'KB-002', 'KB-003', 'KB-004', 'KB-005'],
+ * //   conflicts: [],
+ * //   startNumber: 1
+ * // }
+ */
+export async function previewBulkCreation(tagPrefix, quantity) {
+  const startNumber = await findNextAvailableNumber(tagPrefix);
+  const generatedTags = generateTags(tagPrefix, startNumber, quantity);
+
+  // Check for conflicts
+  const existingTags = await prisma.assetItem.findMany({
+    where: { assetTag: { in: generatedTags } },
+    select: { assetTag: true }
+  });
+
+  return {
+    tags: generatedTags,
+    conflicts: existingTags.map(item => item.assetTag),
+    startNumber
+  };
+}
+
+/**
+ * Create multiple asset items in bulk with auto-generated tags
+ *
+ * Creates multiple identical equipment items with sequential asset tags.
+ * All items will have:
+ * - Auto-generated sequential tags (e.g., KB-001, KB-002, etc.)
+ * - Same asset model
+ * - Same status (default EN_STOCK)
+ * - Same notes (if provided)
+ * - NULL serial numbers (individual serial numbers can be added later)
+ *
+ * Transaction ensures all-or-nothing creation. If any tag conflict occurs,
+ * the entire operation is rolled back.
+ *
+ * @param {Object} data - Bulk creation data
+ * @param {string} data.assetModelId - Asset model reference
+ * @param {string} data.tagPrefix - Prefix for tag generation (e.g., "KB-", "LAPTOP-")
+ * @param {number} data.quantity - Number of items to create (1-100)
+ * @param {string} [data.status='EN_STOCK'] - Initial status
+ * @param {string} [data.notes] - Optional notes applied to all items
+ * @returns {Promise<Array>} Array of created asset items with model details
+ * @throws {NotFoundError} If asset model doesn't exist
+ * @throws {ValidationError} If quantity is out of range (1-100)
+ * @throws {ConflictError} If any generated tags already exist
+ *
+ * @example
+ * const items = await createAssetItemsBulk({
+ *   assetModelId: 'modelId123',
+ *   tagPrefix: 'KB-',
+ *   quantity: 20,
+ *   status: 'EN_STOCK',
+ *   notes: 'Commande 2025-01'
+ * });
+ * // Creates 20 keyboards with tags KB-001 to KB-020
+ */
+export async function createAssetItemsBulk(data) {
+  const { assetModelId, tagPrefix, quantity, status = 'EN_STOCK', notes } = data;
+
+  // 1. Validate asset model exists
+  const assetModel = await prisma.assetModel.findUnique({
+    where: { id: assetModelId }
+  });
+  if (!assetModel) {
+    throw new NotFoundError('Modèle d\'équipement non trouvé');
+  }
+
+  // 2. Validate quantity range
+  if (quantity < 1 || quantity > 100) {
+    throw new ValidationError('La quantité doit être entre 1 et 100');
+  }
+
+  // 3. Generate all tags
+  const startNumber = await findNextAvailableNumber(tagPrefix);
+  const generatedTags = generateTags(tagPrefix, startNumber, quantity);
+
+  // 4. Verify ALL tags are unique (batch check)
+  const existingTags = await prisma.assetItem.findMany({
+    where: { assetTag: { in: generatedTags } },
+    select: { assetTag: true }
+  });
+
+  if (existingTags.length > 0) {
+    const conflicts = existingTags.map(item => item.assetTag).join(', ');
+    throw new ConflictError(
+      `Les tags suivants existent déjà: ${conflicts}. ` +
+      `Veuillez réessayer ou contacter l'administrateur.`
+    );
+  }
+
+  // 5. Create all items in transaction (all or nothing)
+  const createdItems = await prisma.$transaction(async (tx) => {
+    const items = [];
+    for (const tag of generatedTags) {
+      const item = await tx.assetItem.create({
+        data: {
+          assetModelId,
+          assetTag: tag,
+          serial: null, // Always null for bulk creation
+          status,
+          notes: notes || null
+        },
+        include: { assetModel: true }
+      });
+      items.push(item);
+    }
+    return items;
+  });
+
+  return createdItems;
 }

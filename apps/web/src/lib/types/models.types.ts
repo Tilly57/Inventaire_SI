@@ -111,6 +111,20 @@ export interface UpdateAssetItemDto {
   assetModelId?: string
 }
 
+export interface CreateBulkAssetItemsDto {
+  assetModelId: string
+  tagPrefix: string
+  quantity: number
+  status?: AssetStatus
+  notes?: string
+}
+
+export interface BulkCreationPreview {
+  tags: string[]
+  conflicts: string[]
+  startNumber: number
+}
+
 // Stock Item types
 export interface StockItem {
   id: string
