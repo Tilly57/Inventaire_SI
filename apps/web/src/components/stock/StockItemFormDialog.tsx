@@ -5,6 +5,7 @@ import type { StockItem } from '@/lib/types/models.types'
 import { createStockItemSchema, updateStockItemSchema } from '@/lib/schemas/stockItems.schema'
 import type { CreateStockItemFormData, UpdateStockItemFormData } from '@/lib/schemas/stockItems.schema'
 import { useCreateStockItem, useUpdateStockItem } from '@/lib/hooks/useStockItems'
+import { useAssetModels } from '@/lib/hooks/useAssetModels'
 import {
   Dialog,
   DialogContent,
@@ -20,6 +21,13 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
@@ -34,31 +42,31 @@ export function StockItemFormDialog({ item, open, onClose }: StockItemFormDialog
   const isEdit = !!item
   const createItem = useCreateStockItem()
   const updateItem = useUpdateStockItem()
+  const { data: models } = useAssetModels()
+
+  const modelsList = Array.isArray(models) ? models : []
 
   const form = useForm<CreateStockItemFormData | UpdateStockItemFormData>({
     resolver: zodResolver(isEdit ? updateStockItemSchema : createStockItemSchema),
     defaultValues: {
-      name: '',
-      description: '',
+      assetModelId: '',
       quantity: 0,
-      unitPrice: 0,
+      notes: '',
     },
   })
 
   useEffect(() => {
     if (item) {
       form.reset({
-        name: item.name,
-        description: item.description || '',
+        assetModelId: item.assetModelId,
         quantity: item.quantity,
-        unitPrice: item.unitPrice || 0,
+        notes: item.notes || '',
       })
     } else {
       form.reset({
-        name: '',
-        description: '',
+        assetModelId: '',
         quantity: 0,
-        unitPrice: 0,
+        notes: '',
       })
     }
   }, [item, form])
@@ -70,6 +78,12 @@ export function StockItemFormDialog({ item, open, onClose }: StockItemFormDialog
       } else {
         await createItem.mutateAsync(data as CreateStockItemFormData)
       }
+      // Reset form after successful creation
+      form.reset({
+        assetModelId: '',
+        quantity: 0,
+        notes: '',
+      })
       onClose()
     } catch (error) {
       // Error handled by mutation hooks
@@ -94,12 +108,42 @@ export function StockItemFormDialog({ item, open, onClose }: StockItemFormDialog
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="name"
+              name="assetModelId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nom *</FormLabel>
+                  <FormLabel>Modèle *</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionnez un modèle" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {modelsList.map((model) => (
+                        <SelectItem key={model.id} value={model.id}>
+                          {model.brand} {model.modelName} ({model.type})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="quantity"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Quantité *</FormLabel>
                   <FormControl>
-                    <Input placeholder="Câble HDMI, Souris USB..." {...field} />
+                    <Input
+                      type="number"
+                      min="0"
+                      {...field}
+                      onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -108,13 +152,13 @@ export function StockItemFormDialog({ item, open, onClose }: StockItemFormDialog
 
             <FormField
               control={form.control}
-              name="description"
+              name="notes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
+                  <FormLabel>Notes</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Description de l'article..."
+                      placeholder="Notes supplémentaires..."
                       className="resize-none"
                       {...field}
                     />
@@ -123,47 +167,6 @@ export function StockItemFormDialog({ item, open, onClose }: StockItemFormDialog
                 </FormItem>
               )}
             />
-
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="quantity"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Quantité *</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min="0"
-                        {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="unitPrice"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Prix unitaire (€)</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
 
             <div className="flex gap-2 justify-end">
               <Button type="button" variant="outline" onClick={onClose}>

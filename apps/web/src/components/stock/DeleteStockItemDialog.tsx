@@ -39,7 +39,11 @@ export function DeleteStockItemDialog({ item, open, onClose }: DeleteStockItemDi
           <DialogTitle>Supprimer l'article</DialogTitle>
           <DialogDescription>
             Êtes-vous sûr de vouloir supprimer l'article{' '}
-            <strong>{item.name}</strong> ?
+            <strong>
+              {item.assetModel
+                ? `${item.assetModel.brand} ${item.assetModel.modelName}`
+                : 'Modèle inconnu'}
+            </strong> ?
             Cette action est irréversible.
           </DialogDescription>
         </DialogHeader>

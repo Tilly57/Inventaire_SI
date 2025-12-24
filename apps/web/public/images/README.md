@@ -11,3 +11,4 @@ public/
     ├── logo.png          ← Logo principal
     └── favicon.ico       ← Icône du site (optionnel)
 ```
+

@@ -29,7 +29,10 @@ import { NotFoundError, ValidationError } from '../utils/errors.js';
  */
 export async function getAllStockItems() {
   const stockItems = await prisma.stockItem.findMany({
-    orderBy: { createdAt: 'desc' }
+    orderBy: { createdAt: 'desc' },
+    include: {
+      assetModel: true  // Include model details (type, brand, modelName)
+    }
   });
 
   return stockItems;
@@ -55,6 +58,7 @@ export async function getStockItemById(id) {
   const stockItem = await prisma.stockItem.findUnique({
     where: { id },
     include: {
+      assetModel: true,  // Include model details
       loanLines: {
         include: {
           loan: {
@@ -82,26 +86,37 @@ export async function getStockItemById(id) {
 /**
  * Create a new stock item
  *
- * Creates a consumable item with initial quantity.
+ * Creates a consumable item with initial quantity linked to an AssetModel.
  *
  * @param {Object} data - Stock item creation data
- * @param {string} data.name - Item name (e.g., "Câble HDMI 2m")
+ * @param {string} data.assetModelId - Asset model ID (must exist)
  * @param {number} [data.quantity=0] - Initial quantity in stock
- * @param {string} [data.unit='pièce'] - Unit of measurement (pièce, mètre, boîte, etc.)
- * @param {string} [data.description] - Optional description
- * @returns {Promise<Object>} Created stock item
+ * @param {string} [data.notes] - Optional notes
+ * @returns {Promise<Object>} Created stock item with assetModel populated
+ * @throws {NotFoundError} If asset model doesn't exist
  *
  * @example
  * const item = await createStockItem({
- *   name: 'Câble USB-C',
+ *   assetModelId: 'modelId123',
  *   quantity: 50,
- *   unit: 'pièce',
- *   description: 'Câble USB-C 1m pour chargement'
+ *   notes: 'Câbles de recharge pour postes de travail'
  * });
  */
 export async function createStockItem(data) {
+  // Validate that asset model exists
+  const assetModel = await prisma.assetModel.findUnique({
+    where: { id: data.assetModelId }
+  });
+
+  if (!assetModel) {
+    throw new NotFoundError('Modèle d\'équipement non trouvé');
+  }
+
   const stockItem = await prisma.stockItem.create({
-    data
+    data,
+    include: {
+      assetModel: true  // Include model in response
+    }
   });
 
   return stockItem;
@@ -115,16 +130,15 @@ export async function createStockItem(data) {
  *
  * @param {string} id - Stock item ID to update
  * @param {Object} data - Updated stock item data
- * @param {string} [data.name] - Updated name
+ * @param {string} [data.assetModelId] - Updated asset model ID (must exist)
  * @param {number} [data.quantity] - Updated quantity (prefer adjustStockQuantity)
- * @param {string} [data.unit] - Updated unit
- * @param {string} [data.description] - Updated description
- * @returns {Promise<Object>} Updated stock item
- * @throws {NotFoundError} If stock item doesn't exist
+ * @param {string} [data.notes] - Updated notes
+ * @returns {Promise<Object>} Updated stock item with assetModel populated
+ * @throws {NotFoundError} If stock item or asset model doesn't exist
  *
  * @example
  * const updated = await updateStockItem('stockId123', {
- *   description: 'Câble USB-C 2m (nouvelle version)'
+ *   notes: 'Câbles USB-C neufs commandés en décembre'
  * });
  */
 export async function updateStockItem(id, data) {
@@ -134,9 +148,22 @@ export async function updateStockItem(id, data) {
     throw new NotFoundError('Article de stock non trouvé');
   }
 
+  // If asset model is being changed, validate it exists
+  if (data.assetModelId) {
+    const assetModel = await prisma.assetModel.findUnique({
+      where: { id: data.assetModelId }
+    });
+    if (!assetModel) {
+      throw new NotFoundError('Modèle d\'équipement non trouvé');
+    }
+  }
+
   const stockItem = await prisma.stockItem.update({
     where: { id },
-    data
+    data,
+    include: {
+      assetModel: true  // Include model in response
+    }
   });
 
   return stockItem;
@@ -189,7 +216,10 @@ export async function adjustStockQuantity(id, adjustment) {
 
   const stockItem = await prisma.stockItem.update({
     where: { id },
-    data: { quantity: newQuantity }
+    data: { quantity: newQuantity },
+    include: {
+      assetModel: true  // Include model in response
+    }
   });
 
   return stockItem;

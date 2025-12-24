@@ -92,7 +92,7 @@ export interface AssetItem {
   modelId: string
   createdAt: string
   updatedAt: string
-  model?: AssetModel
+  assetModel?: AssetModel
 }
 
 export interface CreateAssetItemDto {
@@ -114,26 +114,25 @@ export interface UpdateAssetItemDto {
 // Stock Item types
 export interface StockItem {
   id: string
-  name: string
-  description: string | null
+  assetModelId: string
   quantity: number
-  unitPrice: number | null
+  loaned: number
+  notes: string | null
   createdAt: string
   updatedAt: string
+  assetModel?: AssetModel
 }
 
 export interface CreateStockItemDto {
-  name: string
-  description?: string
+  assetModelId: string
   quantity: number
-  unitPrice?: number
+  notes?: string
 }
 
 export interface UpdateStockItemDto {
-  name?: string
-  description?: string | null
+  assetModelId?: string
   quantity?: number
-  unitPrice?: number | null
+  notes?: string | null
 }
 
 // Loan types

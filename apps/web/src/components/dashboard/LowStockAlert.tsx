@@ -69,11 +69,15 @@ export function LowStockAlert() {
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <AlertTriangle className="h-4 w-4 text-destructive" />
-                    <p className="font-medium">{item.name}</p>
+                    <p className="font-medium">
+                      {item.assetModel
+                        ? `${item.assetModel.brand} ${item.assetModel.modelName}`
+                        : 'Modèle inconnu'}
+                    </p>
                   </div>
-                  {item.description && (
+                  {item.assetModel && (
                     <p className="text-xs text-muted-foreground mt-1 ml-6">
-                      {item.description}
+                      Type: {item.assetModel.type}
                     </p>
                   )}
                 </div>

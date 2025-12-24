@@ -29,10 +29,12 @@ export function StockItemsTable({ items }: StockItemsTableProps) {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Nom</TableHead>
-            <TableHead>Description</TableHead>
+            <TableHead>Type</TableHead>
+            <TableHead>Marque</TableHead>
+            <TableHead>Modèle</TableHead>
             <TableHead>Quantité</TableHead>
-            <TableHead>Prix unitaire</TableHead>
+            <TableHead>Prêté</TableHead>
+            <TableHead>Notes</TableHead>
             <TableHead>Créé le</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
@@ -40,7 +42,7 @@ export function StockItemsTable({ items }: StockItemsTableProps) {
         <TableBody>
           {items.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={6} className="text-center text-muted-foreground">
+              <TableCell colSpan={8} className="text-center text-muted-foreground">
                 Aucun article de stock trouvé
               </TableCell>
             </TableRow>
@@ -50,9 +52,16 @@ export function StockItemsTable({ items }: StockItemsTableProps) {
 
               return (
                 <TableRow key={item.id}>
+                  <TableCell>{item.assetModel?.type || '-'}</TableCell>
                   <TableCell className="font-medium">
+                    {item.assetModel?.brand || '-'}
+                  </TableCell>
+                  <TableCell>{item.assetModel?.modelName || '-'}</TableCell>
+                  <TableCell>
                     <div className="flex items-center gap-2">
-                      {item.name}
+                      <span className={isLowStock ? 'text-destructive font-semibold' : ''}>
+                        {item.quantity}
+                      </span>
                       {isLowStock && (
                         <Badge variant="destructive" className="gap-1">
                           <AlertTriangle className="h-3 w-3" />
@@ -61,17 +70,8 @@ export function StockItemsTable({ items }: StockItemsTableProps) {
                       )}
                     </div>
                   </TableCell>
-                  <TableCell className="max-w-xs truncate">
-                    {item.description || '-'}
-                  </TableCell>
-                  <TableCell>
-                    <span className={isLowStock ? 'text-destructive font-semibold' : ''}>
-                      {item.quantity}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    {item.unitPrice ? `${item.unitPrice.toFixed(2)} €` : '-'}
-                  </TableCell>
+                  <TableCell>{item.loaned || 0}</TableCell>
+                  <TableCell className="max-w-xs truncate">{item.notes || '-'}</TableCell>
                   <TableCell>{formatDate(item.createdAt)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex gap-2 justify-end">
