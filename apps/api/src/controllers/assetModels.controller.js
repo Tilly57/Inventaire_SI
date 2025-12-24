@@ -32,11 +32,12 @@ export const getAssetModelById = asyncHandler(async (req, res) => {
  * POST /api/asset-models
  */
 export const createAssetModel = asyncHandler(async (req, res) => {
-  const assetModel = await assetModelsService.createAssetModel(req.body);
+  const result = await assetModelsService.createAssetModel(req.body);
 
   res.status(201).json({
     success: true,
-    data: assetModel
+    data: result.assetModel,
+    created: result.created // Info sur ce qui a été créé automatiquement
   });
 });
 
