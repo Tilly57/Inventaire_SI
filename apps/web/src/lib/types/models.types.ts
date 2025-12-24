@@ -92,7 +92,7 @@ export interface AssetItem {
   modelId: string
   createdAt: string
   updatedAt: string
-  model?: AssetModel
+  assetModel?: AssetModel
 }
 
 export interface CreateAssetItemDto {

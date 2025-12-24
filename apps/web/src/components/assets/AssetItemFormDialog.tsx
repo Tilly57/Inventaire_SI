@@ -85,6 +85,14 @@ export function AssetItemFormDialog({ item, open, onClose }: AssetItemFormDialog
       } else {
         await createItem.mutateAsync(data as CreateAssetItemFormData)
       }
+      // Reset form to empty values after successful creation/update
+      form.reset({
+        assetTag: '',
+        serialNumber: '',
+        status: AssetStatus.EN_STOCK,
+        notes: '',
+        assetModelId: '',
+      })
       onClose()
     } catch (error) {
       // Error handled by mutation hooks

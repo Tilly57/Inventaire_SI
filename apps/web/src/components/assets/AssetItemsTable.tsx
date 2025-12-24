@@ -49,8 +49,8 @@ export function AssetItemsTable({ items }: AssetItemsTableProps) {
               <TableRow key={item.id}>
                 <TableCell className="font-medium">{item.assetTag}</TableCell>
                 <TableCell>
-                  {item.model
-                    ? `${item.model.brand} ${item.model.modelName}`
+                  {item.assetModel
+                    ? `${item.assetModel.brand} ${item.assetModel.modelName}`
                     : 'Non défini'}
                 </TableCell>
                 <TableCell>{item.serialNumber || '-'}</TableCell>
