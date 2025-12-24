@@ -33,8 +33,8 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted/40 p-4">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-[#231F20] p-4">
+      <Card className="w-full max-w-md bg-white">
         <CardHeader className="space-y-4">
           {/* Logo */}
           <div className="flex justify-center">
