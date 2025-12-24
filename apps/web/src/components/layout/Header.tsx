@@ -36,7 +36,7 @@ export function Header() {
         {/* Logo */}
         <div className="flex items-center">
           <img
-            src="/images/Tilly_Manutention_Logo_300x300.png"
+            src="/images/logo.jpg"
             alt="Groupe Tilly Logo"
             className="h-12 w-auto object-contain"
             onError={(e) => {
