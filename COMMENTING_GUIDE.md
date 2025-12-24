@@ -16,9 +16,17 @@ Ce document détaille la stratégie de documentation du code pour le projet Inve
 9. **apps/api/src/middleware/errorHandler.js** - Middleware gestion d'erreurs globale
 10. **apps/api/src/middleware/rbac.js** - Middleware contrôle d'accès par rôles
 
-### Frontend (2 fichiers)
+### Frontend (10 fichiers)
 1. **apps/web/src/lib/api/client.ts** - Configuration Axios avec refresh token
 2. **apps/web/src/lib/stores/authStore.ts** - Store Zustand d'authentification
+3. **apps/web/src/lib/api/auth.api.ts** - API client authentification
+4. **apps/web/src/lib/api/users.api.ts** - API client utilisateurs système
+5. **apps/web/src/lib/api/employees.api.ts** - API client employés
+6. **apps/web/src/lib/api/assetModels.api.ts** - API client modèles d'équipements
+7. **apps/web/src/lib/api/assetItems.api.ts** - API client équipements individuels
+8. **apps/web/src/lib/api/stockItems.api.ts** - API client stock consommables
+9. **apps/web/src/lib/api/loans.api.ts** - API client prêts (avec signatures)
+10. **apps/web/src/lib/api/dashboard.api.ts** - API client dashboard (calculs client)
 
 ## Format de Commentaires Utilisé
 
@@ -122,15 +130,15 @@ interface InterfaceName {
 
 ### Frontend (Priorité Haute)
 
-#### API Clients (9 fichiers)
-- [ ] **apps/web/src/lib/api/auth.api.ts**
-- [ ] **apps/web/src/lib/api/users.api.ts**
-- [ ] **apps/web/src/lib/api/employees.api.ts**
-- [ ] **apps/web/src/lib/api/assetModels.api.ts**
-- [ ] **apps/web/src/lib/api/assetItems.api.ts**
-- [ ] **apps/web/src/lib/api/stockItems.api.ts**
-- [ ] **apps/web/src/lib/api/loans.api.ts**
-- [ ] **apps/web/src/lib/api/dashboard.api.ts**
+#### API Clients
+- [x] **apps/web/src/lib/api/auth.api.ts** ✅
+- [x] **apps/web/src/lib/api/users.api.ts** ✅
+- [x] **apps/web/src/lib/api/employees.api.ts** ✅
+- [x] **apps/web/src/lib/api/assetModels.api.ts** ✅
+- [x] **apps/web/src/lib/api/assetItems.api.ts** ✅
+- [x] **apps/web/src/lib/api/stockItems.api.ts** ✅
+- [x] **apps/web/src/lib/api/loans.api.ts** ✅
+- [x] **apps/web/src/lib/api/dashboard.api.ts** ✅
 
 #### Hooks (8 fichiers)
 - [ ] **apps/web/src/lib/hooks/useAuth.ts**
@@ -375,19 +383,20 @@ const [loanLine] = await prisma.$transaction([
 
 1. ✅ ~~Commenter les services backend restants~~ **TERMINÉ**
 2. ✅ ~~Commenter les middlewares critiques~~ **TERMINÉ**
-3. Commenter tous les API clients frontend (8 fichiers)
+3. ✅ ~~Commenter tous les API clients frontend~~ **TERMINÉ**
 4. Commenter tous les hooks React Query (8 fichiers)
 5. Commenter les composants complexes (optionnel)
 
 ## Statistiques
 
 - **Total de fichiers à commenter (Option 2):** ~40 fichiers
-- **Fichiers commentés:** 12/40 (30%)
+- **Fichiers commentés:** 20/40 (50%) 🎉
   - Backend: 7 services ✅
   - Backend: 3 middlewares ✅
+  - Frontend: 8 API clients ✅
   - Frontend: 2 fichiers (client.ts, authStore.ts) ✅
-- **Fichiers restants:** 28
-- **Prochaine catégorie:** API clients frontend (8 fichiers)
+- **Fichiers restants:** 20
+- **Prochaine catégorie:** Hooks React Query (8 fichiers)
 
 ---
 
