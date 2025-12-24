@@ -13,6 +13,37 @@
 
 import prisma from '../config/database.js';
 import { NotFoundError, ValidationError } from '../utils/errors.js';
+import { createAssetItemsBulk } from './assetItems.service.js';
+
+/**
+ * Types d'équipements uniques (trackés individuellement)
+ */
+const UNIQUE_ASSET_TYPES = ['LAPTOP', 'DESKTOP', 'MONITOR', 'KEYBOARD', 'MOUSE', 'HEADSET', 'WEBCAM', 'DOCK'];
+
+/**
+ * Types de consommables (stock global)
+ */
+const CONSUMABLE_TYPES = ['CABLE', 'ADAPTER', 'OTHER'];
+
+/**
+ * Génère un préfixe de tag selon le type d'équipement
+ */
+function generateTagPrefix(type) {
+  const prefixes = {
+    'LAPTOP': 'LAP-',
+    'DESKTOP': 'DSK-',
+    'MONITOR': 'MON-',
+    'KEYBOARD': 'KB-',
+    'MOUSE': 'MS-',
+    'HEADSET': 'HS-',
+    'WEBCAM': 'WC-',
+    'DOCK': 'DOCK-',
+    'CABLE': 'CAB-',
+    'ADAPTER': 'ADP-',
+    'OTHER': 'OTH-'
+  };
+  return prefixes[type] || 'ASSET-';
+}
 
 /**
  * Get all asset models with item counts
@@ -81,26 +112,77 @@ export async function getAssetModelById(id) {
  * Creates a new equipment model template that can be referenced
  * by multiple physical asset items.
  *
+ * If quantity is provided:
+ * - For unique assets (LAPTOP, KEYBOARD, etc.): Creates individual AssetItems with auto-generated tags
+ * - For consumables (CABLE, ADAPTER, etc.): Creates a StockItem with the specified quantity
+ *
  * @param {Object} data - Model creation data
  * @param {string} data.type - Equipment type (LAPTOP, DESKTOP, MONITOR, etc.)
  * @param {string} data.brand - Manufacturer brand name
  * @param {string} data.modelName - Specific model name
+ * @param {number} [data.quantity] - Optional quantity for auto-creation
  * @param {string} [data.description] - Optional description
- * @returns {Promise<Object>} Created asset model
+ * @returns {Promise<Object>} Created asset model with creation results
  *
  * @example
+ * // Create model with 20 keyboards
  * const model = await createAssetModel({
- *   type: 'LAPTOP',
- *   brand: 'Dell',
- *   modelName: 'Latitude 5420'
+ *   type: 'KEYBOARD',
+ *   brand: 'Logitech',
+ *   modelName: 'K780',
+ *   quantity: 20
  * });
+ * // → Creates model + 20 AssetItems (KB-001 to KB-020)
  */
 export async function createAssetModel(data) {
+  const { quantity, ...modelData } = data;
+
+  // Create the asset model
   const assetModel = await prisma.assetModel.create({
-    data
+    data: modelData
   });
 
-  return assetModel;
+  const result = {
+    assetModel,
+    created: {
+      assetItems: [],
+      stockItem: null
+    }
+  };
+
+  // If quantity is provided, create items automatically
+  if (quantity && quantity > 0) {
+    const { type } = assetModel;
+
+    if (UNIQUE_ASSET_TYPES.includes(type)) {
+      // Create individual AssetItems with auto-generated tags
+      const tagPrefix = generateTagPrefix(type);
+      const assetItems = await createAssetItemsBulk({
+        assetModelId: assetModel.id,
+        tagPrefix,
+        quantity,
+        status: 'EN_STOCK',
+        notes: `Créé automatiquement depuis le modèle ${assetModel.brand} ${assetModel.modelName}`
+      });
+      result.created.assetItems = assetItems;
+    } else if (CONSUMABLE_TYPES.includes(type)) {
+      // Create a single StockItem with the quantity
+      const stockItem = await prisma.stockItem.create({
+        data: {
+          assetModelId: assetModel.id,
+          quantity,
+          loaned: 0,
+          notes: `Créé automatiquement depuis le modèle ${assetModel.brand} ${assetModel.modelName}`
+        },
+        include: {
+          assetModel: true
+        }
+      });
+      result.created.stockItem = stockItem;
+    }
+  }
+
+  return result;
 }
 
 /**

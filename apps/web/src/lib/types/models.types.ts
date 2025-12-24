@@ -74,6 +74,7 @@ export interface CreateAssetModelDto {
   type: AssetType
   brand: string
   modelName: string
+  quantity?: number
 }
 
 export interface UpdateAssetModelDto {

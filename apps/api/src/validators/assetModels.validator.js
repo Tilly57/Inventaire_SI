@@ -6,7 +6,8 @@ import { z } from 'zod';
 export const createAssetModelSchema = z.object({
   type: z.string().min(1, 'Type requis'),
   brand: z.string().min(1, 'Marque requise'),
-  modelName: z.string().min(1, 'Nom du modèle requis')
+  modelName: z.string().min(1, 'Nom du modèle requis'),
+  quantity: z.number().int().min(1).max(100).optional()
 });
 
 export const updateAssetModelSchema = z.object({
