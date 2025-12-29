@@ -161,16 +161,11 @@ export async function getLowStockItemsApi(): Promise<LowStockAlertItem[]> {
     const assetsData = assetsResponse.data.data
     const assetItems: AssetItem[] = Array.isArray(assetsData) ? assetsData : assetsData.items || []
 
-    console.log('📊 [DEBUG] Stock items:', stockItems)
-    console.log('📊 [DEBUG] Asset items:', assetItems)
-    console.log('📊 [DEBUG] LOW_STOCK_THRESHOLD:', LOW_STOCK_THRESHOLD)
-
     const alerts: LowStockAlertItem[] = []
 
     // Process StockItems (consumables)
     stockItems.forEach(item => {
       const available = item.quantity - item.loaned
-      console.log(`📊 [DEBUG] StockItem ${item.assetModel?.brand} ${item.assetModel?.modelName}: available=${available}, isLow=${available < LOW_STOCK_THRESHOLD}`)
 
       if (available < LOW_STOCK_THRESHOLD) {
         alerts.push({
@@ -198,8 +193,6 @@ export async function getLowStockItemsApi(): Promise<LowStockAlertItem[]> {
       const inStockCount = items.filter(item => item.status === 'EN_STOCK').length
       const assetModel = items[0]?.assetModel
 
-      console.log(`📊 [DEBUG] AssetItem ${assetModel?.brand} ${assetModel?.modelName}: EN_STOCK=${inStockCount}, isLow=${inStockCount < LOW_STOCK_THRESHOLD}`)
-
       if (inStockCount < LOW_STOCK_THRESHOLD) {
         alerts.push({
           id: `asset-model-${modelId}`, // Synthetic ID for grouped assets
@@ -211,10 +204,8 @@ export async function getLowStockItemsApi(): Promise<LowStockAlertItem[]> {
       }
     })
 
-    console.log('📊 [DEBUG] Total alerts:', alerts)
     return alerts
   } catch (error) {
-    console.error('❌ [DEBUG] Error fetching low stock items:', error)
     // Return empty array on error to prevent dashboard crash
     return []
   }
