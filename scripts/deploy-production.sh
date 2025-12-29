@@ -80,16 +80,16 @@ print_info "Version ${VERSION} is now live on main"
 print_info "Tag: v${VERSION}"
 echo ""
 
-# Create GitHub release if gh CLI available
+# Create GitHub release automatically
 if command -v gh &> /dev/null; then
-    read -p "Create GitHub release? (y/N): " gh_confirm
-    if [[ "$gh_confirm" == "y" || "$gh_confirm" == "Y" ]]; then
-        gh release create "v${VERSION}" \
-            --title "Release v${VERSION}" \
-            --notes-file "$NOTES_FILE"
-        print_success "GitHub release created"
-    fi
+    print_info "Creating GitHub release..."
+    gh release create "v${VERSION}" \
+        --title "Release v${VERSION}" \
+        --notes-file "$NOTES_FILE"
+    print_success "GitHub release created"
+    print_info "View at: https://github.com/Tilly57/Inventaire_SI/releases/tag/v${VERSION}"
 else
+    print_warning "GitHub CLI (gh) not installed"
     print_info "Create GitHub release manually at:"
     print_info "https://github.com/Tilly57/Inventaire_SI/releases/new?tag=v${VERSION}"
 fi
