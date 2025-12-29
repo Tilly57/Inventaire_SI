@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.3] - 2025-12-29
+
+### Added
+- **Scripts**: Automatisation complète de la création de GitHub release
+  - `deploy-production.sh` crée automatiquement la release sans confirmation
+  - Affichage du lien direct vers la release créée
+
+### Removed
+- **Scripts**: Suppression de `quick-commit.sh`
+  - Respect strict du workflow de release (feature → staging → release.sh)
+  - Pas de commits directs sur main
+
+### Changed
+- **Dashboard**: Code production-ready
+  - Retrait des logs de debug de `getLowStockItemsApi()`
+  - Performance optimisée
+
 ## [0.2.2] - 2025-12-29
 
 ### Added
