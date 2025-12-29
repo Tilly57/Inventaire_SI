@@ -1,3 +1,36 @@
+/**
+ * @fileoverview LoanDetailsPage - Detailed view of a single loan
+ *
+ * This page provides:
+ * - Loan overview (employee, status, dates)
+ * - Loan lines management (add/remove equipment)
+ * - Pickup signature upload and display
+ * - Return signature upload and display
+ * - Loan closure functionality
+ *
+ * Features:
+ * - Real-time data via React Query hooks
+ * - Signature image upload with preview
+ * - Conditional actions based on loan status (OPEN/CLOSED)
+ * - Validation before closing (requires pickup signature and items)
+ * - Employee information display
+ *
+ * Loan Workflow UI:
+ * 1. Add equipment to loan (Add button → AddLoanLineDialog)
+ * 2. Upload pickup signature when employee receives equipment
+ * 3. Employee uses equipment
+ * 4. Upload return signature when equipment returned
+ * 5. Close loan (button enabled only after signatures uploaded)
+ *
+ * Business Rules:
+ * - Can only add/remove items when loan is OPEN
+ * - Pickup signature requires at least one item
+ * - Return signature requires pickup signature first
+ * - Close button requires: items + pickup signature
+ * - Closed loans are read-only (no edits allowed)
+ *
+ * Route: /loans/:id
+ */
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useLoan, useRemoveLoanLine, useUploadPickupSignature, useUploadReturnSignature, useCloseLoan } from '@/lib/hooks/useLoans'
@@ -18,6 +51,22 @@ import {
 import { ArrowLeft, Plus, Trash2, Upload, CheckCircle, AlertCircle } from 'lucide-react'
 import { API_URL } from '@/lib/utils/constants'
 
+/**
+ * Loan details page component
+ *
+ * Displays complete loan information including employee details, borrowed items,
+ * signatures, and management actions. Adapts UI based on loan status (OPEN/CLOSED).
+ *
+ * @returns {JSX.Element} Loan details page with all loan information and actions
+ *
+ * @example
+ * // Route configuration
+ * <Route path="/loans/:id" element={<LoanDetailsPage />} />
+ *
+ * @example
+ * // Navigation from loans list
+ * navigate(`/loans/${loanId}`)
+ */
 export function LoanDetailsPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
