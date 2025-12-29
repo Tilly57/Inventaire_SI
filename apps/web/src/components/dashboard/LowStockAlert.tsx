@@ -83,9 +83,11 @@ export function LowStockAlert() {
                 </div>
                 <div className="text-right">
                   <Badge variant="destructive" className="font-mono">
-                    {item.quantity}
+                    {item.availableQuantity}
                   </Badge>
-                  <p className="text-xs text-muted-foreground mt-1">restant{item.quantity > 1 ? 's' : ''}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {item.itemType === 'stock' ? 'disponible' : 'en stock'}{item.availableQuantity > 1 ? 's' : ''}
+                  </p>
                 </div>
               </div>
             ))}
