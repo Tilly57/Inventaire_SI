@@ -92,13 +92,17 @@ export const useRecentLoans = () => {
 }
 
 /**
- * Hook to get low stock items
+ * Hook to get low stock items (unified for StockItems and AssetItems)
  *
- * Fetches stock items with quantity below threshold (< 5).
- * Useful for alert widget to prompt restocking.
+ * Fetches both stock items (consumables) and asset items (individual equipment)
+ * and returns alerts for items below the threshold (< 2).
+ *
+ * Logic:
+ * - StockItems: Alert if (quantity - loaned) < 2
+ * - AssetItems: Group by model, count EN_STOCK items, alert if count < 2
  *
  * @returns React Query result object
- * @returns {StockItem[] | undefined} data - Array of low stock items
+ * @returns {LowStockAlertItem[] | undefined} data - Array of low stock alerts
  * @returns {boolean} isLoading - Whether initial fetch is in progress
  * @returns {boolean} isError - Whether fetch failed
  *
@@ -115,7 +119,7 @@ export const useRecentLoans = () => {
  *       <ul>
  *         {items.map(item => (
  *           <li key={item.id}>
- *             {item.name}: {item.quantity} {item.unit} remaining
+ *             {item.assetModel.brand} {item.assetModel.modelName}: {item.availableQuantity}
  *           </li>
  *         ))}
  *       </ul>

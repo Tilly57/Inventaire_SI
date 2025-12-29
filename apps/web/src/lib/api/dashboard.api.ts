@@ -13,7 +13,7 @@
  */
 
 import { apiClient } from './client'
-import type { ApiResponse, DashboardStats, Loan, StockItem, Employee, AssetItem } from '@/lib/types/models.types'
+import type { ApiResponse, DashboardStats, Loan, StockItem, Employee, AssetItem, LowStockAlertItem } from '@/lib/types/models.types'
 import { LOW_STOCK_THRESHOLD } from '@/lib/utils/constants'
 
 /**
@@ -126,32 +126,95 @@ export async function getRecentLoansApi(): Promise<Loan[]> {
 }
 
 /**
- * Get low stock items
+ * Get low stock items (unified for StockItems and AssetItems)
  *
- * Fetches all stock items and filters for those below the low stock threshold.
+ * Fetches both stock items (consumables) and asset items (individual equipment),
+ * and returns alerts for items below the low stock threshold.
+ *
+ * Logic:
+ * - StockItems: Alert if (quantity - loaned) < threshold
+ * - AssetItems: Group by model, count EN_STOCK items, alert if count < threshold
+ *
  * Threshold imported from constants (currently 2).
  *
- * Useful for dashboard "Low Stock Alert" widget to prompt reordering.
- *
- * @returns Promise resolving to array of stock items with quantity < LOW_STOCK_THRESHOLD
+ * @returns Promise resolving to array of low stock alert items
  *
  * @example
  * const lowStock = await getLowStockItemsApi();
  * // lowStock = [
- * //   { id, assetModelId, quantity: 1, assetModel: { brand, modelName }, ... },
+ * //   { id, assetModelId, assetModel, availableQuantity: 1, itemType: 'stock' },
+ * //   { id, assetModelId, assetModel, availableQuantity: 0, itemType: 'asset' },
  * //   ...
  * // ]
  */
-export async function getLowStockItemsApi(): Promise<StockItem[]> {
+export async function getLowStockItemsApi(): Promise<LowStockAlertItem[]> {
   try {
-    const response = await apiClient.get<ApiResponse<any>>('/stock-items?limit=1000')
-    const data = response.data.data
-    const items: StockItem[] = Array.isArray(data) ? data : data.items || []
+    // Fetch both StockItems and AssetItems in parallel
+    const [stockResponse, assetsResponse] = await Promise.all([
+      apiClient.get<ApiResponse<any>>('/stock-items?limit=1000'),
+      apiClient.get<ApiResponse<any>>('/asset-items?limit=1000'),
+    ])
 
-    // Filter items with quantity below threshold
-    // These items need restocking
-    return items.filter(item => item.quantity < LOW_STOCK_THRESHOLD)
+    const stockData = stockResponse.data.data
+    const stockItems: StockItem[] = Array.isArray(stockData) ? stockData : stockData.items || []
+
+    const assetsData = assetsResponse.data.data
+    const assetItems: AssetItem[] = Array.isArray(assetsData) ? assetsData : assetsData.items || []
+
+    console.log('📊 [DEBUG] Stock items:', stockItems)
+    console.log('📊 [DEBUG] Asset items:', assetItems)
+    console.log('📊 [DEBUG] LOW_STOCK_THRESHOLD:', LOW_STOCK_THRESHOLD)
+
+    const alerts: LowStockAlertItem[] = []
+
+    // Process StockItems (consumables)
+    stockItems.forEach(item => {
+      const available = item.quantity - item.loaned
+      console.log(`📊 [DEBUG] StockItem ${item.assetModel?.brand} ${item.assetModel?.modelName}: available=${available}, isLow=${available < LOW_STOCK_THRESHOLD}`)
+
+      if (available < LOW_STOCK_THRESHOLD) {
+        alerts.push({
+          id: item.id,
+          assetModelId: item.assetModelId,
+          assetModel: item.assetModel,
+          availableQuantity: available,
+          itemType: 'stock'
+        })
+      }
+    })
+
+    // Process AssetItems (individual equipment) - group by model
+    const assetsByModel = new Map<string, AssetItem[]>()
+
+    assetItems.forEach(item => {
+      if (!assetsByModel.has(item.assetModelId || item.modelId)) {
+        assetsByModel.set(item.assetModelId || item.modelId, [])
+      }
+      assetsByModel.get(item.assetModelId || item.modelId)!.push(item)
+    })
+
+    // Count EN_STOCK items per model and create alerts
+    assetsByModel.forEach((items, modelId) => {
+      const inStockCount = items.filter(item => item.status === 'EN_STOCK').length
+      const assetModel = items[0]?.assetModel
+
+      console.log(`📊 [DEBUG] AssetItem ${assetModel?.brand} ${assetModel?.modelName}: EN_STOCK=${inStockCount}, isLow=${inStockCount < LOW_STOCK_THRESHOLD}`)
+
+      if (inStockCount < LOW_STOCK_THRESHOLD) {
+        alerts.push({
+          id: `asset-model-${modelId}`, // Synthetic ID for grouped assets
+          assetModelId: modelId,
+          assetModel: assetModel,
+          availableQuantity: inStockCount,
+          itemType: 'asset'
+        })
+      }
+    })
+
+    console.log('📊 [DEBUG] Total alerts:', alerts)
+    return alerts
   } catch (error) {
+    console.error('❌ [DEBUG] Error fetching low stock items:', error)
     // Return empty array on error to prevent dashboard crash
     return []
   }

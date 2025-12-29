@@ -226,3 +226,12 @@ export interface DashboardStats {
   activeLoans: number
   loanedAssets: number
 }
+
+// Low stock alert item (unified type for StockItem and grouped AssetItem)
+export interface LowStockAlertItem {
+  id: string
+  assetModelId: string
+  assetModel?: AssetModel
+  availableQuantity: number // For StockItem: quantity - loaned, For AssetItem: count of EN_STOCK items
+  itemType: 'stock' | 'asset' // Distinguish between StockItem and grouped AssetItem
+}
