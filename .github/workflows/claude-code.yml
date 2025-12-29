@@ -1,34 +1,333 @@
 name: Claude Code Assistant
 
-# Déclenché sur les pull requests et les issues
-on:
-  issues:
-    types: [opened, edited]
-  pull_request:
-    types: [opened, synchronize, reopened]
-  issue_comment:
-    types: [created]
+# Workflow automatisé pour assistance Claude Code sur PRs et Issues
+# Optimisé pour le projet Inventaire SI - Groupe Tilly
 
+on:
+  # Pull Requests
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+    branches:
+      - main
+      - staging
+      - 'release/**'
+
+  # Issues
+  issues:
+    types: [opened, edited, labeled]
+
+  # Commentaires (PR et Issues)
+  issue_comment:
+    types: [created, edited]
+
+  # Pull Request Reviews
+  pull_request_review:
+    types: [submitted]
+
+  # Workflow dispatch manuel
+  workflow_dispatch:
+    inputs:
+      target_type:
+        description: 'Type de cible (issue/pr)'
+        required: true
+        default: 'pr'
+        type: choice
+        options:
+          - issue
+          - pr
+      target_number:
+        description: 'Numéro de l''issue ou PR'
+        required: true
+        type: number
+
+# Permissions minimales requises
 permissions:
-  contents: write
-  issues: write
-  pull-requests: write
+  contents: write          # Pour créer des commits
+  issues: write            # Pour commenter les issues
+  pull-requests: write     # Pour commenter les PRs
+  checks: write            # Pour créer des checks
+  statuses: write          # Pour mettre à jour les statuts
+
+# Variables d'environnement globales
+env:
+  NODE_VERSION: '18.x'
+  PYTHON_VERSION: '3.11'
 
 jobs:
-  claude-code:
+  # Job de validation pré-Claude
+  validate:
+    name: Validation Préalable
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    outputs:
+      should_run: ${{ steps.check.outputs.should_run }}
+      context_type: ${{ steps.check.outputs.context_type }}
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Check si Claude doit s'exécuter
+        id: check
+        run: |
+          # Ne pas exécuter sur les bots
+          if [[ "${{ github.actor }}" == *"bot"* ]]; then
+            echo "should_run=false" >> $GITHUB_OUTPUT
+            echo "🤖 Skipping bot-created events"
+            exit 0
+          fi
 
-      - name: Run Claude Code
-        uses: anthropics/claude-code-action@main
+          # Ne pas exécuter sur les WIP ou Draft
+          if [[ "${{ github.event.pull_request.title }}" == *"WIP"* ]] || \
+             [[ "${{ github.event.pull_request.draft }}" == "true" ]]; then
+            echo "should_run=false" >> $GITHUB_OUTPUT
+            echo "📝 Skipping WIP/Draft PR"
+            exit 0
+          fi
+
+          # Déterminer le type de contexte
+          if [[ "${{ github.event_name }}" == "pull_request"* ]]; then
+            echo "context_type=pr" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.event_name }}" == "issue"* ]]; then
+            echo "context_type=issue" >> $GITHUB_OUTPUT
+          else
+            echo "context_type=comment" >> $GITHUB_OUTPUT
+          fi
+
+          echo "should_run=true" >> $GITHUB_OUTPUT
+          echo "✅ Validation passed"
+
+  # Job principal Claude Code
+  claude-code:
+    name: Claude Code Analysis
+    runs-on: ubuntu-latest
+    needs: validate
+    if: needs.validate.outputs.should_run == 'true'
+    timeout-minutes: 30
+
+    # Concurrency: un seul Claude à la fois par PR/Issue
+    concurrency:
+      group: claude-${{ github.event.pull_request.number || github.event.issue.number }}
+      cancel-in-progress: false  # Ne pas annuler les runs en cours
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
         with:
+          fetch-depth: 0  # Historique complet pour meilleure analyse
+          submodules: recursive
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: |
+            apps/api/package-lock.json
+            apps/web/package-lock.json
+
+      - name: 🐍 Setup Python (pour outils d'analyse)
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: 📦 Cache Claude Context
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/claude
+            .claude-cache
+          key: claude-context-${{ runner.os }}-${{ hashFiles('**/*.md', 'CLAUDE.md') }}
+          restore-keys: |
+            claude-context-${{ runner.os }}-
+
+      - name: 📝 Préparer le contexte du projet
+        id: context
+        run: |
+          # Créer un fichier de contexte pour Claude
+          cat > .claude-context.md << 'EOF'
+          # Contexte Projet: Inventaire SI - Groupe Tilly
+
+          ## Version Actuelle
+          $(cat VERSION)
+
+          ## Structure du Projet
+          - Monorepo: apps/api (Node.js/Express) + apps/web (React/TypeScript)
+          - Base de données: PostgreSQL + Prisma ORM
+          - Documentation complète: 95% des fichiers avec JSDoc
+          - Scripts d'automatisation: release.sh, deploy-production.sh, quick-commit.sh
+
+          ## Workflow de Développement
+          - Branches: feature → release/X.Y.Z → staging → main
+          - Versioning: Semantic Versioning (MAJOR.MINOR.PATCH)
+          - Documentation: Voir COMMENTING_GUIDE.md pour standards
+
+          ## Fichiers Importants
+          - CLAUDE.md: Instructions pour Claude Code
+          - RELEASE_WORKFLOW.md: Guide de release
+          - COMMENTING_GUIDE.md: Standards de documentation
+          - scripts/README.md: Scripts d'automatisation
+
+          ## Charte Graphique
+          - Orange: #EE2722
+          - Noir: #231F20
+          - Blanc: #FFFFFF
+          EOF
+
+          echo "context_file=.claude-context.md" >> $GITHUB_OUTPUT
+
+      - name: 🤖 Run Claude Code Assistant
+        id: claude
+        uses: anthropics/claude-code-action@v1
+        with:
+          # API Configuration
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
+          # Model Configuration
+          model: claude-sonnet-4.5  # Modèle recommandé
+          max-tokens: 8000
+          temperature: 0.7
 
+          # Context Files
+          system-prompt-file: CLAUDE.md
+          context-files: |
+            .claude-context.md
+            COMMENTING_GUIDE.md
+            RELEASE_WORKFLOW.md
+            VERSION
+            CHANGELOG.md
 
+          # Behavior Configuration
+          auto-reply: true
+          create-review-comments: true
+          suggest-improvements: true
+          check-code-style: true
 
+          # Project Specific
+          project-languages: |
+            javascript
+            typescript
+            prisma
+            markdown
 
+          # Ignore patterns
+          ignore-paths: |
+            node_modules/**
+            dist/**
+            build/**
+            .next/**
+            coverage/**
+            *.lock
+            *.log
+
+        continue-on-error: true  # Ne pas échouer le workflow si Claude a une erreur
+
+      - name: 📊 Analyser le résultat
+        if: always()
+        run: |
+          if [[ "${{ steps.claude.outcome }}" == "success" ]]; then
+            echo "✅ Claude Code analysis completed successfully"
+          elif [[ "${{ steps.claude.outcome }}" == "failure" ]]; then
+            echo "❌ Claude Code analysis failed"
+            echo "Check logs for details"
+          else
+            echo "⚠️ Claude Code analysis was skipped or cancelled"
+          fi
+
+      - name: 🏷️ Add labels based on analysis
+        if: success() && needs.validate.outputs.context_type == 'pr'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const labels = [];
+
+            // Labels basés sur les fichiers modifiés
+            const { data: files } = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+
+            const hasBackend = files.some(f => f.filename.startsWith('apps/api/'));
+            const hasFrontend = files.some(f => f.filename.startsWith('apps/web/'));
+            const hasDocs = files.some(f => f.filename.endsWith('.md'));
+            const hasScripts = files.some(f => f.filename.startsWith('scripts/'));
+
+            if (hasBackend) labels.push('backend');
+            if (hasFrontend) labels.push('frontend');
+            if (hasDocs) labels.push('documentation');
+            if (hasScripts) labels.push('automation');
+
+            if (labels.length > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels
+              });
+            }
+
+      - name: 📈 Upload analysis artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-analysis-${{ github.run_number }}
+          path: |
+            .claude-context.md
+            .claude-cache/
+          retention-days: 7
+
+  # Job de notification
+  notify:
+    name: Notification
+    runs-on: ubuntu-latest
+    needs: [validate, claude-code]
+    if: always() && needs.validate.outputs.should_run == 'true'
+
+    steps:
+      - name: 📬 Notification de résultat
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const status = '${{ needs.claude-code.result }}';
+            const emoji = status === 'success' ? '✅' : status === 'failure' ? '❌' : '⚠️';
+            const context_type = '${{ needs.validate.outputs.context_type }}';
+
+            const message = `${emoji} Claude Code analysis ${status}\n\nWorkflow run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+
+            if (context_type === 'pr') {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: message
+              });
+            }
+
+# Documentation du workflow
+#
+# Ce workflow active Claude Code Assistant pour:
+# - Analyser les Pull Requests automatiquement
+# - Répondre aux questions dans les issues
+# - Suggérer des améliorations de code
+# - Vérifier le respect des standards (voir COMMENTING_GUIDE.md)
+# - Aider avec le workflow de release (voir RELEASE_WORKFLOW.md)
+#
+# Configuration requise:
+# - Secret ANTHROPIC_API_KEY dans les settings du repo
+# - Permissions: contents, issues, pull-requests (write)
+#
+# Pour désactiver temporairement:
+# - Ajouter [skip ci] dans le message de commit
+# - Mettre la PR en mode Draft
+# - Préfixer le titre avec "WIP:"
+#
+# Optimisations incluses:
+# - Caching du contexte Claude
+# - Concurrency control (un Claude par PR/Issue)
+# - Validation préalable pour éviter runs inutiles
+# - Timeout de 30 minutes
+# - Labels automatiques basés sur les fichiers modifiés
+# - Artifacts pour debugging
+#
+# Voir README.md et CLAUDE.md pour plus d'informations.
