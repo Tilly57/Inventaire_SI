@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2025-12-29
+
+### Fixed
+- **Dashboard**: Correction du seuil de stock bas incohérent
+  - Synchronisation de `LOW_STOCK_THRESHOLD` entre l'API (5) et le composant (2)
+  - Import de la constante depuis `constants.ts` (valeur unifiée: 2)
+  - Mise à jour de la documentation JSDoc
+
+### Changed
+- **CI/CD**: Optimisation du workflow GitHub Actions Claude Code
+  - Validation préalable (skip bots, drafts, WIP)
+  - Caching multi-niveaux (npm, Python, contexte Claude)
+  - Auto-labeling basé sur fichiers modifiés
+  - Documentation complète du workflow (450+ lignes)
+
+### Documentation
+- **README.md**: Réécriture complète avec badges et informations v0.2.0
+  - Badges version, license, node, TypeScript
+  - Section nouveautés v0.2.0
+  - Documentation architecture et installation
+  - Guide des scripts d'automatisation
+
 ## [0.2.0] - 2024-12-29
 
 ### Added
