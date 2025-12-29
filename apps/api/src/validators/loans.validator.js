@@ -14,3 +14,9 @@ export const addLoanLineSchema = z.object({
 }).refine(data => data.assetItemId || data.stockItemId, {
   message: 'Vous devez spécifier soit un article d\'équipement soit un article de stock'
 });
+
+export const batchDeleteLoansSchema = z.object({
+  loanIds: z.array(z.string().cuid())
+    .min(1, 'Au moins un prêt doit être sélectionné')
+    .max(100, 'Impossible de supprimer plus de 100 prêts à la fois')
+});

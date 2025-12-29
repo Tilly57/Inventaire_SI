@@ -12,16 +12,38 @@ import {
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Eye, Trash2 } from 'lucide-react'
 import { DeleteLoanDialog } from './DeleteLoanDialog'
 
 interface LoansTableProps {
   loans: Loan[]
+  selectedLoans?: string[]
+  onSelectionChange?: (selectedIds: string[]) => void
 }
 
-export function LoansTable({ loans }: LoansTableProps) {
+export function LoansTable({ loans, selectedLoans = [], onSelectionChange }: LoansTableProps) {
   const navigate = useNavigate()
   const [deletingLoan, setDeletingLoan] = useState<Loan | null>(null)
+
+  // Multi-selection logic
+  const isAllSelected = loans.length > 0 && selectedLoans.length === loans.length
+  const isSomeSelected = selectedLoans.length > 0 && selectedLoans.length < loans.length
+
+  const handleSelectAll = (checked: boolean | 'indeterminate') => {
+    if (onSelectionChange) {
+      onSelectionChange(checked === true ? loans.map(loan => loan.id) : [])
+    }
+  }
+
+  const handleSelectLoan = (loanId: string, checked: boolean) => {
+    if (onSelectionChange) {
+      const newSelection = checked
+        ? [...selectedLoans, loanId]
+        : selectedLoans.filter(id => id !== loanId)
+      onSelectionChange(newSelection)
+    }
+  }
 
   const handleRowClick = (loanId: string) => {
     navigate(`/loans/${loanId}`)
@@ -37,6 +59,15 @@ export function LoansTable({ loans }: LoansTableProps) {
       <Table>
         <TableHeader>
           <TableRow>
+            {onSelectionChange && (
+              <TableHead className="w-12">
+                <Checkbox
+                  checked={isSomeSelected ? 'indeterminate' : isAllSelected}
+                  onCheckedChange={handleSelectAll}
+                  aria-label="Sélectionner tout"
+                />
+              </TableHead>
+            )}
             <TableHead>Employé</TableHead>
             <TableHead>Statut</TableHead>
             <TableHead>Articles</TableHead>
@@ -48,7 +79,7 @@ export function LoansTable({ loans }: LoansTableProps) {
         <TableBody>
           {loans.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={6} className="text-center text-muted-foreground">
+              <TableCell colSpan={onSelectionChange ? 7 : 6} className="text-center text-muted-foreground">
                 Aucun prêt trouvé
               </TableCell>
             </TableRow>
@@ -59,6 +90,15 @@ export function LoansTable({ loans }: LoansTableProps) {
                 onClick={() => handleRowClick(loan.id)}
                 className="cursor-pointer hover:bg-muted/50 transition-colors"
               >
+                {onSelectionChange && (
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    <Checkbox
+                      checked={selectedLoans.includes(loan.id)}
+                      onCheckedChange={(checked) => handleSelectLoan(loan.id, checked as boolean)}
+                      aria-label={`Sélectionner ${loan.employee?.firstName || 'prêt'}`}
+                    />
+                  </TableCell>
+                )}
                 <TableCell className="font-medium">
                   {loan.employee
                     ? formatFullName(loan.employee.firstName, loan.employee.lastName)

@@ -276,3 +276,33 @@ export async function closeLoanApi(loanId: string): Promise<Loan> {
 export async function deleteLoanApi(id: string): Promise<void> {
   await apiClient.delete(`/loans/${id}`)
 }
+
+/**
+ * Batch delete loans (ADMIN only)
+ *
+ * Deletes multiple loans in a single atomic transaction.
+ * All associated asset statuses are reverted to EN_STOCK,
+ * stock quantities are restored, and signature files are deleted.
+ *
+ * This operation is restricted to ADMIN users only.
+ *
+ * @param loanIds - Array of loan IDs to delete (max 100)
+ * @returns Promise resolving to deletion result
+ * @throws {ValidationError} If loanIds array is empty or contains invalid IDs (400)
+ * @throws {ForbiddenError} If user is not ADMIN (403)
+ * @throws {NotFoundError} If no loans found with provided IDs (404)
+ *
+ * @example
+ * const result = await batchDeleteLoansApi(['id1', 'id2', 'id3']);
+ * // result = { deletedCount: 3, message: '3 prêt(s) supprimé(s) avec succès' }
+ */
+export async function batchDeleteLoansApi(loanIds: string[]): Promise<{
+  deletedCount: number;
+  message: string;
+}> {
+  const response = await apiClient.post<ApiResponse<{
+    deletedCount: number;
+    message: string;
+  }>>('/loans/batch-delete', { loanIds });
+  return response.data.data;
+}

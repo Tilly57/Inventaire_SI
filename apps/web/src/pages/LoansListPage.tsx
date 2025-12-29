@@ -1,8 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLoans } from '@/lib/hooks/useLoans'
+import { useAuth } from '@/lib/hooks/useAuth'
+import { useEmployees } from '@/lib/hooks/useEmployees'
 import { LoansTable } from '@/components/loans/LoansTable'
 import { LoanFormDialog } from '@/components/loans/LoanFormDialog'
+import { BulkDeleteLoansDialog } from '@/components/loans/BulkDeleteLoansDialog'
+import { PrintLoansHistoryDialog } from '@/components/loans/PrintLoansHistoryDialog'
+import { LoansPrintView } from '@/components/loans/LoansPrintView'
 import { Pagination } from '@/components/common/Pagination'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -13,18 +18,27 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Plus, Search } from 'lucide-react'
+import { Plus, Search, Trash2, Printer } from 'lucide-react'
 import { LoanStatus } from '@/lib/types/enums'
 import { DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS } from '@/lib/utils/constants'
+import { formatFullName } from '@/lib/utils/formatters'
 
 export function LoansListPage() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const { data: loans, isLoading, error } = useLoans()
+  const { data: employees = [] } = useEmployees()
   const [isCreating, setIsCreating] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
+  const [selectedLoanIds, setSelectedLoanIds] = useState<string[]>([])
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false)
+  const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false)
+  const [printEmployeeId, setPrintEmployeeId] = useState<string | undefined>()
+  const [showPrintView, setShowPrintView] = useState(false)
+  const isAdmin = user?.role === 'ADMIN'
 
   const loansList = Array.isArray(loans) ? loans : []
 
@@ -41,6 +55,7 @@ export function LoansListPage() {
 
   useEffect(() => {
     setCurrentPage(1)
+    setSelectedLoanIds([])
   }, [searchTerm, statusFilter])
 
   const totalItems = filteredLoans.length
@@ -61,6 +76,28 @@ export function LoansListPage() {
   const handleLoanCreated = (loanId: string) => {
     navigate(`/loans/${loanId}`)
   }
+
+  const handlePrint = (employeeId?: string) => {
+    setPrintEmployeeId(employeeId)
+    setShowPrintView(true)
+  }
+
+  const handlePrintComplete = () => {
+    setShowPrintView(false)
+    setPrintEmployeeId(undefined)
+  }
+
+  // Get loans to print (filtered by employee if specified)
+  const loansToPrint = printEmployeeId
+    ? loansList.filter(loan => loan.employeeId === printEmployeeId)
+    : loansList
+
+  const printEmployeeName = printEmployeeId
+    ? (() => {
+        const employee = employees.find(e => e.id === printEmployeeId)
+        return employee ? formatFullName(employee.firstName, employee.lastName) : undefined
+      })()
+    : undefined
 
   if (isLoading) {
     return (
@@ -113,6 +150,24 @@ export function LoansListPage() {
               <SelectItem value={LoanStatus.CLOSED}>Fermé</SelectItem>
             </SelectContent>
           </Select>
+          {isAdmin && selectedLoanIds.length > 0 && (
+            <Button
+              variant="destructive"
+              onClick={() => setIsBulkDeleting(true)}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Supprimer ({selectedLoanIds.length})
+            </Button>
+          )}
+          {isAdmin && (
+            <Button
+              variant="outline"
+              onClick={() => setIsPrintDialogOpen(true)}
+            >
+              <Printer className="h-4 w-4 mr-2" />
+              Imprimer l'historique
+            </Button>
+          )}
           <Button onClick={() => setIsCreating(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Nouveau prêt
@@ -121,7 +176,11 @@ export function LoansListPage() {
       </div>
 
       <div className="border rounded-lg">
-        <LoansTable loans={paginatedLoans} />
+        <LoansTable
+          loans={paginatedLoans}
+          selectedLoans={isAdmin ? selectedLoanIds : undefined}
+          onSelectionChange={isAdmin ? setSelectedLoanIds : undefined}
+        />
 
         {totalItems > 0 && (
           <Pagination
@@ -141,6 +200,34 @@ export function LoansListPage() {
         onClose={() => setIsCreating(false)}
         onSuccess={handleLoanCreated}
       />
+
+      {isAdmin && (
+        <BulkDeleteLoansDialog
+          loans={loansList.filter(loan => selectedLoanIds.includes(loan.id))}
+          open={isBulkDeleting}
+          onClose={() => {
+            setIsBulkDeleting(false)
+            setSelectedLoanIds([])
+          }}
+        />
+      )}
+
+      {isAdmin && (
+        <PrintLoansHistoryDialog
+          open={isPrintDialogOpen}
+          onClose={() => setIsPrintDialogOpen(false)}
+          employees={employees}
+          onPrint={handlePrint}
+        />
+      )}
+
+      {showPrintView && (
+        <LoansPrintView
+          loans={loansToPrint}
+          employeeName={printEmployeeName}
+          onPrintComplete={handlePrintComplete}
+        />
+      )}
     </div>
   )
 }

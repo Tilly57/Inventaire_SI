@@ -11,6 +11,7 @@
 
 import prisma from '../config/database.js';
 import { NotFoundError, ValidationError } from '../utils/errors.js';
+import { deleteSignatureFile, deleteSignatureFiles } from '../utils/fileUtils.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -36,7 +37,9 @@ export async function getAllLoans(filters = {}) {
   const { status, employeeId } = filters;
 
   // Build dynamic WHERE clause based on provided filters
-  const where = {};
+  const where = {
+    deletedAt: null  // Exclude soft-deleted loans
+  };
 
   if (status) {
     where.status = status;
@@ -190,6 +193,9 @@ export async function addLoanLine(loanId, data) {
   if (!loan) {
     throw new NotFoundError('Prêt non trouvé');
   }
+  if (loan.deletedAt) {
+    throw new ValidationError('Impossible de modifier un prêt supprimé');
+  }
   if (loan.status === 'CLOSED') {
     throw new ValidationError('Impossible d\'ajouter des articles à un prêt fermé');
   }
@@ -299,6 +305,9 @@ export async function removeLoanLine(loanId, lineId) {
   if (!loan) {
     throw new NotFoundError('Prêt non trouvé');
   }
+  if (loan.deletedAt) {
+    throw new ValidationError('Impossible de modifier un prêt supprimé');
+  }
   if (loan.status === 'CLOSED') {
     throw new ValidationError('Impossible de modifier un prêt fermé');
   }
@@ -366,6 +375,9 @@ export async function uploadPickupSignature(loanId, file) {
   if (!loan) {
     throw new NotFoundError('Prêt non trouvé');
   }
+  if (loan.deletedAt) {
+    throw new ValidationError('Impossible de modifier un prêt supprimé');
+  }
 
   // Generate signature URL path (accessible via static file serving)
   const signatureUrl = `/uploads/signatures/${file.filename}`;
@@ -415,6 +427,9 @@ export async function uploadReturnSignature(loanId, file) {
   const loan = await prisma.loan.findUnique({ where: { id: loanId } });
   if (!loan) {
     throw new NotFoundError('Prêt non trouvé');
+  }
+  if (loan.deletedAt) {
+    throw new ValidationError('Impossible de modifier un prêt supprimé');
   }
 
   // Generate signature URL path
@@ -477,6 +492,10 @@ export async function closeLoan(loanId) {
     throw new NotFoundError('Prêt non trouvé');
   }
 
+  if (loan.deletedAt) {
+    throw new ValidationError('Impossible de modifier un prêt supprimé');
+  }
+
   if (loan.status === 'CLOSED') {
     throw new ValidationError('Ce prêt est déjà fermé');
   }
@@ -529,20 +548,22 @@ export async function closeLoan(loanId) {
 }
 
 /**
- * Delete a loan
+ * Soft delete a loan (mark as deleted with timestamp)
  *
- * Can only delete OPEN loans without signatures.
+ * Marks the loan as deleted instead of removing it from the database.
  * Automatically reverts all asset statuses and stock quantities.
+ * Keeps signatures and loan lines for full traceability.
  *
- * @param {string} loanId - The loan ID to delete
+ * @param {string} loanId - The loan ID to soft delete
+ * @param {string} userId - The ID of the user performing the deletion
  * @returns {Promise<Object>} Success message
  * @throws {NotFoundError} If loan doesn't exist
- * @throws {ValidationError} If loan is closed or has signatures
+ * @throws {ValidationError} If loan is already deleted
  *
  * @example
- * await deleteLoan('loan123');
+ * await deleteLoan('loan123', 'user456');
  */
-export async function deleteLoan(loanId) {
+export async function deleteLoan(loanId, userId) {
   // Get loan with lines to process reversions
   const loan = await prisma.loan.findUnique({
     where: { id: loanId },
@@ -560,14 +581,8 @@ export async function deleteLoan(loanId) {
     throw new NotFoundError('Prêt non trouvé');
   }
 
-  // Business rule: Cannot delete closed loans (preserve history)
-  if (loan.status === 'CLOSED') {
-    throw new ValidationError('Impossible de supprimer un prêt fermé');
-  }
-
-  // Business rule: Cannot delete loans with signatures (preserve audit trail)
-  if (loan.pickupSignatureUrl || loan.returnSignatureUrl) {
-    throw new ValidationError('Impossible de supprimer un prêt avec des signatures');
+  if (loan.deletedAt) {
+    throw new ValidationError('Ce prêt est déjà supprimé');
   }
 
   // Prepare reversion updates for all loaned items
@@ -584,23 +599,130 @@ export async function deleteLoan(loanId) {
       );
     }
 
-    // Restore stock quantity
+    // Restore stock quantity and decrement loaned
     if (line.stockItemId) {
       updates.push(
         prisma.stockItem.update({
           where: { id: line.stockItemId },
-          data: { quantity: { increment: line.quantity } }
+          data: {
+            quantity: { increment: line.quantity },
+            loaned: { decrement: line.quantity }
+          }
         })
       );
     }
   }
 
   // Use transaction to ensure atomicity:
-  // Loan deletion and ALL reversions must succeed together
+  // Soft delete loan and ALL reversions must succeed together
   await prisma.$transaction([
-    prisma.loan.delete({ where: { id: loanId } }),
+    // Mark loan as deleted (soft delete)
+    prisma.loan.update({
+      where: { id: loanId },
+      data: {
+        deletedAt: new Date(),
+        deletedById: userId
+      }
+    }),
+    // Revert all asset/stock statuses
     ...updates
   ]);
 
+  // NOTE: We keep signatures and loan lines for full traceability
   return { message: 'Prêt supprimé avec succès' };
+}
+
+/**
+ * Soft delete multiple loans in batch (ADMIN only)
+ *
+ * Marks multiple loans as deleted in a single atomic transaction, reverting all
+ * associated asset statuses and stock quantities. Keeps signatures and loan lines
+ * for full traceability.
+ *
+ * @param {string[]} loanIds - Array of loan IDs to soft delete
+ * @param {string} userId - The ID of the user performing the deletion
+ * @returns {Promise<{ deletedCount: number, message: string }>}
+ * @throws {ValidationError} If loanIds array is empty
+ * @throws {NotFoundError} If no loans found with provided IDs
+ *
+ * @example
+ * const result = await batchDeleteLoans(['id1', 'id2', 'id3'], 'user456');
+ * // result = { deletedCount: 3, message: '3 prêt(s) supprimé(s) avec succès' }
+ */
+export async function batchDeleteLoans(loanIds, userId) {
+  if (!loanIds || loanIds.length === 0) {
+    throw new ValidationError('Au moins un prêt doit être sélectionné');
+  }
+
+  // 1. Fetch all non-deleted loans with their lines
+  const loans = await prisma.loan.findMany({
+    where: {
+      id: { in: loanIds },
+      deletedAt: null  // Only process non-deleted loans
+    },
+    include: {
+      lines: {
+        include: {
+          assetItem: true,
+          stockItem: true
+        }
+      }
+    }
+  });
+
+  if (loans.length === 0) {
+    throw new NotFoundError('Aucun prêt trouvé avec les IDs fournis');
+  }
+
+  // 2. Build update operations for assets and stock
+  const updates = [];
+
+  loans.forEach(loan => {
+    loan.lines.forEach(line => {
+      // Revert asset item status to EN_STOCK
+      if (line.assetItemId) {
+        updates.push(
+          prisma.assetItem.update({
+            where: { id: line.assetItemId },
+            data: { status: 'EN_STOCK' }
+          })
+        );
+      }
+
+      // Restore stock item quantity and decrement loaned
+      if (line.stockItemId) {
+        updates.push(
+          prisma.stockItem.update({
+            where: { id: line.stockItemId },
+            data: {
+              quantity: { increment: line.quantity },
+              loaned: { decrement: line.quantity }
+            }
+          })
+        );
+      }
+    });
+  });
+
+  const actualLoanIds = loans.map(l => l.id);
+
+  // 3. Execute all operations in a single transaction
+  await prisma.$transaction([
+    // Mark all loans as deleted (soft delete)
+    prisma.loan.updateMany({
+      where: { id: { in: actualLoanIds } },
+      data: {
+        deletedAt: new Date(),
+        deletedById: userId
+      }
+    }),
+    // Revert all asset/stock statuses
+    ...updates
+  ]);
+
+  // NOTE: We keep signatures and loan lines for full traceability
+  return {
+    deletedCount: loans.length,
+    message: `${loans.length} prêt(s) supprimé(s) avec succès`
+  };
 }
