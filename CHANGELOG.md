@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.2] - 2025-12-29
+
+### Added
+- **Dashboard**: Carte "Alertes stock bas" affiche maintenant tous les types d'articles
+  - Support unifié pour StockItems (consommables) ET AssetItems (équipements)
+  - AssetItems groupés par modèle avec comptage des items EN_STOCK
+  - Nouveau type `LowStockAlertItem` pour unifier les deux sources
+  - Labels dynamiques : "disponible(s)" pour stock, "en stock" pour assets
+  - Logs de debug détaillés pour troubleshooting
+
+### Changed
+- **API**: `getLowStockItemsApi()` récupère et combine les deux types d'articles
+- **Logique d'alerte**:
+  - StockItems: alerte si (quantity - loaned) < 2
+  - AssetItems: alerte si nombre EN_STOCK par modèle < 2
+
 ## [0.2.1] - 2025-12-29
 
 ### Fixed
