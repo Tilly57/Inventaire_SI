@@ -114,20 +114,56 @@ export async function updateAssetModelApi(id: string, data: UpdateAssetModelDto)
 }
 
 /**
- * Delete asset model
+ * Delete asset model with cascade deletion
  *
- * IMPORTANT: Models with associated items cannot be deleted.
- * This prevents orphaned items and maintains referential integrity.
+ * Deletes the model and all associated items (AssetItems and StockItems).
+ * IMPORTANT: Cannot delete if any AssetItem is currently loaned (status PRETE)
+ * or if any StockItem has loaned items.
  *
  * @param id - Asset model ID to delete
  * @returns Promise resolving when deletion is complete
  * @throws {NotFoundError} If model doesn't exist (404)
- * @throws {ValidationError} If model has associated items (400)
+ * @throws {ValidationError} If model has loaned items (400)
  *
  * @example
  * await deleteAssetModelApi('modelId123');
- * // Throws error if any AssetItems reference this model
+ * // Deletes model + all AssetItems + all StockItems
  */
 export async function deleteAssetModelApi(id: string): Promise<void> {
   await apiClient.delete(`/asset-models/${id}`)
+}
+
+/**
+ * Batch delete asset models
+ *
+ * Deletes multiple models and all associated items in one transaction.
+ * ADMIN only operation.
+ *
+ * @param modelIds - Array of asset model IDs to delete
+ * @returns Promise resolving to deletion result with counts
+ * @throws {ValidationError} If any model has loaned items (400)
+ * @throws {NotFoundError} If no models found (404)
+ *
+ * @example
+ * const result = await batchDeleteAssetModelsApi(['id1', 'id2', 'id3']);
+ * // result = {
+ * //   message: '3 modèle(s) supprimé(s) avec succès',
+ * //   modelsDeleted: 3,
+ * //   assetItemsDeleted: 15,
+ * //   stockItemsDeleted: 2
+ * // }
+ */
+export async function batchDeleteAssetModelsApi(modelIds: string[]): Promise<{
+  message: string;
+  modelsDeleted: number;
+  assetItemsDeleted: number;
+  stockItemsDeleted: number;
+}> {
+  const response = await apiClient.post<ApiResponse<{
+    message: string;
+    modelsDeleted: number;
+    assetItemsDeleted: number;
+    stockItemsDeleted: number;
+  }>>('/asset-models/batch-delete', { modelIds })
+  return response.data.data
 }
