@@ -4,7 +4,9 @@ Ce document détaille la stratégie de documentation du code pour le projet Inve
 
 ## Fichiers Déjà Commentés ✅
 
-### Backend (10 fichiers)
+### Backend (16 fichiers)
+
+#### Services (7 fichiers)
 1. **apps/api/src/services/loans.service.js** - Service de gestion des prêts (le plus complexe)
 2. **apps/api/src/services/auth.service.js** - Service d'authentification
 3. **apps/api/src/services/employees.service.js** - Service de gestion des employés
@@ -12,13 +14,29 @@ Ce document détaille la stratégie de documentation du code pour le projet Inve
 5. **apps/api/src/services/assetModels.service.js** - Service de gestion des modèles d'équipements
 6. **apps/api/src/services/assetItems.service.js** - Service de gestion des équipements individuels
 7. **apps/api/src/services/stockItems.service.js** - Service de gestion du stock consommables
+
+#### Middlewares (3 fichiers)
 8. **apps/api/src/middleware/auth.js** - Middleware authentification JWT
 9. **apps/api/src/middleware/errorHandler.js** - Middleware gestion d'erreurs globale
 10. **apps/api/src/middleware/rbac.js** - Middleware contrôle d'accès par rôles
 
-### Frontend (10 fichiers)
+#### Controllers (3 fichiers)
+11. **apps/api/src/controllers/auth.controller.js** - Endpoints d'authentification
+12. **apps/api/src/controllers/loans.controller.js** - Endpoints de gestion des prêts
+13. **apps/api/src/controllers/employees.controller.js** - Endpoints de gestion des employés
+
+#### Utils (3 fichiers)
+14. **apps/api/src/utils/errors.js** - Classes d'erreurs custom
+15. **apps/api/src/utils/jwt.js** - Fonctions JWT (génération et vérification)
+16. **apps/api/src/utils/constants.js** - Constantes de l'application
+
+### Frontend (22 fichiers)
+
+#### Configuration & Stores (2 fichiers)
 1. **apps/web/src/lib/api/client.ts** - Configuration Axios avec refresh token
 2. **apps/web/src/lib/stores/authStore.ts** - Store Zustand d'authentification
+
+#### API Clients (8 fichiers)
 3. **apps/web/src/lib/api/auth.api.ts** - API client authentification
 4. **apps/web/src/lib/api/users.api.ts** - API client utilisateurs système
 5. **apps/web/src/lib/api/employees.api.ts** - API client employés
@@ -27,6 +45,22 @@ Ce document détaille la stratégie de documentation du code pour le projet Inve
 8. **apps/web/src/lib/api/stockItems.api.ts** - API client stock consommables
 9. **apps/web/src/lib/api/loans.api.ts** - API client prêts (avec signatures)
 10. **apps/web/src/lib/api/dashboard.api.ts** - API client dashboard (calculs client)
+
+#### Hooks React Query (8 fichiers)
+11. **apps/web/src/lib/hooks/useAuth.ts** - Hook d'authentification
+12. **apps/web/src/lib/hooks/useEmployees.ts** - Hook de gestion des employés
+13. **apps/web/src/lib/hooks/useLoans.ts** - Hook de gestion des prêts
+14. **apps/web/src/lib/hooks/useAssetModels.ts** - Hook de gestion des modèles
+15. **apps/web/src/lib/hooks/useAssetItems.ts** - Hook de gestion des équipements
+16. **apps/web/src/lib/hooks/useStockItems.ts** - Hook de gestion du stock
+17. **apps/web/src/lib/hooks/useUsers.ts** - Hook de gestion des utilisateurs
+18. **apps/web/src/lib/hooks/useDashboard.ts** - Hook du dashboard
+
+#### Composants & Pages (4 fichiers)
+19. **apps/web/src/components/layout/ProtectedRoute.tsx** - Guard de routes (auth + RBAC)
+20. **apps/web/src/components/common/Pagination.tsx** - Composant de pagination réutilisable
+21. **apps/web/src/components/employees/ImportEmployeesDialog.tsx** - Dialog d'import Excel
+22. **apps/web/src/pages/LoanDetailsPage.tsx** - Page de détails de prêt
 
 ## Format de Commentaires Utilisé
 
@@ -103,7 +137,7 @@ interface InterfaceName {
 }
 ```
 
-## Fichiers Prioritaires Restants
+## Fichiers Prioritaires - Statut
 
 ### Backend (Priorité Haute)
 
@@ -114,19 +148,19 @@ interface InterfaceName {
 - [x] **apps/api/src/services/stockItems.service.js** ✅
 
 #### Controllers
-- [ ] **apps/api/src/controllers/auth.controller.js**
-- [ ] **apps/api/src/controllers/loans.controller.js**
-- [ ] **apps/api/src/controllers/employees.controller.js**
+- [x] **apps/api/src/controllers/auth.controller.js** ✅
+- [x] **apps/api/src/controllers/loans.controller.js** ✅
+- [x] **apps/api/src/controllers/employees.controller.js** ✅
 
 #### Middleware
-- [x] **apps/api/src/middleware/auth.js** - Vérification JWT ✅
-- [x] **apps/api/src/middleware/errorHandler.js** - Gestion d'erreurs globale ✅
-- [x] **apps/api/src/middleware/rbac.js** - Contrôle d'accès par rôles ✅
+- [x] **apps/api/src/middleware/auth.js** ✅
+- [x] **apps/api/src/middleware/errorHandler.js** ✅
+- [x] **apps/api/src/middleware/rbac.js** ✅
 
 #### Utils
-- [ ] **apps/api/src/utils/errors.js** - Classes d'erreurs custom
-- [ ] **apps/api/src/utils/jwt.js** - Fonctions JWT
-- [ ] **apps/api/src/utils/constants.js** - Constantes de l'application
+- [x] **apps/api/src/utils/errors.js** ✅
+- [x] **apps/api/src/utils/jwt.js** ✅
+- [x] **apps/api/src/utils/constants.js** ✅
 
 ### Frontend (Priorité Haute)
 
@@ -150,11 +184,11 @@ interface InterfaceName {
 - [x] **apps/web/src/lib/hooks/useUsers.ts** ✅
 - [x] **apps/web/src/lib/hooks/useDashboard.ts** ✅
 
-#### Composants Complexes
-- [ ] **apps/web/src/components/employees/ImportEmployeesDialog.tsx** - Import Excel
-- [ ] **apps/web/src/pages/LoanDetailsPage.tsx** - Page de détails de prêt
-- [ ] **apps/web/src/components/common/Pagination.tsx** - Pagination réutilisable
-- [ ] **apps/web/src/components/layout/ProtectedRoute.tsx** - Guard de routes
+#### Composants & Pages
+- [x] **apps/web/src/components/employees/ImportEmployeesDialog.tsx** ✅
+- [x] **apps/web/src/pages/LoanDetailsPage.tsx** ✅
+- [x] **apps/web/src/components/common/Pagination.tsx** ✅
+- [x] **apps/web/src/components/layout/ProtectedRoute.tsx** ✅
 
 ## Templates par Type de Fichier
 
@@ -385,19 +419,25 @@ const [loanLine] = await prisma.$transaction([
 2. ✅ ~~Commenter les middlewares critiques~~ **TERMINÉ**
 3. ✅ ~~Commenter tous les API clients frontend~~ **TERMINÉ**
 4. ✅ ~~Commenter tous les hooks React Query (8 fichiers)~~ **TERMINÉ**
-5. Commenter les composants complexes (optionnel)
+5. ✅ ~~Commenter les controllers backend (3 fichiers)~~ **TERMINÉ**
+6. ✅ ~~Commenter les utils backend (3 fichiers)~~ **TERMINÉ**
+7. ✅ ~~Commenter les composants frontend prioritaires (4 fichiers)~~ **TERMINÉ**
+8. Commenter les composants restants (optionnel)
 
 ## Statistiques
 
 - **Total de fichiers à commenter (Option 2):** ~40 fichiers
-- **Fichiers commentés:** 28/40 (70%) 🎉
+- **Fichiers commentés:** 38/40 (95%) 🎉
   - Backend: 7 services ✅
   - Backend: 3 middlewares ✅
+  - Backend: 3 controllers ✅
+  - Backend: 3 utils ✅
   - Frontend: 8 API clients ✅
   - Frontend: 2 fichiers (client.ts, authStore.ts) ✅
   - Frontend: 8 hooks ✅
-- **Fichiers restants:** 12
-- **Prochaine catégorie:** Controllers et composants complexes (optionnel)
+  - Frontend: 4 composants ✅
+- **Fichiers restants:** 2
+- **Statut:** Documentation quasi-complète - seuls les fichiers optionnels restent
 
 ---
 
