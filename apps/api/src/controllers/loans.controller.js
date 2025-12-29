@@ -404,7 +404,45 @@ export const closeLoan = asyncHandler(async (req, res) => {
  * }
  */
 export const deleteLoan = asyncHandler(async (req, res) => {
-  const result = await loansService.deleteLoan(req.params.id);
+  const result = await loansService.deleteLoan(req.params.id, req.user.id);
+
+  res.json({
+    success: true,
+    data: result
+  });
+});
+
+/**
+ * Batch delete loans (ADMIN only)
+ *
+ * Route: POST /api/loans/batch-delete
+ * Access: ADMIN only
+ *
+ * Deletes multiple loans in a single atomic transaction. All associated
+ * asset statuses are reverted to EN_STOCK and stock quantities are restored.
+ * Signature files are deleted from the server.
+ *
+ * @param {Object} req.body - Request body
+ * @param {string[]} req.body.loanIds - Array of loan IDs to delete (max 100)
+ *
+ * @returns {Object} 200 - Deletion result
+ *
+ * Response 200:
+ * {
+ *   "success": true,
+ *   "data": {
+ *     "deletedCount": 5,
+ *     "message": "5 prêt(s) supprimé(s) avec succès"
+ *   }
+ * }
+ *
+ * @throws {400} If loanIds array is empty or contains invalid IDs
+ * @throws {403} If user is not ADMIN
+ * @throws {404} If no loans found with provided IDs
+ */
+export const batchDeleteLoans = asyncHandler(async (req, res) => {
+  const { loanIds } = req.body;
+  const result = await loansService.batchDeleteLoans(loanIds, req.user.id);
 
   res.json({
     success: true,

@@ -2,17 +2,20 @@
  * Loans routes - ADMIN and GESTIONNAIRE
  */
 import express from 'express';
-import { getAllLoans, getLoanById, createLoan, addLoanLine, removeLoanLine, uploadPickupSignature, uploadReturnSignature, closeLoan, deleteLoan } from '../controllers/loans.controller.js';
+import { getAllLoans, getLoanById, createLoan, addLoanLine, removeLoanLine, uploadPickupSignature, uploadReturnSignature, closeLoan, deleteLoan, batchDeleteLoans } from '../controllers/loans.controller.js';
 import { requireAuth } from '../middleware/auth.js';
-import { requireManager } from '../middleware/rbac.js';
+import { requireManager, requireAdmin } from '../middleware/rbac.js';
 import { validate } from '../middleware/validateRequest.js';
-import { createLoanSchema, addLoanLineSchema } from '../validators/loans.validator.js';
+import { createLoanSchema, addLoanLineSchema, batchDeleteLoansSchema } from '../validators/loans.validator.js';
 import { upload } from '../config/multer.js';
 
 const router = express.Router();
 
 // All loan routes require authentication and ADMIN or GESTIONNAIRE role
 router.use(requireAuth, requireManager);
+
+// Batch delete route (ADMIN only) - MUST be before /:id routes
+router.post('/batch-delete', requireAdmin, validate(batchDeleteLoansSchema), batchDeleteLoans);
 
 router.get('/', getAllLoans);
 router.get('/:id', getLoanById);

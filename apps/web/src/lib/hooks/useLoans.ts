@@ -33,6 +33,7 @@ import {
   uploadReturnSignatureApi,
   closeLoanApi,
   deleteLoanApi,
+  batchDeleteLoansApi,
 } from '@/lib/api/loans.api'
 import type {
   CreateLoanDto,
@@ -561,6 +562,46 @@ export function useDeleteLoan() {
         variant: 'destructive',
         title: 'Erreur',
         description: error.response?.data?.error || 'Impossible de supprimer le prêt',
+      })
+    },
+  })
+}
+
+/**
+ * Batch delete loans mutation (ADMIN only)
+ *
+ * Deletes multiple loans in a single atomic transaction.
+ * Invalidates all affected query caches after successful deletion.
+ *
+ * @returns Mutation object with mutateAsync function
+ *
+ * @example
+ * const batchDelete = useBatchDeleteLoans();
+ * await batchDelete.mutateAsync(['id1', 'id2', 'id3']);
+ */
+export function useBatchDeleteLoans() {
+  const queryClient = useQueryClient()
+  const { toast } = useToast()
+
+  return useMutation({
+    mutationFn: (loanIds: string[]) => batchDeleteLoansApi(loanIds),
+    onSuccess: async (result) => {
+      // Invalidate all affected caches
+      await queryClient.invalidateQueries({ queryKey: ['loans'] })
+      await queryClient.invalidateQueries({ queryKey: ['assetItems'] })
+      await queryClient.invalidateQueries({ queryKey: ['stockItems'] })
+      await queryClient.refetchQueries({ queryKey: ['loans'] })
+
+      toast({
+        title: 'Prêts supprimés',
+        description: result.message,
+      })
+    },
+    onError: (error: any) => {
+      toast({
+        variant: 'destructive',
+        title: 'Erreur',
+        description: error.response?.data?.error || 'Impossible de supprimer les prêts',
       })
     },
   })
