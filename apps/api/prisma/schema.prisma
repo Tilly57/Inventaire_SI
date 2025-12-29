@@ -49,6 +49,13 @@ model Employee {
   loans     Loan[]
 }
 
+model EquipmentType {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model AssetModel {
   id        String   @id @default(cuid())
   type      String

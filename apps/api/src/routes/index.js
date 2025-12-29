@@ -5,6 +5,7 @@ import express from 'express';
 import authRoutes from './auth.routes.js';
 import usersRoutes from './users.routes.js';
 import employeesRoutes from './employees.routes.js';
+import equipmentTypesRoutes from './equipmentTypes.routes.js';
 import assetModelsRoutes from './assetModels.routes.js';
 import assetItemsRoutes from './assetItems.routes.js';
 import stockItemsRoutes from './stockItems.routes.js';
@@ -28,6 +29,7 @@ router.get('/health', (req, res) => {
 router.use('/auth', authRoutes);
 router.use('/users', usersRoutes);
 router.use('/employees', employeesRoutes);
+router.use('/equipment-types', equipmentTypesRoutes);
 router.use('/asset-models', assetModelsRoutes);
 router.use('/asset-items', assetItemsRoutes);
 router.use('/stock-items', stockItemsRoutes);
