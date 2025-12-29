@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2025-12-29
+
+### Fixed
+- **UI**: Masquer les boutons de création d'équipements et de modèles
+  - Bouton "Nouvel équipement" masqué dans la page Équipements
+  - Bouton "Nouveau modèle" masqué dans la page Stock
+
 ## [0.3.0] - 2025-12-29
 
 ### Added
