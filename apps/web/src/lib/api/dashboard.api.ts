@@ -14,12 +14,7 @@
 
 import { apiClient } from './client'
 import type { ApiResponse, DashboardStats, Loan, StockItem, Employee, AssetItem } from '@/lib/types/models.types'
-
-/**
- * Low stock alert threshold
- * Items with quantity below this value are considered low stock
- */
-const LOW_STOCK_THRESHOLD = 5
+import { LOW_STOCK_THRESHOLD } from '@/lib/utils/constants'
 
 /**
  * Get dashboard statistics
@@ -134,17 +129,16 @@ export async function getRecentLoansApi(): Promise<Loan[]> {
  * Get low stock items
  *
  * Fetches all stock items and filters for those below the low stock threshold.
- * Threshold defined by LOW_STOCK_THRESHOLD constant (currently 5).
+ * Threshold imported from constants (currently 2).
  *
  * Useful for dashboard "Low Stock Alert" widget to prompt reordering.
  *
- * @returns Promise resolving to array of stock items with quantity < 5
+ * @returns Promise resolving to array of stock items with quantity < LOW_STOCK_THRESHOLD
  *
  * @example
  * const lowStock = await getLowStockItemsApi();
  * // lowStock = [
- * //   { id, name: 'Câble HDMI', quantity: 2, unit: 'pièce' },
- * //   { id, name: 'Adaptateur USB-C', quantity: 4, unit: 'pièce' },
+ * //   { id, assetModelId, quantity: 1, assetModel: { brand, modelName }, ... },
  * //   ...
  * // ]
  */
