@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2025-12-29
+
+### Added
+- **Soft Delete pour Prêts**: Conservation complète de l'historique
+  - Migration Prisma: ajout de `deletedAt` et `deletedById` au modèle Loan
+  - Prêts marqués comme supprimés au lieu d'être effacés définitivement
+  - Conservation des signatures, lignes de prêt et traçabilité complète
+  - Réversion automatique des statuts d'équipements (PRETE → EN_STOCK)
+  - Restauration automatique des quantités en stock (quantity +1, loaned -1)
+  - Traçabilité: qui a supprimé, quand, avec relation vers l'utilisateur
+
+- **Impression Historique (ADMIN uniquement)**:
+  - Nouveau bouton "Imprimer l'historique" visible uniquement pour les ADMIN
+  - Dialogue de sélection: tout l'historique ou employé spécifique
+  - Vue d'impression optimisée A4 avec format professionnel
+  - Affichage détaillé: prêts, employés, articles, signatures, dates
+  - Export PDF via boîte de dialogue d'impression du navigateur
+  - Composant `PrintLoansHistoryDialog` pour la sélection
+  - Composant `LoansPrintView` pour l'affichage imprimable
+
+### Changed
+- **Services Backend**: Adaptation pour soft delete
+  - `deleteLoan()`: UPDATE au lieu de DELETE, conservation des données
+  - `batchDeleteLoans()`: Suppression en masse avec soft delete
+  - `getAllLoans()`: Filtre automatique `deletedAt: null`
+  - Protection: toutes les fonctions de modification rejettent les prêts supprimés
+
+- **Controllers**: Passage de `userId` pour traçabilité des suppressions
+
+### Fixed
+- **Validation**: Correction schéma batch delete (retrait wrapper `body` inutile)
+- **UI**: Ajout composant manquant `radio-group.tsx`
+- **Dependencies**: Installation `@radix-ui/react-radio-group`
+
 ## [0.2.3] - 2025-12-29
 
 ### Added
