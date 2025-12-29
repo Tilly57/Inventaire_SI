@@ -217,10 +217,14 @@ export function useAddLoanLine() {
     mutationFn: ({ loanId, data }: { loanId: string; data: AddLoanLineDto }) =>
       addLoanLineApi(loanId, data),
     onSuccess: async (_, variables) => {
-      // Invalidate both general loans list and specific loan
+      // Invalidate loans, asset items, and asset models
       await queryClient.invalidateQueries({ queryKey: ['loans'] })
       await queryClient.invalidateQueries({ queryKey: ['loans', variables.loanId] })
+      await queryClient.invalidateQueries({ queryKey: ['assetItems'] })
+      await queryClient.invalidateQueries({ queryKey: ['assetModels'] })
       await queryClient.refetchQueries({ queryKey: ['loans', variables.loanId] })
+      await queryClient.refetchQueries({ queryKey: ['assetItems'] })
+      await queryClient.refetchQueries({ queryKey: ['assetModels'] })
       toast({
         title: 'Ligne ajoutée',
         description: 'La ligne a été ajoutée au prêt',
@@ -280,7 +284,11 @@ export function useRemoveLoanLine() {
     onSuccess: async (_, variables) => {
       await queryClient.invalidateQueries({ queryKey: ['loans'] })
       await queryClient.invalidateQueries({ queryKey: ['loans', variables.loanId] })
+      await queryClient.invalidateQueries({ queryKey: ['assetItems'] })
+      await queryClient.invalidateQueries({ queryKey: ['assetModels'] })
       await queryClient.refetchQueries({ queryKey: ['loans', variables.loanId] })
+      await queryClient.refetchQueries({ queryKey: ['assetItems'] })
+      await queryClient.refetchQueries({ queryKey: ['assetModels'] })
       toast({
         title: 'Ligne supprimée',
         description: 'La ligne a été retirée du prêt',
@@ -473,7 +481,11 @@ export function useCloseLoan() {
     onSuccess: async (_, loanId) => {
       await queryClient.invalidateQueries({ queryKey: ['loans'] })
       await queryClient.invalidateQueries({ queryKey: ['loans', loanId] })
+      await queryClient.invalidateQueries({ queryKey: ['assetItems'] })
+      await queryClient.invalidateQueries({ queryKey: ['assetModels'] })
       await queryClient.refetchQueries({ queryKey: ['loans'] })
+      await queryClient.refetchQueries({ queryKey: ['assetItems'] })
+      await queryClient.refetchQueries({ queryKey: ['assetModels'] })
       toast({
         title: 'Prêt fermé',
         description: 'Le prêt a été fermé avec succès',

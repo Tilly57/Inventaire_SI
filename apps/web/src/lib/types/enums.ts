@@ -1,36 +1,44 @@
 // Enums matching backend Prisma schema
 
-export enum UserRole {
-  ADMIN = 'ADMIN',
-  GESTIONNAIRE = 'GESTIONNAIRE',
-  LECTURE = 'LECTURE',
-}
+export const UserRole = {
+  ADMIN: 'ADMIN',
+  GESTIONNAIRE: 'GESTIONNAIRE',
+  LECTURE: 'LECTURE',
+} as const
 
-export enum AssetStatus {
-  EN_STOCK = 'EN_STOCK',
-  PRETE = 'PRETE',
-  HS = 'HS',
-  REPARATION = 'REPARATION',
-}
+export type UserRole = typeof UserRole[keyof typeof UserRole]
 
-export enum LoanStatus {
-  OPEN = 'OPEN',
-  CLOSED = 'CLOSED',
-}
+export const AssetStatus = {
+  EN_STOCK: 'EN_STOCK',
+  PRETE: 'PRETE',
+  HS: 'HS',
+  REPARATION: 'REPARATION',
+} as const
 
-export enum AssetType {
-  LAPTOP = 'LAPTOP',
-  DESKTOP = 'DESKTOP',
-  MONITOR = 'MONITOR',
-  KEYBOARD = 'KEYBOARD',
-  MOUSE = 'MOUSE',
-  HEADSET = 'HEADSET',
-  WEBCAM = 'WEBCAM',
-  DOCK = 'DOCK',
-  CABLE = 'CABLE',
-  ADAPTER = 'ADAPTER',
-  OTHER = 'OTHER',
-}
+export type AssetStatus = typeof AssetStatus[keyof typeof AssetStatus]
+
+export const LoanStatus = {
+  OPEN: 'OPEN',
+  CLOSED: 'CLOSED',
+} as const
+
+export type LoanStatus = typeof LoanStatus[keyof typeof LoanStatus]
+
+export const AssetType = {
+  LAPTOP: 'LAPTOP',
+  DESKTOP: 'DESKTOP',
+  MONITOR: 'MONITOR',
+  KEYBOARD: 'KEYBOARD',
+  MOUSE: 'MOUSE',
+  HEADSET: 'HEADSET',
+  WEBCAM: 'WEBCAM',
+  DOCK: 'DOCK',
+  CABLE: 'CABLE',
+  ADAPTER: 'ADAPTER',
+  OTHER: 'OTHER',
+} as const
+
+export type AssetType = typeof AssetType[keyof typeof AssetType]
 
 // Display labels for UI
 export const UserRoleLabels: Record<UserRole, string> = {

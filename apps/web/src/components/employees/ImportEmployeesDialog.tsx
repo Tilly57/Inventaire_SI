@@ -1,3 +1,36 @@
+/**
+ * @fileoverview ImportEmployeesDialog - Excel import dialog for bulk employee creation
+ *
+ * This component provides:
+ * - Excel file upload (.xlsx, .xls)
+ * - Bulk employee creation from spreadsheet data
+ * - Email generation (prenom.nom@groupetilly.com)
+ * - Duplicate detection (skips existing emails)
+ * - Error reporting with row numbers and details
+ * - Import result summary (success, skipped, errors)
+ *
+ * Excel Format:
+ * - Column headers: Société | Agence | Civilité | Nom | Prénom
+ * - Required fields: Nom, Prénom
+ * - Optional fields: Société, Agence, Civilité
+ *
+ * Features:
+ * - Uses xlsx library for Excel parsing
+ * - Sanitizes names for email generation (removes accents, special chars)
+ * - Validates data before creation
+ * - Atomic operations (each employee created independently)
+ * - Comprehensive error handling and user feedback
+ *
+ * Workflow:
+ * 1. User selects Excel file
+ * 2. Click "Importer" button
+ * 3. Parse Excel rows into employee data
+ * 4. Validate required fields (Nom, Prénom)
+ * 5. Generate email from sanitized name
+ * 6. Check for duplicates against existing employees
+ * 7. Create non-duplicate employees via API
+ * 8. Display results (success count, skipped count, errors)
+ */
 import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { read, utils } from 'xlsx'
@@ -16,25 +49,72 @@ import { useEmployees } from '@/lib/hooks/useEmployees'
 import { createEmployeeApi } from '@/lib/api/employees.api'
 import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, Loader2, Info } from 'lucide-react'
 
+/**
+ * Props for ImportEmployeesDialog component
+ *
+ * @interface ImportEmployeesDialogProps
+ */
 interface ImportEmployeesDialogProps {
+  /** Whether the dialog is visible */
   open: boolean
+  /** Callback invoked when dialog should close */
   onClose: () => void
 }
 
+/**
+ * Excel row structure for employee import
+ *
+ * Matches expected column headers in the Excel file.
+ * All fields are optional in TypeScript but Nom and Prénom are validated as required.
+ *
+ * @interface EmployeeRow
+ */
 interface EmployeeRow {
+  /** Company name (optional, not used in current implementation) */
   Société?: string
+  /** Department/Agency name (maps to dept field) */
   Agence?: string
+  /** Title/Civility (Mr/Mme/Mlle, optional, not used) */
   Civilité?: string
+  /** Last name (required for employee creation) */
   Nom?: string
+  /** First name (required for employee creation) */
   Prénom?: string
 }
 
+/**
+ * Result of bulk import operation
+ *
+ * Tracks success, skipped, and error counts along with detailed error information.
+ *
+ * @interface ImportResult
+ */
 interface ImportResult {
+  /** Number of successfully created employees */
   success: number
+  /** Number of skipped employees (already exist) */
   skipped: number
+  /** Array of errors with row numbers and details */
   errors: { row: number; name: string; error: string }[]
 }
 
+/**
+ * Dialog for importing employees from Excel files
+ *
+ * Allows bulk employee creation from Excel spreadsheets with validation,
+ * duplicate detection, and comprehensive error reporting.
+ *
+ * @param {ImportEmployeesDialogProps} props - Component props
+ * @returns {JSX.Element} Import dialog component
+ *
+ * @example
+ * const [isImportOpen, setIsImportOpen] = useState(false)
+ *
+ * <ImportEmployeesDialog
+ *   open={isImportOpen}
+ *   onClose={() => setIsImportOpen(false)}
+ * />
+ */
 export function ImportEmployeesDialog({ open, onClose }: ImportEmployeesDialogProps) {
   const [file, setFile] = useState<File | null>(null)
   const [isImporting, setIsImporting] = useState(false)
@@ -51,13 +131,29 @@ export function ImportEmployeesDialog({ open, onClose }: ImportEmployeesDialogPr
     }
   }
 
-  // Sanitize string for email (remove accents, spaces, special chars)
+  /**
+   * Sanitize string for email generation
+   *
+   * Converts accented French names to ASCII-safe email format:
+   * - Removes accents (é → e, à → a, etc.)
+   * - Converts to lowercase
+   * - Removes all non-alphanumeric characters
+   * - Trims whitespace
+   *
+   * @param {string} str - Input string (name)
+   * @returns {string} Sanitized string safe for email
+   *
+   * @example
+   * sanitizeForEmail('François') // → 'francois'
+   * sanitizeForEmail('Marie-Claire') // → 'marieclaire'
+   * sanitizeForEmail('José') // → 'jose'
+   */
   const sanitizeForEmail = (str: string): string => {
     return str
-      .normalize('NFD') // Decompose accented characters
-      .replace(/[\u0300-\u036f]/g, '') // Remove diacritics
+      .normalize('NFD') // Decompose accented characters (é → e + ́)
+      .replace(/[\u0300-\u036f]/g, '') // Remove diacritics (accent marks)
       .toLowerCase()
-      .replace(/[^a-z0-9]/g, '') // Keep only alphanumeric
+      .replace(/[^a-z0-9]/g, '') // Keep only alphanumeric characters
       .trim()
   }
 
@@ -118,7 +214,7 @@ export function ImportEmployeesDialog({ open, onClose }: ImportEmployeesDialogPr
             firstName: row.Prénom.trim(),
             lastName: row.Nom.trim(),
             email: email,
-            dept: row.Agence?.trim() || null,
+            dept: row.Agence?.trim() || undefined,
           })
 
           importResult.success++

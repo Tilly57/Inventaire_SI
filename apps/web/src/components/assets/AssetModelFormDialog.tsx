@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import type { AssetModel } from '@/lib/types/models.types'
-import { AssetType } from '@/lib/types/enums'
+import { AssetType, AssetTypeLabels } from '@/lib/types/enums'
 import { createAssetModelSchema, updateAssetModelSchema } from '@/lib/schemas/assetModels.schema'
 import type { CreateAssetModelFormData, UpdateAssetModelFormData } from '@/lib/schemas/assetModels.schema'
 import { useCreateAssetModel, useUpdateAssetModel } from '@/lib/hooks/useAssetModels'
@@ -45,9 +45,10 @@ export function AssetModelFormDialog({ model, open, onClose }: AssetModelFormDia
   const form = useForm<CreateAssetModelFormData | UpdateAssetModelFormData>({
     resolver: zodResolver(isEdit ? updateAssetModelSchema : createAssetModelSchema),
     defaultValues: {
-      type: AssetType.ORDINATEUR,
+      type: AssetType.LAPTOP,
       brand: '',
       modelName: '',
+      quantity: undefined,
     },
   })
 
@@ -57,12 +58,14 @@ export function AssetModelFormDialog({ model, open, onClose }: AssetModelFormDia
         type: model.type,
         brand: model.brand,
         modelName: model.modelName,
+        quantity: undefined,
       })
     } else {
       form.reset({
-        type: AssetType.ORDINATEUR,
+        type: AssetType.LAPTOP,
         brand: '',
         modelName: '',
+        quantity: undefined,
       })
     }
   }, [model, form])
@@ -74,6 +77,7 @@ export function AssetModelFormDialog({ model, open, onClose }: AssetModelFormDia
       } else {
         await createModel.mutateAsync(data as CreateAssetModelFormData)
       }
+      form.reset()
       onClose()
     } catch (error) {
       // Error handled by mutation hooks
@@ -111,7 +115,7 @@ export function AssetModelFormDialog({ model, open, onClose }: AssetModelFormDia
                     <SelectContent>
                       {Object.values(AssetType).map((type) => (
                         <SelectItem key={type} value={type}>
-                          {type}
+                          {AssetTypeLabels[type]}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -148,6 +152,33 @@ export function AssetModelFormDialog({ model, open, onClose }: AssetModelFormDia
                 </FormItem>
               )}
             />
+
+            {!isEdit && (
+              <FormField
+                control={form.control}
+                name="quantity"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Quantité (optionnel)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={1}
+                        max={100}
+                        placeholder="Créer automatiquement des équipements..."
+                        {...field}
+                        onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value, 10) : undefined)}
+                        value={field.value || ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Si renseigné, crée automatiquement des équipements avec tags auto-générés
+                    </p>
+                  </FormItem>
+                )}
+              />
+            )}
 
             <div className="flex gap-2 justify-end">
               <Button type="button" variant="outline" onClick={onClose}>

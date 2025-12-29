@@ -17,6 +17,8 @@ import type {
   AssetItem,
   CreateAssetItemDto,
   UpdateAssetItemDto,
+  CreateBulkAssetItemsDto,
+  BulkCreationPreview,
   ApiResponse,
 } from '@/lib/types/models.types'
 
@@ -144,4 +146,91 @@ export async function updateAssetItemApi(id: string, data: UpdateAssetItemDto): 
  */
 export async function deleteAssetItemApi(id: string): Promise<void> {
   await apiClient.delete(`/asset-items/${id}`)
+}
+
+/**
+ * Preview bulk asset creation
+ *
+ * Returns list of tags that will be generated and any conflicts before actual creation.
+ * Useful for UI preview and validation.
+ *
+ * @param tagPrefix - Tag prefix for generation (e.g., "KB-", "LAPTOP-")
+ * @param quantity - Number of items to create (1-100)
+ * @returns Promise resolving to preview with tags, conflicts, and start number
+ *
+ * @example
+ * const preview = await previewBulkCreationApi('KB-', 20);
+ * // preview = {
+ * //   tags: ['KB-001', 'KB-002', ..., 'KB-020'],
+ * //   conflicts: [],
+ * //   startNumber: 1
+ * // }
+ *
+ * @example
+ * // When conflicts exist
+ * const preview = await previewBulkCreationApi('KB-', 5);
+ * // preview = {
+ * //   tags: ['KB-001', 'KB-002', 'KB-003', 'KB-004', 'KB-005'],
+ * //   conflicts: ['KB-001', 'KB-002'], // These already exist
+ * //   startNumber: 1
+ * // }
+ */
+export async function previewBulkCreationApi(
+  tagPrefix: string,
+  quantity: number
+): Promise<BulkCreationPreview> {
+  const response = await apiClient.get<ApiResponse<BulkCreationPreview>>(
+    '/asset-items/bulk/preview',
+    { params: { tagPrefix, quantity } }
+  )
+  return response.data.data
+}
+
+/**
+ * Create multiple asset items in bulk
+ *
+ * Creates multiple identical equipment items with auto-generated sequential tags.
+ * All items will have:
+ * - Auto-generated sequential tags (e.g., KB-001, KB-002, KB-003)
+ * - Same asset model
+ * - Same status (default EN_STOCK)
+ * - Same notes (if provided)
+ * - NULL serial numbers (individual serial numbers can be added later via update)
+ *
+ * Server performs atomic transaction - all items created or none.
+ *
+ * @param data - Bulk creation data
+ * @param data.assetModelId - Reference to equipment model template
+ * @param data.tagPrefix - Prefix for tag generation (e.g., "KB-", "LAPTOP-")
+ * @param data.quantity - Number of items to create (1-100)
+ * @param data.status - Initial status for all items (default: "EN_STOCK")
+ * @param data.notes - Optional notes applied to all items
+ * @returns Promise resolving to array of created AssetItems with model
+ * @throws {NotFoundError} If asset model doesn't exist (404)
+ * @throws {ValidationError} If quantity is out of range (400)
+ * @throws {ConflictError} If any generated tags already exist (409)
+ *
+ * @example
+ * const items = await createAssetItemsBulkApi({
+ *   assetModelId: 'modelId123',
+ *   tagPrefix: 'KB-',
+ *   quantity: 20,
+ *   status: 'EN_STOCK',
+ *   notes: 'Commande janvier 2025'
+ * });
+ * // Creates 20 keyboards with tags KB-001 to KB-020
+ * // items = [
+ * //   { id, assetTag: 'KB-001', serial: null, status: 'EN_STOCK', assetModel: {...} },
+ * //   { id, assetTag: 'KB-002', serial: null, status: 'EN_STOCK', assetModel: {...} },
+ * //   ...
+ * // ]
+ */
+export async function createAssetItemsBulkApi(
+  data: CreateBulkAssetItemsDto
+): Promise<AssetItem[]> {
+  const response = await apiClient.post<ApiResponse<AssetItem[]>>(
+    '/asset-items/bulk',
+    data
+  )
+  return response.data.data
 }

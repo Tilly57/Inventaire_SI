@@ -74,6 +74,7 @@ export interface CreateAssetModelDto {
   type: AssetType
   brand: string
   modelName: string
+  quantity?: number
 }
 
 export interface UpdateAssetModelDto {
@@ -109,6 +110,20 @@ export interface UpdateAssetItemDto {
   status?: AssetStatus
   notes?: string | null
   assetModelId?: string
+}
+
+export interface CreateBulkAssetItemsDto {
+  assetModelId: string
+  tagPrefix: string
+  quantity: number
+  status?: AssetStatus
+  notes?: string
+}
+
+export interface BulkCreationPreview {
+  tags: string[]
+  conflicts: string[]
+  startNumber: number
 }
 
 // Stock Item types

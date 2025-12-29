@@ -1,12 +1,18 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import type { AssetItem } from '@/lib/types/models.types'
 import { AssetStatus } from '@/lib/types/enums'
-import { createAssetItemSchema, updateAssetItemSchema } from '@/lib/schemas/assetItems.schema'
-import type { CreateAssetItemFormData, UpdateAssetItemFormData } from '@/lib/schemas/assetItems.schema'
-import { useCreateAssetItem, useUpdateAssetItem } from '@/lib/hooks/useAssetItems'
+import { assetItemFormSchema } from '@/lib/schemas/assetItems.schema'
+import type { AssetItemFormData } from '@/lib/schemas/assetItems.schema'
+import {
+  useCreateAssetItem,
+  useCreateAssetItemsBulk,
+  usePreviewBulkCreation,
+  useUpdateAssetItem
+} from '@/lib/hooks/useAssetItems'
 import { useAssetModels } from '@/lib/hooks/useAssetModels'
+import { BulkCreationPreview } from './BulkCreationPreview'
 import {
   Dialog,
   DialogContent,
@@ -42,15 +48,20 @@ interface AssetItemFormDialogProps {
 export function AssetItemFormDialog({ item, open, onClose }: AssetItemFormDialogProps) {
   const isEdit = !!item
   const createItem = useCreateAssetItem()
+  const createItemsBulk = useCreateAssetItemsBulk()
   const updateItem = useUpdateAssetItem()
   const { data: models } = useAssetModels()
 
+  const [isBulkMode, setIsBulkMode] = useState(false)
+
   const modelsList = Array.isArray(models) ? models : []
 
-  const form = useForm<CreateAssetItemFormData | UpdateAssetItemFormData>({
-    resolver: zodResolver(isEdit ? updateAssetItemSchema : createAssetItemSchema),
+  const form = useForm<AssetItemFormData>({
+    resolver: zodResolver(assetItemFormSchema),
     defaultValues: {
+      quantity: 1,
       assetTag: '',
+      tagPrefix: '',
       serialNumber: '',
       status: AssetStatus.EN_STOCK,
       notes: '',
@@ -58,92 +69,204 @@ export function AssetItemFormDialog({ item, open, onClose }: AssetItemFormDialog
     },
   })
 
+  // Watch pour détecter le mode
+  const quantity = form.watch('quantity') || 1
+  const tagPrefix = form.watch('tagPrefix') || ''
+
+  useEffect(() => {
+    setIsBulkMode(quantity > 1)
+  }, [quantity])
+
+  // Preview hook
+  const { data: preview, isLoading: isLoadingPreview } = usePreviewBulkCreation(
+    tagPrefix,
+    quantity,
+    isBulkMode && !!tagPrefix
+  )
+
   useEffect(() => {
     if (item) {
       form.reset({
+        quantity: 1,
         assetTag: item.assetTag,
+        tagPrefix: '',
         serialNumber: item.serialNumber || '',
         status: item.status,
         notes: item.notes || '',
         assetModelId: item.modelId,
       })
-    } else {
+      setIsBulkMode(false)
+    } else if (!open) {
       form.reset({
+        quantity: 1,
         assetTag: '',
+        tagPrefix: '',
         serialNumber: '',
         status: AssetStatus.EN_STOCK,
         notes: '',
         assetModelId: '',
       })
+      setIsBulkMode(false)
     }
-  }, [item, form])
+  }, [item, open, form])
 
-  const onSubmit = async (data: CreateAssetItemFormData | UpdateAssetItemFormData) => {
+  const onSubmit = async (data: AssetItemFormData) => {
     try {
       if (isEdit && item) {
-        await updateItem.mutateAsync({ id: item.id, data: data as UpdateAssetItemFormData })
+        // Mode édition (inchangé)
+        await updateItem.mutateAsync({
+          id: item.id,
+          data: {
+            assetTag: data.assetTag,
+            serialNumber: data.serialNumber,
+            status: data.status,
+            notes: data.notes,
+            assetModelId: data.assetModelId,
+          }
+        })
+      } else if (isBulkMode) {
+        // Mode création en masse
+        await createItemsBulk.mutateAsync({
+          tagPrefix: data.tagPrefix!,
+          quantity: data.quantity,
+          assetModelId: data.assetModelId,
+          status: data.status,
+          notes: data.notes,
+        })
       } else {
-        await createItem.mutateAsync(data as CreateAssetItemFormData)
+        // Mode création simple (inchangé)
+        await createItem.mutateAsync({
+          assetTag: data.assetTag!,
+          serialNumber: data.serialNumber,
+          assetModelId: data.assetModelId,
+          status: data.status,
+          notes: data.notes,
+        })
       }
-      // Reset form to empty values after successful creation/update
-      form.reset({
-        assetTag: '',
-        serialNumber: '',
-        status: AssetStatus.EN_STOCK,
-        notes: '',
-        assetModelId: '',
-      })
+
+      form.reset()
       onClose()
     } catch (error) {
-      // Error handled by mutation hooks
+      // Errors handled by mutation hooks
     }
   }
+
+  const isPending = createItem.isPending || createItemsBulk.isPending || updateItem.isPending
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>
-            {isEdit ? 'Modifier l\'équipement' : 'Créer un équipement'}
+            {isEdit
+              ? 'Modifier l\'équipement'
+              : isBulkMode
+                ? 'Créer des équipements en masse'
+                : 'Créer un équipement'
+            }
           </DialogTitle>
           <DialogDescription>
             {isEdit
               ? 'Modifiez les informations de l\'équipement'
-              : 'Ajoutez un nouvel équipement dans l\'inventaire'}
+              : isBulkMode
+                ? 'Créez plusieurs équipements avec des tags auto-générés'
+                : 'Ajoutez un nouvel équipement dans l\'inventaire'
+            }
           </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            {/* Quantity field - only in create mode */}
+            {!isEdit && (
               <FormField
                 control={form.control}
-                name="assetTag"
+                name="quantity"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Tag d'actif *</FormLabel>
+                    <FormLabel>Quantité</FormLabel>
                     <FormControl>
-                      <Input placeholder="IT-2024-001" {...field} />
+                      <Input
+                        type="number"
+                        min={1}
+                        max={100}
+                        placeholder="1"
+                        {...field}
+                        onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 1)}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+            )}
 
-              <FormField
-                control={form.control}
-                name="serialNumber"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Numéro de série</FormLabel>
-                    <FormControl>
-                      <Input placeholder="SN123456789" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <div className="grid grid-cols-2 gap-4">
+              {/* Asset Tag (simple) OR Tag Prefix (bulk) */}
+              {isBulkMode ? (
+                <FormField
+                  control={form.control}
+                  name="tagPrefix"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Préfixe du tag *</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="KB-"
+                          {...field}
+                          onChange={(e) => {
+                            const value = e.target.value.toUpperCase()
+                            field.onChange(value)
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              ) : (
+                <FormField
+                  control={form.control}
+                  name="assetTag"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tag d'actif *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="IT-2024-001" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              {/* Serial Number - hidden in bulk mode */}
+              {!isBulkMode && (
+                <FormField
+                  control={form.control}
+                  name="serialNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Numéro de série</FormLabel>
+                      <FormControl>
+                        <Input placeholder="SN123456789" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
             </div>
+
+            {/* Bulk creation preview */}
+            {isBulkMode && (
+              <BulkCreationPreview
+                tagPrefix={tagPrefix}
+                quantity={quantity}
+                preview={preview}
+                isLoading={isLoadingPreview}
+              />
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <FormField
@@ -208,6 +331,7 @@ export function AssetItemFormDialog({ item, open, onClose }: AssetItemFormDialog
                       placeholder="Notes supplémentaires..."
                       className="resize-none"
                       {...field}
+                      value={field.value || ''}
                     />
                   </FormControl>
                   <FormMessage />
@@ -221,12 +345,14 @@ export function AssetItemFormDialog({ item, open, onClose }: AssetItemFormDialog
               </Button>
               <Button
                 type="submit"
-                disabled={createItem.isPending || updateItem.isPending}
+                disabled={isPending || (isBulkMode && preview?.conflicts && preview.conflicts.length > 0)}
               >
-                {createItem.isPending || updateItem.isPending
+                {isPending
                   ? 'Enregistrement...'
                   : isEdit
                   ? 'Modifier'
+                  : isBulkMode
+                  ? `Créer ${quantity} équipement(s)`
                   : 'Créer'}
               </Button>
             </div>
