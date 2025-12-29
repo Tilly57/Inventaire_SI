@@ -52,7 +52,7 @@ export function DashboardPage() {
             title="Équipements"
             value={stats.totalAssets}
             icon={Laptop}
-            color="danger"
+            color="info"
             description="Total des équipements"
           />
           <StatsCard

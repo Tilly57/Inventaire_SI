@@ -9,7 +9,7 @@ interface StatsCardProps {
   value: number | string
   icon: LucideIcon
   description?: string
-  color?: 'primary' | 'secondary' | 'success' | 'warning' | 'danger'
+  color?: 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'info'
 }
 
 const colorClasses = {
@@ -18,6 +18,7 @@ const colorClasses = {
   success: 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400',
   warning: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400',
   danger: 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400',
+  info: 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400',
 }
 
 export function StatsCard({ title, value, icon: Icon, description, color = 'primary' }: StatsCardProps) {
