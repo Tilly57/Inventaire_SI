@@ -162,10 +162,10 @@ export function AssetItemsListPage() {
               Supprimer ({selectedItems.length})
             </Button>
           )}
-          <Button onClick={() => setIsCreating(true)}>
+          {/* <Button onClick={() => setIsCreating(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Nouvel équipement
-          </Button>
+          </Button> */}
         </div>
 
         <div className="flex gap-4">

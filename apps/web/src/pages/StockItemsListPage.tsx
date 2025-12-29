@@ -97,10 +97,10 @@ export function StockItemsListPage() {
             className="pl-10"
           />
         </div>
-        <Button onClick={() => navigate('/asset-models')}>
+        {/* <Button onClick={() => navigate('/asset-models')}>
           <Plus className="h-4 w-4 mr-2" />
           Nouveau modèle
-        </Button>
+        </Button> */}
       </div>
 
       <div className="border rounded-lg">
