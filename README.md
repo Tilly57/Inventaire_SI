@@ -43,6 +43,13 @@ Système de gestion d'inventaire informatique avec suivi des prêts de matériel
 - ✅ Les utilisateurs du système avec gestion des rôles (RBAC)
 - ✅ Dashboard avec statistiques en temps réel
 
+### 🔒 Sécurité & Qualité (Nouveau!)
+
+- ✅ **Tests automatisés** - Infrastructure Jest + Supertest configurée (11 tests auth passent)
+- ✅ **Rate Limiting** - Protection contre brute force et DoS (4 niveaux)
+- ✅ **Secrets management** - Aucun secret hardcodé, .env sécurisés
+- ✅ **JWT dual-token** - Access (15min) + Refresh (7j) avec httpOnly cookies
+
 ---
 
 ## 🆕 Nouveautés v0.2.0

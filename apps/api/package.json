@@ -5,6 +5,11 @@
   "scripts": {
     "dev": "node --watch src/index.js",
     "start": "node src/index.js",
+    "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest",
+    "test:watch": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --watch",
+    "test:coverage": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --coverage",
+    "test:unit": "cross-env NODE_OPTIONS=--experimental-vm-modules jest unit",
+    "test:integration": "cross-env NODE_OPTIONS=--experimental-vm-modules jest integration",
     "prisma:migrate": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
     "seed": "node src/seeds/seed.js"
@@ -16,11 +21,18 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
+    "express-rate-limit": "^8.2.1",
     "jsonwebtoken": "^9.0.2",
     "multer": "^1.4.5-lts.1",
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "prisma": "^6.0.0"
+    "@jest/globals": "^30.2.0",
+    "@types/jest": "^30.0.0",
+    "@types/supertest": "^6.0.3",
+    "cross-env": "^10.1.0",
+    "jest": "^30.2.0",
+    "prisma": "^6.0.0",
+    "supertest": "^7.1.4"
   }
 }

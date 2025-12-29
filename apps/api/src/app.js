@@ -5,6 +5,7 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
+import { generalLimiter } from './middleware/rateLimiter.js';
 import routes from './routes/index.js';
 
 const app = express();
@@ -21,6 +22,9 @@ app.use(express.urlencoded({ extended: true }));
 
 // Cookie parser for refresh tokens
 app.use(cookieParser());
+
+// Rate limiting (apply to all routes)
+app.use('/api', generalLimiter);
 
 // Serve uploaded files statically
 app.use('/uploads', express.static('uploads'));

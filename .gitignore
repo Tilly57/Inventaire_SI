@@ -1,0 +1,79 @@
+# ===========================================
+# Environment Variables & Secrets
+# ===========================================
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# API environment files
+apps/api/.env
+apps/api/.env.local
+!apps/api/.env.example
+!apps/api/.env.test
+
+# Web environment files
+apps/web/.env
+apps/web/.env.local
+!apps/web/.env.example
+
+# ===========================================
+# Dependencies
+# ===========================================
+node_modules/
+**/node_modules/
+
+# ===========================================
+# Build Output
+# ===========================================
+dist/
+build/
+**/dist/
+**/build/
+coverage/
+**/coverage/
+
+# ===========================================
+# Logs
+# ===========================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ===========================================
+# IDE & Editor
+# ===========================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# ===========================================
+# Docker
+# ===========================================
+# Keep docker-compose.yml but ignore override
+docker-compose.override.yml
+
+# ===========================================
+# Database
+# ===========================================
+*.db
+*.sqlite
+*.sqlite3
+
+# ===========================================
+# Uploads & Signatures
+# ===========================================
+apps/api/uploads/
+uploads/
+
+# ===========================================
+# Test & Temporary Files
+# ===========================================
+*.tmp
+*.temp
+.cache/
