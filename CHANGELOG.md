@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2025-12-29
+
+### Fixed
+- **UI Dashboard**: Changement de la couleur de l'icône "Équipements"
+  - Ajout de la couleur 'info' (bleu) dans le composant StatsCard
+  - Icône Équipements : danger (rouge) → info (bleu)
+  - Meilleure distinction visuelle entre Employés (orange) et Équipements (bleu)
+
 ## [0.4.0] - 2025-12-29
 
 ### Added
