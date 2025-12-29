@@ -15,3 +15,9 @@ export const updateAssetModelSchema = z.object({
   brand: z.string().min(1, 'Marque requise').optional(),
   modelName: z.string().min(1, 'Nom du modèle requis').optional()
 });
+
+export const batchDeleteAssetModelsSchema = z.object({
+  modelIds: z.array(z.string().cuid())
+    .min(1, 'Au moins un modèle doit être sélectionné')
+    .max(100, 'Impossible de supprimer plus de 100 modèles à la fois')
+});

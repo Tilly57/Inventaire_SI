@@ -23,6 +23,7 @@ import {
   createAssetModelApi,
   updateAssetModelApi,
   deleteAssetModelApi,
+  batchDeleteAssetModelsApi,
 } from '@/lib/api/assetModels.api'
 import type {
   CreateAssetModelDto,
@@ -262,6 +263,62 @@ export function useDeleteAssetModel() {
         variant: 'destructive',
         title: 'Erreur',
         description: error.response?.data?.error || 'Impossible de supprimer le modèle',
+      })
+    },
+  })
+}
+
+/**
+ * Hook to batch delete asset models (ADMIN only)
+ *
+ * Deletes multiple models and all associated items (AssetItems and StockItems).
+ * IMPORTANT: Cannot delete if any AssetItem is currently loaned or StockItem has loaned items.
+ *
+ * On success:
+ * - Invalidates asset models, asset items, and stock items caches
+ * - Refetches all caches
+ * - Shows success toast with deletion counts
+ *
+ * On error:
+ * - Shows detailed error message from API
+ *
+ * @returns Mutation object
+ *
+ * @example
+ * function AssetModelsListPage() {
+ *   const batchDelete = useBatchDeleteAssetModels();
+ *   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+ *
+ *   const handleBatchDelete = () => {
+ *     batchDelete.mutate(selectedIds, {
+ *       onSuccess: () => setSelectedIds([])
+ *     });
+ *   };
+ * }
+ */
+export function useBatchDeleteAssetModels() {
+  const queryClient = useQueryClient()
+  const { toast } = useToast()
+
+  return useMutation({
+    mutationFn: (modelIds: string[]) => batchDeleteAssetModelsApi(modelIds),
+    onSuccess: async (result) => {
+      // Invalidate all related caches
+      await queryClient.invalidateQueries({ queryKey: ['assetModels'] })
+      await queryClient.invalidateQueries({ queryKey: ['assetItems'] })
+      await queryClient.invalidateQueries({ queryKey: ['stockItems'] })
+      await queryClient.refetchQueries({ queryKey: ['assetModels'] })
+
+      toast({
+        title: 'Modèles supprimés',
+        description: `${result.modelsDeleted} modèle(s), ${result.assetItemsDeleted} équipement(s) et ${result.stockItemsDeleted} article(s) de stock supprimés`,
+      })
+    },
+    onError: (error: any) => {
+      toast({
+        variant: 'destructive',
+        title: 'Erreur',
+        description: error.response?.data?.error || 'Impossible de supprimer les modèles',
       })
     },
   })

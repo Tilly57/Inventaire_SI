@@ -64,3 +64,17 @@ export const deleteAssetModel = asyncHandler(async (req, res) => {
     data: result
   });
 });
+
+/**
+ * POST /api/asset-models/batch-delete
+ * Batch delete asset models (ADMIN only)
+ */
+export const batchDeleteAssetModels = asyncHandler(async (req, res) => {
+  const { modelIds } = req.body;
+  const result = await assetModelsService.batchDeleteAssetModels(modelIds);
+
+  res.json({
+    success: true,
+    data: result
+  });
+});

@@ -249,26 +249,28 @@ export async function updateAssetModel(id, data) {
 }
 
 /**
- * Delete an asset model
+ * Delete an asset model with cascade deletion
  *
- * IMPORTANT: Cannot delete models that have associated physical items.
- * This prevents orphaned items and maintains data integrity.
+ * Deletes the model and all associated items (AssetItems and StockItems).
+ * IMPORTANT: Cannot delete if any AssetItem is currently loaned (status PRETE)
+ * or if any StockItem has loaned items (loaned > 0).
  *
  * @param {string} id - Asset model ID to delete
- * @returns {Promise<Object>} Success message
+ * @returns {Promise<Object>} Success message with deletion counts
  * @throws {NotFoundError} If model doesn't exist
- * @throws {ValidationError} If model has associated items
+ * @throws {ValidationError} If model has loaned items
  *
  * @example
  * await deleteAssetModel('modelId123');
- * // Error if any items reference this model
+ * // Deletes model + all AssetItems + all StockItems
  */
 export async function deleteAssetModel(id) {
   // Check if asset model exists and fetch items
   const existingModel = await prisma.assetModel.findUnique({
     where: { id },
     include: {
-      items: true  // Fetch all items to check count
+      items: true,  // AssetItems
+      stockItems: true  // StockItems
     }
   });
 
@@ -276,15 +278,125 @@ export async function deleteAssetModel(id) {
     throw new NotFoundError('Modèle d\'équipement non trouvé');
   }
 
-  // Business rule: Cannot delete models with associated items
-  // This prevents orphaned items and maintains referential integrity
-  if (existingModel.items.length > 0) {
+  // Verify no AssetItem is currently loaned
+  const loanedAssetItems = existingModel.items.filter(item => item.status === 'PRETE');
+  if (loanedAssetItems.length > 0) {
     throw new ValidationError(
-      'Impossible de supprimer un modèle qui a des articles associés'
+      `Impossible de supprimer ce modèle : ${loanedAssetItems.length} équipement(s) sont actuellement prêtés`
     );
   }
 
-  await prisma.assetModel.delete({ where: { id } });
+  // Verify no StockItem has loaned items
+  const loanedStockItems = existingModel.stockItems.filter(stock => stock.loaned > 0);
+  if (loanedStockItems.length > 0) {
+    throw new ValidationError(
+      `Impossible de supprimer ce modèle : ${loanedStockItems.reduce((sum, s) => sum + s.loaned, 0)} article(s) de stock sont actuellement prêtés`
+    );
+  }
 
-  return { message: 'Modèle d\'équipement supprimé avec succès' };
+  // Delete in transaction: items first, then model (respects foreign keys)
+  const result = await prisma.$transaction(async (tx) => {
+    // Delete all AssetItems
+    const deletedAssetItems = await tx.assetItem.deleteMany({
+      where: { assetModelId: id }
+    });
+
+    // Delete all StockItems
+    const deletedStockItems = await tx.stockItem.deleteMany({
+      where: { assetModelId: id }
+    });
+
+    // Delete the model
+    await tx.assetModel.delete({ where: { id } });
+
+    return {
+      assetItemsDeleted: deletedAssetItems.count,
+      stockItemsDeleted: deletedStockItems.count
+    };
+  });
+
+  return {
+    message: 'Modèle d\'équipement supprimé avec succès',
+    ...result
+  };
+}
+
+/**
+ * Delete multiple asset models in batch with cascade deletion
+ *
+ * Deletes models and all associated items (AssetItems and StockItems).
+ * IMPORTANT: Cannot delete if any AssetItem is currently loaned (status PRETE)
+ * or if any StockItem has loaned items (loaned > 0).
+ *
+ * @param {string[]} modelIds - Array of asset model IDs to delete
+ * @returns {Promise<Object>} Success message with deletion counts
+ * @throws {NotFoundError} If no models found
+ * @throws {ValidationError} If any model has loaned items
+ *
+ * @example
+ * await batchDeleteAssetModels(['modelId1', 'modelId2', 'modelId3']);
+ */
+export async function batchDeleteAssetModels(modelIds) {
+  if (!modelIds || modelIds.length === 0) {
+    throw new ValidationError('Au moins un modèle doit être sélectionné');
+  }
+
+  // Fetch all models with their items
+  const models = await prisma.assetModel.findMany({
+    where: { id: { in: modelIds } },
+    include: {
+      items: true,
+      stockItems: true
+    }
+  });
+
+  if (models.length === 0) {
+    throw new NotFoundError('Aucun modèle trouvé avec les IDs fournis');
+  }
+
+  // Verify no AssetItem is currently loaned
+  const loanedAssetItems = models.flatMap(m => m.items).filter(item => item.status === 'PRETE');
+  if (loanedAssetItems.length > 0) {
+    throw new ValidationError(
+      `Impossible de supprimer ces modèles : ${loanedAssetItems.length} équipement(s) sont actuellement prêtés`
+    );
+  }
+
+  // Verify no StockItem has loaned items
+  const loanedStockItems = models.flatMap(m => m.stockItems).filter(stock => stock.loaned > 0);
+  if (loanedStockItems.length > 0) {
+    const totalLoaned = loanedStockItems.reduce((sum, s) => sum + s.loaned, 0);
+    throw new ValidationError(
+      `Impossible de supprimer ces modèles : ${totalLoaned} article(s) de stock sont actuellement prêtés`
+    );
+  }
+
+  // Delete in transaction
+  const result = await prisma.$transaction(async (tx) => {
+    // Delete all AssetItems for these models
+    const deletedAssetItems = await tx.assetItem.deleteMany({
+      where: { assetModelId: { in: modelIds } }
+    });
+
+    // Delete all StockItems for these models
+    const deletedStockItems = await tx.stockItem.deleteMany({
+      where: { assetModelId: { in: modelIds } }
+    });
+
+    // Delete all models
+    const deletedModels = await tx.assetModel.deleteMany({
+      where: { id: { in: modelIds } }
+    });
+
+    return {
+      modelsDeleted: deletedModels.count,
+      assetItemsDeleted: deletedAssetItems.count,
+      stockItemsDeleted: deletedStockItems.count
+    };
+  });
+
+  return {
+    message: `${result.modelsDeleted} modèle(s) supprimé(s) avec succès`,
+    ...result
+  };
 }

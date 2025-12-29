@@ -11,23 +11,53 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Pencil, Trash2 } from 'lucide-react'
 import { AssetModelFormDialog } from './AssetModelFormDialog'
 import { DeleteAssetModelDialog } from './DeleteAssetModelDialog'
 
 interface AssetModelsTableProps {
   models: AssetModel[]
+  selectedModels?: string[]
+  onSelectionChange?: (selectedIds: string[]) => void
 }
 
-export function AssetModelsTable({ models }: AssetModelsTableProps) {
+export function AssetModelsTable({ models, selectedModels, onSelectionChange }: AssetModelsTableProps) {
   const [editingModel, setEditingModel] = useState<AssetModel | null>(null)
   const [deletingModel, setDeletingModel] = useState<AssetModel | null>(null)
+
+  const isAllSelected = models.length > 0 && selectedModels?.length === models.length
+  const isSomeSelected = selectedModels && selectedModels.length > 0 && selectedModels.length < models.length
+
+  const handleSelectAll = (checked: boolean | 'indeterminate') => {
+    if (onSelectionChange) {
+      onSelectionChange(checked === true ? models.map(model => model.id) : [])
+    }
+  }
+
+  const handleSelectModel = (modelId: string, checked: boolean) => {
+    if (onSelectionChange && selectedModels) {
+      const newSelection = checked
+        ? [...selectedModels, modelId]
+        : selectedModels.filter(id => id !== modelId)
+      onSelectionChange(newSelection)
+    }
+  }
 
   return (
     <>
       <Table>
         <TableHeader>
           <TableRow>
+            {onSelectionChange && (
+              <TableHead className="w-12">
+                <Checkbox
+                  checked={isSomeSelected ? 'indeterminate' : isAllSelected}
+                  onCheckedChange={handleSelectAll}
+                  aria-label="Sélectionner tout"
+                />
+              </TableHead>
+            )}
             <TableHead>Type</TableHead>
             <TableHead>Marque</TableHead>
             <TableHead>Modèle</TableHead>
@@ -39,13 +69,22 @@ export function AssetModelsTable({ models }: AssetModelsTableProps) {
         <TableBody>
           {models.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={6} className="text-center text-muted-foreground">
+              <TableCell colSpan={onSelectionChange ? 7 : 6} className="text-center text-muted-foreground">
                 Aucun modèle trouvé
               </TableCell>
             </TableRow>
           ) : (
             models.map((model) => (
               <TableRow key={model.id}>
+                {onSelectionChange && (
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    <Checkbox
+                      checked={selectedModels?.includes(model.id) || false}
+                      onCheckedChange={(checked) => handleSelectModel(model.id, checked as boolean)}
+                      aria-label={`Sélectionner ${model.brand} ${model.modelName}`}
+                    />
+                  </TableCell>
+                )}
                 <TableCell className="font-medium">{AssetTypeLabels[model.type] || model.type}</TableCell>
                 <TableCell>{model.brand}</TableCell>
                 <TableCell>{model.modelName}</TableCell>
