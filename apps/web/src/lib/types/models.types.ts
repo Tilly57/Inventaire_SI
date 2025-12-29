@@ -57,10 +57,26 @@ export interface UpdateEmployeeDto {
   dept?: string | null
 }
 
+// Equipment Type types
+export interface EquipmentType {
+  id: string
+  name: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateEquipmentTypeDto {
+  name: string
+}
+
+export interface UpdateEquipmentTypeDto {
+  name?: string
+}
+
 // Asset Model types
 export interface AssetModel {
   id: string
-  type: AssetType
+  type: string
   brand: string
   modelName: string
   createdAt: string
@@ -71,14 +87,14 @@ export interface AssetModel {
 }
 
 export interface CreateAssetModelDto {
-  type: AssetType
+  type: string
   brand: string
   modelName: string
   quantity?: number
 }
 
 export interface UpdateAssetModelDto {
-  type?: AssetType
+  type?: string
   brand?: string
   modelName?: string
 }

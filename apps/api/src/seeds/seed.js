@@ -14,8 +14,9 @@ async function main() {
   await prisma.loanLine.deleteMany();
   await prisma.loan.deleteMany();
   await prisma.assetItem.deleteMany();
-  await prisma.assetModel.deleteMany();
   await prisma.stockItem.deleteMany();
+  await prisma.assetModel.deleteMany();
+  await prisma.equipmentType.deleteMany();
   await prisma.employee.deleteMany();
   await prisma.user.deleteMany();
 
@@ -56,6 +57,23 @@ async function main() {
   });
 
   console.log(`✅ Created ${4} users`);
+
+  // Create equipment types
+  console.log('Creating equipment types...');
+  const equipmentTypes = await Promise.all([
+    prisma.equipmentType.create({ data: { name: 'Ordinateur portable' } }),
+    prisma.equipmentType.create({ data: { name: 'Ordinateur fixe' } }),
+    prisma.equipmentType.create({ data: { name: 'Écran' } }),
+    prisma.equipmentType.create({ data: { name: 'Clavier' } }),
+    prisma.equipmentType.create({ data: { name: 'Souris' } }),
+    prisma.equipmentType.create({ data: { name: 'Casque audio' } }),
+    prisma.equipmentType.create({ data: { name: 'Webcam' } }),
+    prisma.equipmentType.create({ data: { name: 'Station d\'accueil' } }),
+    prisma.equipmentType.create({ data: { name: 'Câble' } }),
+    prisma.equipmentType.create({ data: { name: 'Adaptateur' } }),
+    prisma.equipmentType.create({ data: { name: 'Autre' } })
+  ]);
+  console.log(`✅ Created ${equipmentTypes.length} equipment types`);
 
   // Create employees
   console.log('Creating employees...');
@@ -130,7 +148,31 @@ async function main() {
     }
   });
 
-  console.log(`✅ Created ${3} asset models`);
+  const cableModel = await prisma.assetModel.create({
+    data: {
+      type: 'Câble',
+      brand: 'Générique',
+      modelName: 'HDMI 2m'
+    }
+  });
+
+  const mouseModel = await prisma.assetModel.create({
+    data: {
+      type: 'Souris',
+      brand: 'Logitech',
+      modelName: 'Sans fil'
+    }
+  });
+
+  const adapterModel = await prisma.assetModel.create({
+    data: {
+      type: 'Adaptateur',
+      brand: 'Générique',
+      modelName: 'USB-C vers HDMI'
+    }
+  });
+
+  console.log(`✅ Created ${6} asset models`);
 
   // Create asset items
   console.log('Creating asset items...');
@@ -183,24 +225,27 @@ async function main() {
   console.log('Creating stock items...');
   const cableHDMI = await prisma.stockItem.create({
     data: {
-      name: 'Câble HDMI 2m',
+      assetModelId: cableModel.id,
       quantity: 50,
+      loaned: 0,
       notes: 'Câbles HDMI standard 2 mètres'
     }
   });
 
   const mouseWireless = await prisma.stockItem.create({
     data: {
-      name: 'Souris sans fil Logitech',
+      assetModelId: mouseModel.id,
       quantity: 30,
+      loaned: 0,
       notes: 'Souris sans fil USB'
     }
   });
 
   const usbAdapter = await prisma.stockItem.create({
     data: {
-      name: 'Adaptateur USB-C vers HDMI',
+      assetModelId: adapterModel.id,
       quantity: 20,
+      loaned: 0,
       notes: 'Adaptateurs pour MacBook'
     }
   });
@@ -243,10 +288,10 @@ async function main() {
     data: { status: 'PRETE' }
   });
 
-  // Update stock quantity
+  // Update stock loaned quantity
   await prisma.stockItem.update({
     where: { id: cableHDMI.id },
-    data: { quantity: 48 }
+    data: { loaned: 2 }
   });
 
   console.log(`✅ Created open loan with ${3} lines`);
@@ -279,13 +324,20 @@ async function main() {
     }
   });
 
+  // Update stock loaned quantity for closed loan (will be 0 since it's closed, but let's track it was loaned)
+  await prisma.stockItem.update({
+    where: { id: mouseWireless.id },
+    data: { loaned: 0 }
+  });
+
   console.log(`✅ Created closed loan with ${2} lines`);
 
   console.log('\n🎉 Database seeding completed successfully!');
   console.log('\n📋 Summary:');
   console.log(`   Users: 4 (1 ADMIN, 2 GESTIONNAIRE, 1 LECTURE)`);
   console.log(`   Employees: ${employees.length}`);
-  console.log(`   Asset Models: 3`);
+  console.log(`   Equipment Types: ${equipmentTypes.length}`);
+  console.log(`   Asset Models: 6`);
   console.log(`   Asset Items: ${assetItems.length} (2 currently loaned)`);
   console.log(`   Stock Items: 3`);
   console.log(`   Loans: 2 (1 OPEN, 1 CLOSED)`);

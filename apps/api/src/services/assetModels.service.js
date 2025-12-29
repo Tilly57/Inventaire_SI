@@ -18,29 +18,38 @@ import { createAssetItemsBulk } from './assetItems.service.js';
 /**
  * Types d'équipements uniques (trackés individuellement)
  */
-const UNIQUE_ASSET_TYPES = ['LAPTOP', 'DESKTOP', 'MONITOR', 'KEYBOARD', 'MOUSE', 'HEADSET', 'WEBCAM', 'DOCK'];
+const UNIQUE_ASSET_TYPES = [
+  'Ordinateur portable',
+  'Ordinateur fixe',
+  'Écran',
+  'Clavier',
+  'Souris',
+  'Casque audio',
+  'Webcam',
+  'Station d\'accueil'
+];
 
 /**
  * Types de consommables (stock global)
  */
-const CONSUMABLE_TYPES = ['CABLE', 'ADAPTER', 'OTHER'];
+const CONSUMABLE_TYPES = ['Câble', 'Adaptateur', 'Autre'];
 
 /**
  * Génère un préfixe de tag selon le type d'équipement
  */
 function generateTagPrefix(type) {
   const prefixes = {
-    'LAPTOP': 'LAP-',
-    'DESKTOP': 'DSK-',
-    'MONITOR': 'MON-',
-    'KEYBOARD': 'KB-',
-    'MOUSE': 'MS-',
-    'HEADSET': 'HS-',
-    'WEBCAM': 'WC-',
-    'DOCK': 'DOCK-',
-    'CABLE': 'CAB-',
-    'ADAPTER': 'ADP-',
-    'OTHER': 'OTH-'
+    'Ordinateur portable': 'LAP-',
+    'Ordinateur fixe': 'DSK-',
+    'Écran': 'MON-',
+    'Clavier': 'KB-',
+    'Souris': 'MS-',
+    'Casque audio': 'HS-',
+    'Webcam': 'WC-',
+    'Station d\'accueil': 'DOCK-',
+    'Câble': 'CAB-',
+    'Adaptateur': 'ADP-',
+    'Autre': 'OTH-'
   };
   return prefixes[type] || 'ASSET-';
 }

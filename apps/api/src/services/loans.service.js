@@ -476,13 +476,14 @@ export async function uploadReturnSignature(loanId, file) {
  * const closedLoan = await closeLoan('loan123');
  */
 export async function closeLoan(loanId) {
-  // Get loan with lines to process asset status updates
+  // Get loan with lines to process asset and stock updates
   const loan = await prisma.loan.findUnique({
     where: { id: loanId },
     include: {
       lines: {
         include: {
-          assetItem: true
+          assetItem: true,
+          stockItem: true
         }
       }
     }
@@ -501,7 +502,6 @@ export async function closeLoan(loanId) {
   }
 
   // Prepare asset status updates for all loaned equipment
-  // Note: Stock items are NOT restored (they were consumed)
   const assetItemUpdates = loan.lines
     .filter(line => line.assetItemId)  // Only process asset items
     .map(line =>
@@ -511,8 +511,22 @@ export async function closeLoan(loanId) {
       })
     );
 
+  // Prepare stock item updates to decrement loaned counter
+  // Note: Stock quantity is NOT restored (items were consumed)
+  // But loaned counter must be decremented since loan is closed
+  const stockItemUpdates = loan.lines
+    .filter(line => line.stockItemId)  // Only process stock items
+    .map(line =>
+      prisma.stockItem.update({
+        where: { id: line.stockItemId },
+        data: {
+          loaned: { decrement: line.quantity }  // Decrement loaned counter
+        }
+      })
+    );
+
   // Use transaction to ensure atomicity:
-  // Loan closure and ALL asset status updates must succeed together
+  // Loan closure and ALL asset/stock updates must succeed together
   const [updatedLoan] = await prisma.$transaction([
     prisma.loan.update({
       where: { id: loanId },
@@ -541,7 +555,8 @@ export async function closeLoan(loanId) {
         }
       }
     }),
-    ...assetItemUpdates  // Execute all asset updates in same transaction
+    ...assetItemUpdates,  // Execute all asset updates in same transaction
+    ...stockItemUpdates   // Execute all stock updates in same transaction
   ]);
 
   return updatedLoan;

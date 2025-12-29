@@ -2,10 +2,10 @@ import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import type { AssetModel } from '@/lib/types/models.types'
-import { AssetType, AssetTypeLabels } from '@/lib/types/enums'
 import { createAssetModelSchema, updateAssetModelSchema } from '@/lib/schemas/assetModels.schema'
 import type { CreateAssetModelFormData, UpdateAssetModelFormData } from '@/lib/schemas/assetModels.schema'
 import { useCreateAssetModel, useUpdateAssetModel } from '@/lib/hooks/useAssetModels'
+import { useEquipmentTypes } from '@/lib/hooks/useEquipmentTypes'
 import {
   Dialog,
   DialogContent,
@@ -41,11 +41,12 @@ export function AssetModelFormDialog({ model, open, onClose }: AssetModelFormDia
   const isEdit = !!model
   const createModel = useCreateAssetModel()
   const updateModel = useUpdateAssetModel()
+  const { data: equipmentTypes = [] } = useEquipmentTypes()
 
   const form = useForm<CreateAssetModelFormData | UpdateAssetModelFormData>({
     resolver: zodResolver(isEdit ? updateAssetModelSchema : createAssetModelSchema),
     defaultValues: {
-      type: AssetType.LAPTOP,
+      type: '',
       brand: '',
       modelName: '',
       quantity: undefined,
@@ -62,7 +63,7 @@ export function AssetModelFormDialog({ model, open, onClose }: AssetModelFormDia
       })
     } else {
       form.reset({
-        type: AssetType.LAPTOP,
+        type: '',
         brand: '',
         modelName: '',
         quantity: undefined,
@@ -113,9 +114,9 @@ export function AssetModelFormDialog({ model, open, onClose }: AssetModelFormDia
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {Object.values(AssetType).map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {AssetTypeLabels[type]}
+                      {equipmentTypes.map((type) => (
+                        <SelectItem key={type.id} value={type.name}>
+                          {type.name}
                         </SelectItem>
                       ))}
                     </SelectContent>

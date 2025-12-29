@@ -4,6 +4,8 @@ import { useAuth } from '@/lib/hooks/useAuth'
 import { AssetModelsTable } from '@/components/assets/AssetModelsTable'
 import { AssetModelFormDialog } from '@/components/assets/AssetModelFormDialog'
 import { BulkDeleteAssetModelsDialog } from '@/components/assets/BulkDeleteAssetModelsDialog'
+import { EquipmentTypesTable } from '@/components/equipmentTypes/EquipmentTypesTable'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Pagination } from '@/components/common/Pagination'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -81,7 +83,14 @@ export function AssetModelsListPage() {
         </p>
       </div>
 
-      <div className="flex items-center gap-4">
+      <Tabs defaultValue="models" className="w-full">
+        <TabsList>
+          <TabsTrigger value="models">Modèles</TabsTrigger>
+          {isAdmin && <TabsTrigger value="types">Types d'équipement</TabsTrigger>}
+        </TabsList>
+
+        <TabsContent value="models" className="space-y-6 mt-6">
+          <div className="flex items-center gap-4">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -149,6 +158,14 @@ export function AssetModelsListPage() {
           }}
         />
       )}
+        </TabsContent>
+
+        {isAdmin && (
+          <TabsContent value="types" className="mt-6">
+            <EquipmentTypesTable />
+          </TabsContent>
+        )}
+      </Tabs>
     </div>
   )
 }
