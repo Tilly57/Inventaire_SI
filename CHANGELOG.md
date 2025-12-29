@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2025-12-29
+
+### Added
+- **Suppression en masse des modèles d'équipements (ADMIN uniquement)**:
+  - Checkboxes multi-sélection dans la table des modèles (visible ADMIN uniquement)
+  - Bouton "Supprimer (X)" pour suppression en masse
+  - Dialogue `BulkDeleteAssetModelsDialog` avec détails et avertissements
+  - Endpoint backend `POST /api/asset-models/batch-delete` (middleware `requireAdmin`)
+  - Suppression cascade automatique : Modèle + AssetItems + StockItems
+  - Transaction atomique pour garantir l'intégrité des données
+  - Validation : bloque si équipements prêtés (status PRETE) ou stock prêté (loaned > 0)
+  - Invalidation cache complète : assetModels, assetItems, stockItems
+  - Toast avec compteurs de suppression (modèles, équipements, stock)
+
+### Changed
+- **Service AssetModels**: Modification de `deleteAssetModel()` pour suppression cascade
+  - Suppression d'un modèle supprime désormais tous les AssetItems et StockItems associés
+  - Protection : impossible si des équipements sont actuellement prêtés
+  - Protection : impossible si des articles de stock sont actuellement prêtés
+
 ## [0.3.1] - 2025-12-29
 
 ### Fixed
