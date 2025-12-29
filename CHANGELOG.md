@@ -7,6 +7,78 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2025-12-29
+
+### Added
+
+**Infrastructure de Tests Backend (Jest + Supertest)**
+- Configuration Jest complète avec support ES Modules et cross-platform
+- 11 tests unitaires auth service (register, login, JWT tokens) - 100% passants
+- 14 tests unitaires loans service (create, close, soft delete)
+- Tests d'intégration API endpoints (auth routes avec Supertest)
+- Test utilities: `testUtils.js` (create test data), `apiTestUtils.js` (API helpers)
+- Scripts NPM: `test`, `test:watch`, `test:coverage`, `test:unit`, `test:integration`
+- Fichiers de configuration: `jest.config.js`, `.env.test`, setup files
+- Support Windows avec `cross-env`
+- Coverage: ~30% (auth service complet)
+
+**Rate Limiting (Protection API)**
+- Middleware `express-rate-limit` configuré avec 4 niveaux de protection:
+  - **General limiter**: 100 requêtes / 15 minutes (toutes routes API)
+  - **Auth limiter**: 5 requêtes / 15 minutes (protection brute force login/register)
+  - **Mutation limiter**: 30 requêtes / 15 minutes (POST/PUT/PATCH/DELETE)
+  - **Upload limiter**: 10 uploads / heure (signatures)
+- Headers `RateLimit-*` standards dans les réponses
+- Messages d'erreur en français
+- Appliqué à `app.js` (general) et `auth.routes.js` (auth strict)
+
+**Secrets Management**
+- Externalisation complète des secrets de `docker-compose.yml`
+- Fichiers `.env` créés (root, api, web) avec toutes les variables
+- Fichiers `.env.example` templates avec instructions
+- `.gitignore` complet pour protection des secrets (multi-niveaux)
+- Variables sécurisées: `POSTGRES_PASSWORD`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`
+- Documentation génération secrets forts: `openssl rand -base64 32`
+- Protection contre commits accidentels de secrets
+
+### Changed
+
+**Docker Compose**
+- Passage de secrets hardcodés à variables d'environnement `${VAR}`
+- Lecture depuis `.env` root pour toutes les configurations
+- Variables: database, JWT secrets, CORS, signatures directory
+
+**Package.json (API)**
+- Ajout de 5 nouveaux scripts de test
+- Configuration cross-platform avec `cross-env`
+
+### Security
+
+- ✅ **Aucun secret hardcodé** - Tous externalisés dans .env (gitignored)
+- ✅ **Protection brute force** - Max 5 tentatives login / 15 minutes
+- ✅ **Protection DoS** - Rate limiting général 100 req / 15 minutes
+- ✅ **Protection spam** - Limitations mutations et uploads
+- ✅ **Tests automatisés** - Validation auth et business logic
+
+### Documentation
+
+- **IMPROVEMENTS_CRITIQUE.md** - Guide complet 30+ pages des améliorations
+- **TODO.md** - Roadmap améliorations futures (CRITIQUE, IMPORTANT, RECOMMANDÉ, SOUHAITÉ)
+- **README.md** - Section "Sécurité & Qualité" ajoutée
+- Documentation technique rate limiting et tests
+- Instructions setup production avec .env
+
+### Dependencies
+
+**Ajoutées:**
+- `jest@^30.2.0` - Framework de tests
+- `@jest/globals@^30.2.0` - Globals Jest pour ES Modules
+- `supertest@^7.1.4` - Tests endpoints HTTP
+- `@types/jest@^30.0.0` - Types Jest
+- `@types/supertest@^6.0.3` - Types Supertest
+- `cross-env@^10.1.0` - Variables env cross-platform
+- `express-rate-limit@^8.2.1` - Rate limiting middleware
+
 ## [0.4.1] - 2025-12-29
 
 ### Fixed
