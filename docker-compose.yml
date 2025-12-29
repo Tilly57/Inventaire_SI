@@ -2,9 +2,9 @@ services:
   db:
     image: postgres:16
     environment:
-      POSTGRES_DB: inventaire
-      POSTGRES_USER: inventaire
-      POSTGRES_PASSWORD: inventaire_pwd
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
@@ -13,11 +13,11 @@ services:
   api:
     build: ./apps/api
     environment:
-      DATABASE_URL: postgresql://inventaire:inventaire_pwd@db:5432/inventaire
-      JWT_ACCESS_SECRET: change_me_access
-      JWT_REFRESH_SECRET: change_me_refresh
-      CORS_ORIGIN: http://localhost:5175
-      SIGNATURES_DIR: /app/uploads/signatures
+      DATABASE_URL: ${DATABASE_URL}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      SIGNATURES_DIR: ${SIGNATURES_DIR}
     depends_on:
       - db
     ports:
@@ -29,8 +29,8 @@ services:
     build:
       context: ./apps/web
       args:
-        VITE_API_URL: http://localhost:3001/api
-        VITE_ENV: production
+        VITE_API_URL: ${VITE_API_URL}
+        VITE_ENV: ${VITE_ENV}
     depends_on:
       - api
     ports:
