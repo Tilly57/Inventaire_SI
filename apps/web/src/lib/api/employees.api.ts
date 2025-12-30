@@ -90,6 +90,30 @@ export async function createEmployeeApi(data: CreateEmployeeDto): Promise<Employ
 }
 
 /**
+ * Bulk create employees
+ *
+ * Creates multiple employees in a single request.
+ * Skips employees with duplicate emails (both with existing database records
+ * and within the batch). Returns detailed result with success/skip/error counts.
+ *
+ * @param employees - Array of employee creation data
+ * @returns Promise resolving to import result
+ *
+ * @example
+ * const result = await bulkCreateEmployeesApi([
+ *   { firstName: 'Jean', lastName: 'Dupont', email: 'jean@example.com' },
+ *   { firstName: 'Marie', lastName: 'Martin', email: 'marie@example.com' }
+ * ]);
+ * // result = { created: 2, skipped: 0, errors: [] }
+ */
+export async function bulkCreateEmployeesApi(
+  employees: CreateEmployeeDto[]
+): Promise<{ created: number; skipped: number; errors: Array<{ row: number; data: any; error: string }> }> {
+  const response = await apiClient.post<ApiResponse<any>>('/employees/bulk', { employees })
+  return response.data.data
+}
+
+/**
  * Update existing employee
  *
  * Updates employee information.
