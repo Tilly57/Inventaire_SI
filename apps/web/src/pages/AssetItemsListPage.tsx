@@ -43,7 +43,7 @@ export function AssetItemsListPage() {
       item.assetModel?.modelName?.toLowerCase().includes(searchTerm.toLowerCase())
 
     const matchesStatus = statusFilter === 'all' || item.status === statusFilter
-    const matchesModel = modelFilter === 'all' || item.modelId === modelFilter
+    const matchesModel = modelFilter === 'all' || item.assetModelId === modelFilter
 
     return matchesSearch && matchesStatus && matchesModel
   })

@@ -93,7 +93,7 @@ export function AssetItemFormDialog({ item, open, onClose }: AssetItemFormDialog
         serial: item.serial || '',
         status: item.status,
         notes: item.notes || '',
-        assetModelId: item.modelId,
+        assetModelId: item.assetModelId,
       })
       setIsBulkMode(false)
     } else if (!open) {

@@ -189,8 +189,6 @@ export function useUpdateAssetModel() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['assetModels'] })
       await queryClient.refetchQueries({ queryKey: ['assetModels'] })
-      // Invalidate assetItems cache to show newly created items when quantity is added
-      await queryClient.invalidateQueries({ queryKey: ['assetItems'] })
       toast({
         title: 'Modèle modifié',
         description: 'Le modèle d\'équipement a été modifié avec succès',

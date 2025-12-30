@@ -97,6 +97,7 @@ export interface UpdateAssetModelDto {
   type?: string
   brand?: string
   modelName?: string
+  quantity?: number
 }
 
 // Asset Item types
@@ -106,7 +107,7 @@ export interface AssetItem {
   serial: string | null
   status: AssetStatus
   notes: string | null
-  modelId: string
+  assetModelId: string
   createdAt: string
   updatedAt: string
   assetModel?: AssetModel
