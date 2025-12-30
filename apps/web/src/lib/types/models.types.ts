@@ -173,6 +173,7 @@ export interface LoanLine {
   assetItemId: string | null
   stockItemId: string | null
   quantity: number
+  addedAt: string
   createdAt: string
   assetItem?: AssetItem
   stockItem?: StockItem
