@@ -34,6 +34,8 @@ import {
   closeLoanApi,
   deleteLoanApi,
   batchDeleteLoansApi,
+  deletePickupSignatureApi,
+  deleteReturnSignatureApi,
 } from '@/lib/api/loans.api'
 import type {
   CreateLoanDto,
@@ -602,6 +604,80 @@ export function useBatchDeleteLoans() {
         variant: 'destructive',
         title: 'Erreur',
         description: error.response?.data?.error || 'Impossible de supprimer les prêts',
+      })
+    },
+  })
+}
+
+/**
+ * Delete pickup signature mutation (ADMIN only)
+ *
+ * Removes the pickup signature from a loan. Only available to ADMIN users.
+ * Invalidates loan cache after successful deletion.
+ *
+ * @returns Mutation object with mutateAsync function
+ *
+ * @example
+ * const deletePickup = useDeletePickupSignature();
+ * await deletePickup.mutateAsync('loanId123');
+ */
+export function useDeletePickupSignature() {
+  const queryClient = useQueryClient()
+  const { toast } = useToast()
+
+  return useMutation({
+    mutationFn: (loanId: string) => deletePickupSignatureApi(loanId),
+    onSuccess: async (loan) => {
+      await queryClient.invalidateQueries({ queryKey: ['loans'] })
+      await queryClient.invalidateQueries({ queryKey: ['loans', loan.id] })
+
+      toast({
+        title: 'Signature supprimée',
+        description: 'La signature de retrait a été supprimée',
+      })
+    },
+    onError: (error: any) => {
+      toast({
+        variant: 'destructive',
+        title: 'Erreur',
+        description: error.response?.data?.error || 'Impossible de supprimer la signature',
+      })
+    },
+  })
+}
+
+/**
+ * Delete return signature mutation (ADMIN only)
+ *
+ * Removes the return signature from a loan. Only available to ADMIN users.
+ * Invalidates loan cache after successful deletion.
+ *
+ * @returns Mutation object with mutateAsync function
+ *
+ * @example
+ * const deleteReturn = useDeleteReturnSignature();
+ * await deleteReturn.mutateAsync('loanId123');
+ */
+export function useDeleteReturnSignature() {
+  const queryClient = useQueryClient()
+  const { toast } = useToast()
+
+  return useMutation({
+    mutationFn: (loanId: string) => deleteReturnSignatureApi(loanId),
+    onSuccess: async (loan) => {
+      await queryClient.invalidateQueries({ queryKey: ['loans'] })
+      await queryClient.invalidateQueries({ queryKey: ['loans', loan.id] })
+
+      toast({
+        title: 'Signature supprimée',
+        description: 'La signature de retour a été supprimée',
+      })
+    },
+    onError: (error: any) => {
+      toast({
+        variant: 'destructive',
+        title: 'Erreur',
+        description: error.response?.data?.error || 'Impossible de supprimer la signature',
       })
     },
   })

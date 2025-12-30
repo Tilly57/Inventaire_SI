@@ -320,3 +320,41 @@ export async function batchDeleteLoansApi(loanIds: string[]): Promise<{
   }>>('/loans/batch-delete', { loanIds });
   return response.data.data;
 }
+
+/**
+ * Delete pickup signature (ADMIN only)
+ *
+ * Removes the pickup signature from a loan. Only accessible to ADMIN users.
+ *
+ * @param loanId - Loan ID
+ * @returns Promise resolving to updated Loan without pickup signature
+ * @throws {ForbiddenError} If user is not ADMIN (403)
+ * @throws {NotFoundError} If loan doesn't exist (404)
+ *
+ * @example
+ * const loan = await deletePickupSignatureApi('loanId123');
+ * // loan.pickupSignatureUrl = null, loan.pickupSignedAt = null
+ */
+export async function deletePickupSignatureApi(loanId: string): Promise<Loan> {
+  const response = await apiClient.delete<ApiResponse<Loan>>(`/loans/${loanId}/pickup-signature`);
+  return response.data.data;
+}
+
+/**
+ * Delete return signature (ADMIN only)
+ *
+ * Removes the return signature from a loan. Only accessible to ADMIN users.
+ *
+ * @param loanId - Loan ID
+ * @returns Promise resolving to updated Loan without return signature
+ * @throws {ForbiddenError} If user is not ADMIN (403)
+ * @throws {NotFoundError} If loan doesn't exist (404)
+ *
+ * @example
+ * const loan = await deleteReturnSignatureApi('loanId123');
+ * // loan.returnSignatureUrl = null, loan.returnSignedAt = null
+ */
+export async function deleteReturnSignatureApi(loanId: string): Promise<Loan> {
+  const response = await apiClient.delete<ApiResponse<Loan>>(`/loans/${loanId}/return-signature`);
+  return response.data.data;
+}

@@ -770,3 +770,109 @@ export async function batchDeleteLoans(loanIds, userId) {
     message: `${loans.length} prêt(s) supprimé(s) avec succès`
   };
 }
+
+/**
+ * Delete pickup signature (ADMIN only)
+ *
+ * Removes the pickup signature from a loan. Only allowed for ADMIN users.
+ *
+ * @param {string} loanId - Loan ID
+ * @returns {Promise<Loan>} Updated loan without pickup signature
+ * @throws {NotFoundError} If loan doesn't exist
+ * @throws {ValidationError} If loan is deleted
+ */
+export async function deletePickupSignature(loanId) {
+  const loan = await prisma.loan.findUnique({ where: { id: loanId } });
+  if (!loan) {
+    throw new NotFoundError('Prêt non trouvé');
+  }
+  if (loan.deletedAt) {
+    throw new ValidationError('Impossible de modifier un prêt supprimé');
+  }
+
+  // Delete signature file if it exists
+  if (loan.pickupSignatureUrl) {
+    const signaturesDir = process.env.SIGNATURES_DIR || path.join(__dirname, '../../uploads/signatures');
+    const filename = path.basename(loan.pickupSignatureUrl);
+    const filepath = path.join(signaturesDir, filename);
+
+    try {
+      await fs.unlink(filepath);
+    } catch (err) {
+      // File might not exist, ignore error
+      console.warn(`Could not delete signature file: ${filepath}`);
+    }
+  }
+
+  const updatedLoan = await prisma.loan.update({
+    where: { id: loanId },
+    data: {
+      pickupSignatureUrl: null,
+      pickupSignedAt: null
+    },
+    include: {
+      employee: true,
+      lines: {
+        include: {
+          assetItem: { include: { assetModel: true } },
+          stockItem: { include: { assetModel: true } }
+        }
+      }
+    }
+  });
+
+  return updatedLoan;
+}
+
+/**
+ * Delete return signature (ADMIN only)
+ *
+ * Removes the return signature from a loan. Only allowed for ADMIN users.
+ *
+ * @param {string} loanId - Loan ID
+ * @returns {Promise<Loan>} Updated loan without return signature
+ * @throws {NotFoundError} If loan doesn't exist
+ * @throws {ValidationError} If loan is deleted
+ */
+export async function deleteReturnSignature(loanId) {
+  const loan = await prisma.loan.findUnique({ where: { id: loanId } });
+  if (!loan) {
+    throw new NotFoundError('Prêt non trouvé');
+  }
+  if (loan.deletedAt) {
+    throw new ValidationError('Impossible de modifier un prêt supprimé');
+  }
+
+  // Delete signature file if it exists
+  if (loan.returnSignatureUrl) {
+    const signaturesDir = process.env.SIGNATURES_DIR || path.join(__dirname, '../../uploads/signatures');
+    const filename = path.basename(loan.returnSignatureUrl);
+    const filepath = path.join(signaturesDir, filename);
+
+    try {
+      await fs.unlink(filepath);
+    } catch (err) {
+      // File might not exist, ignore error
+      console.warn(`Could not delete signature file: ${filepath}`);
+    }
+  }
+
+  const updatedLoan = await prisma.loan.update({
+    where: { id: loanId },
+    data: {
+      returnSignatureUrl: null,
+      returnSignedAt: null
+    },
+    include: {
+      employee: true,
+      lines: {
+        include: {
+          assetItem: { include: { assetModel: true } },
+          stockItem: { include: { assetModel: true } }
+        }
+      }
+    }
+  });
+
+  return updatedLoan;
+}

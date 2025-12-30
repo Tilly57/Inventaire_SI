@@ -33,7 +33,7 @@
  */
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useLoan, useRemoveLoanLine, useUploadPickupSignature, useUploadReturnSignature, useCloseLoan } from '@/lib/hooks/useLoans'
+import { useLoan, useRemoveLoanLine, useUploadPickupSignature, useUploadReturnSignature, useCloseLoan, useDeletePickupSignature, useDeleteReturnSignature } from '@/lib/hooks/useLoans'
 import { formatDate, formatFullName } from '@/lib/utils/formatters'
 import { AddLoanLineDialog } from '@/components/loans/AddLoanLineDialog'
 import { SignatureCanvas } from '@/components/common/SignatureCanvas'
@@ -51,6 +51,8 @@ import {
 } from '@/components/ui/table'
 import { ArrowLeft, Plus, Trash2, Pen, CheckCircle, AlertCircle } from 'lucide-react'
 import { BASE_URL } from '@/lib/utils/constants'
+import { useAuthStore } from '@/lib/stores/authStore'
+import { UserRole } from '@/lib/types/enums'
 
 /**
  * Loan details page component
@@ -71,15 +73,20 @@ import { BASE_URL } from '@/lib/utils/constants'
 export function LoanDetailsPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { user } = useAuthStore()
   const { data: loan, isLoading } = useLoan(id || '')
   const removeLine = useRemoveLoanLine()
   const uploadPickup = useUploadPickupSignature()
   const uploadReturn = useUploadReturnSignature()
   const closeLoan = useCloseLoan()
+  const deletePickup = useDeletePickupSignature()
+  const deleteReturn = useDeleteReturnSignature()
 
   const [isAddingLine, setIsAddingLine] = useState(false)
   const [showPickupCanvas, setShowPickupCanvas] = useState(false)
   const [showReturnCanvas, setShowReturnCanvas] = useState(false)
+
+  const isAdmin = user?.role === UserRole.ADMIN
 
   if (isLoading) {
     return (
@@ -120,6 +127,16 @@ export function LoanDetailsPage() {
   const handleCloseLoan = async () => {
     if (!confirm('Voulez-vous vraiment fermer ce prêt? Cette action est irréversible.')) return
     await closeLoan.mutateAsync(loan.id)
+  }
+
+  const handleDeletePickupSignature = async () => {
+    if (!confirm('Voulez-vous vraiment supprimer la signature de retrait?')) return
+    await deletePickup.mutateAsync(loan.id)
+  }
+
+  const handleDeleteReturnSignature = async () => {
+    if (!confirm('Voulez-vous vraiment supprimer la signature de retour?')) return
+    await deleteReturn.mutateAsync(loan.id)
   }
 
   const canClose = isOpen && hasLines && hasPickupSignature
@@ -269,6 +286,28 @@ export function LoanDetailsPage() {
                 <p className="text-sm text-muted-foreground">
                   Signée le {loan.pickupSignedAt ? formatDate(loan.pickupSignedAt) : '-'}
                 </p>
+                {isAdmin && (
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowPickupCanvas(true)}
+                      disabled={deletePickup.isPending}
+                    >
+                      <Pen className="h-4 w-4 mr-2" />
+                      Modifier
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={handleDeletePickupSignature}
+                      disabled={deletePickup.isPending}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Supprimer
+                    </Button>
+                  </div>
+                )}
               </div>
             ) : isOpen ? (
               <div>
@@ -321,6 +360,28 @@ export function LoanDetailsPage() {
                 <p className="text-sm text-muted-foreground">
                   Signée le {loan.returnSignedAt ? formatDate(loan.returnSignedAt) : '-'}
                 </p>
+                {isAdmin && (
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowReturnCanvas(true)}
+                      disabled={deleteReturn.isPending}
+                    >
+                      <Pen className="h-4 w-4 mr-2" />
+                      Modifier
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={handleDeleteReturnSignature}
+                      disabled={deleteReturn.isPending}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Supprimer
+                    </Button>
+                  </div>
+                )}
               </div>
             ) : isOpen ? (
               <div>

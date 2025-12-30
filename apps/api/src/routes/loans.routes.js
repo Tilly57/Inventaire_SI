@@ -2,7 +2,7 @@
  * Loans routes - ADMIN and GESTIONNAIRE
  */
 import express from 'express';
-import { getAllLoans, getLoanById, createLoan, addLoanLine, removeLoanLine, uploadPickupSignature, uploadReturnSignature, closeLoan, deleteLoan, batchDeleteLoans } from '../controllers/loans.controller.js';
+import { getAllLoans, getLoanById, createLoan, addLoanLine, removeLoanLine, uploadPickupSignature, uploadReturnSignature, closeLoan, deleteLoan, batchDeleteLoans, deletePickupSignature, deleteReturnSignature } from '../controllers/loans.controller.js';
 import { requireAuth } from '../middleware/auth.js';
 import { requireManager, requireAdmin } from '../middleware/rbac.js';
 import { validate } from '../middleware/validateRequest.js';
@@ -24,6 +24,8 @@ router.post('/:id/lines', validate(addLoanLineSchema), addLoanLine);
 router.delete('/:id/lines/:lineId', removeLoanLine);
 router.post('/:id/pickup-signature', upload.single('signature'), uploadPickupSignature);
 router.post('/:id/return-signature', upload.single('signature'), uploadReturnSignature);
+router.delete('/:id/pickup-signature', requireAdmin, deletePickupSignature);
+router.delete('/:id/return-signature', requireAdmin, deleteReturnSignature);
 router.patch('/:id/close', closeLoan);
 router.delete('/:id', deleteLoan);
 

@@ -455,3 +455,75 @@ export const batchDeleteLoans = asyncHandler(async (req, res) => {
     data: result
   });
 });
+
+/**
+ * Delete pickup signature (ADMIN only)
+ *
+ * Route: DELETE /api/loans/:id/pickup-signature
+ * Access: ADMIN only
+ *
+ * Removes the pickup signature from a loan.
+ *
+ * @param {string} req.params.id - Loan ID
+ *
+ * @returns {Object} 200 - Updated loan without pickup signature
+ * @returns {Object} 404 - Loan not found
+ * @returns {Object} 403 - Not authorized (non-ADMIN)
+ *
+ * @example
+ * DELETE /api/loans/ckx123/pickup-signature
+ *
+ * Response 200:
+ * {
+ *   "success": true,
+ *   "data": {
+ *     "id": "ckx123",
+ *     "pickupSignatureUrl": null,
+ *     "pickupSignedAt": null
+ *   }
+ * }
+ */
+export const deletePickupSignature = asyncHandler(async (req, res) => {
+  const loan = await loansService.deletePickupSignature(req.params.id);
+
+  res.json({
+    success: true,
+    data: loan
+  });
+});
+
+/**
+ * Delete return signature (ADMIN only)
+ *
+ * Route: DELETE /api/loans/:id/return-signature
+ * Access: ADMIN only
+ *
+ * Removes the return signature from a loan.
+ *
+ * @param {string} req.params.id - Loan ID
+ *
+ * @returns {Object} 200 - Updated loan without return signature
+ * @returns {Object} 404 - Loan not found
+ * @returns {Object} 403 - Not authorized (non-ADMIN)
+ *
+ * @example
+ * DELETE /api/loans/ckx123/return-signature
+ *
+ * Response 200:
+ * {
+ *   "success": true,
+ *   "data": {
+ *     "id": "ckx123",
+ *     "returnSignatureUrl": null,
+ *     "returnSignedAt": null
+ *   }
+ * }
+ */
+export const deleteReturnSignature = asyncHandler(async (req, res) => {
+  const loan = await loansService.deleteReturnSignature(req.params.id);
+
+  res.json({
+    success: true,
+    data: loan
+  });
+});
