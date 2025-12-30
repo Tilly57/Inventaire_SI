@@ -23,15 +23,15 @@ const colorClasses = {
 
 export function StatsCard({ title, value, icon: Icon, description, color = 'primary' }: StatsCardProps) {
   return (
-    <Card>
+    <Card className="border-accent-top stat-card group">
       <CardContent className="p-6">
         <div className="flex items-center gap-4">
-          <div className={`p-3 rounded-lg ${colorClasses[color]}`}>
+          <div className={`p-3 rounded-lg ${colorClasses[color]} transition-transform duration-300 group-hover:scale-110`}>
             <Icon className="h-6 w-6" />
           </div>
           <div className="flex-1">
             <p className="text-sm font-medium text-muted-foreground">{title}</p>
-            <p className="text-2xl font-bold">{value}</p>
+            <p className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">{value}</p>
             {description && (
               <p className="text-xs text-muted-foreground mt-1">{description}</p>
             )}

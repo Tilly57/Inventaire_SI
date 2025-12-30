@@ -11,10 +11,12 @@ import {
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Card } from '@/components/ui/card'
 import { Pencil, Trash2 } from 'lucide-react'
 import { StatusBadge } from './StatusBadge'
 import { AssetItemFormDialog } from './AssetItemFormDialog'
 import { DeleteAssetItemDialog } from './DeleteAssetItemDialog'
+import { useMediaQuery } from '@/lib/hooks/useMediaQuery'
 
 interface AssetItemsTableProps {
   items: AssetItem[]
@@ -29,6 +31,7 @@ export function AssetItemsTable({
 }: AssetItemsTableProps) {
   const [editingItem, setEditingItem] = useState<AssetItem | null>(null)
   const [deletingItem, setDeletingItem] = useState<AssetItem | null>(null)
+  const { isMobile } = useMediaQuery()
 
   const isAllSelected = items.length > 0 && selectedItems.length === items.length
   const isSomeSelected = selectedItems.length > 0 && selectedItems.length < items.length
@@ -48,9 +51,125 @@ export function AssetItemsTable({
     }
   }
 
+  // Vue mobile - Cards empilées
+  if (isMobile) {
+    if (items.length === 0) {
+      return (
+        <div className="flex items-center justify-center py-12 text-muted-foreground">
+          Aucun équipement trouvé
+        </div>
+      )
+    }
+
+    return (
+      <>
+        {/* Sélection globale en mobile */}
+        {onSelectionChange && (
+          <div className="flex items-center gap-2 mb-3 p-3 bg-muted/50 rounded-lg">
+            <Checkbox
+              checked={isSomeSelected ? 'indeterminate' : isAllSelected}
+              onCheckedChange={handleSelectAll}
+              aria-label="Sélectionner tout"
+            />
+            <span className="text-sm font-medium">
+              {selectedItems.length > 0
+                ? `${selectedItems.length} sélectionné(s)`
+                : 'Tout sélectionner'}
+            </span>
+          </div>
+        )}
+
+        <div className="space-y-3">
+          {items.map((item) => (
+            <Card key={item.id} className="p-4 animate-fadeIn">
+              <div className="space-y-3">
+                {/* En-tête avec checkbox et tag */}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3 flex-1">
+                    {onSelectionChange && (
+                      <Checkbox
+                        checked={selectedItems.includes(item.id)}
+                        onCheckedChange={(checked) => handleSelectItem(item.id, checked as boolean)}
+                        aria-label={`Sélectionner ${item.assetTag}`}
+                        className="mt-1"
+                      />
+                    )}
+                    <div className="flex-1">
+                      <p className="font-semibold text-base">{item.assetTag}</p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {item.assetModel
+                          ? `${item.assetModel.brand} ${item.assetModel.modelName}`
+                          : 'Non défini'}
+                      </p>
+                    </div>
+                  </div>
+                  <StatusBadge status={item.status} />
+                </div>
+
+                {/* Informations */}
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">N° série</span>
+                    <p className="font-medium">{item.serial || '-'}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Créé le</span>
+                    <p className="font-medium">{formatDate(item.createdAt)}</p>
+                  </div>
+                  {item.notes && (
+                    <div className="col-span-2">
+                      <span className="text-muted-foreground">Notes</span>
+                      <p className="font-medium text-sm">{item.notes}</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-2 pt-2 border-t">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => setEditingItem(item)}
+                  >
+                    <Pencil className="h-4 w-4 mr-2" />
+                    Modifier
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => setDeletingItem(item)}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Supprimer
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+
+        <AssetItemFormDialog
+          item={editingItem}
+          open={!!editingItem}
+          onClose={() => setEditingItem(null)}
+        />
+
+        <DeleteAssetItemDialog
+          item={deletingItem}
+          open={!!deletingItem}
+          onClose={() => setDeletingItem(null)}
+        />
+      </>
+    )
+  }
+
+  // Vue desktop - Tableau
   return (
     <>
-      <Table>
+      <div className="overflow-x-auto">
+        <Table>
         <TableHeader>
           <TableRow>
             {onSelectionChange && (
@@ -125,6 +244,7 @@ export function AssetItemsTable({
           )}
         </TableBody>
       </Table>
+      </div>
 
       <AssetItemFormDialog
         item={editingItem}

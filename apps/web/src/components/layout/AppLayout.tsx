@@ -14,7 +14,7 @@ export function AppLayout() {
         <Header />
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto bg-muted/40 p-4 md:p-6">
+        <main className="flex-1 overflow-y-auto bg-muted/40 p-3 md:p-6 lg:p-8 custom-scrollbar smooth-scroll">
           <Outlet />
         </main>
       </div>

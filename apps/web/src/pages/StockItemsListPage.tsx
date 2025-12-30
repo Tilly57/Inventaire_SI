@@ -65,9 +65,9 @@ export function StockItemsListPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Stock</h1>
+        <h1 className="text-2xl md:text-3xl font-bold">Stock</h1>
         <p className="text-muted-foreground mt-2">
           Vue consolidée de tous les équipements et consommables
         </p>
@@ -84,8 +84,8 @@ export function StockItemsListPage() {
         </Alert>
       )}
 
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+        <div className="relative flex-1 w-full sm:max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Rechercher par type, marque ou modèle..."
@@ -94,7 +94,7 @@ export function StockItemsListPage() {
             className="pl-10"
           />
         </div>
-        {/* <Button onClick={() => navigate('/asset-models')}>
+        {/* <Button onClick={() => navigate('/asset-models')} className="w-full sm:w-auto">
           <Plus className="h-4 w-4 mr-2" />
           Nouveau modèle
         </Button> */}

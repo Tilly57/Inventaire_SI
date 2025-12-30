@@ -20,6 +20,7 @@ import { useEquipmentTypes } from '@/lib/hooks/useEquipmentTypes';
 import { EquipmentTypeFormDialog } from './EquipmentTypeFormDialog';
 import { DeleteEquipmentTypeDialog } from './DeleteEquipmentTypeDialog';
 import type { EquipmentType } from '@/lib/types/models.types';
+import { useMediaQuery } from '@/lib/hooks/useMediaQuery';
 
 export function EquipmentTypesTable() {
   const { data: equipmentTypes, isLoading } = useEquipmentTypes();
@@ -27,6 +28,7 @@ export function EquipmentTypesTable() {
   const [deletingType, setDeletingType] = useState<EquipmentType | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const { isMobile } = useMediaQuery();
 
   const handleCreate = () => {
     setEditingType(null);
@@ -68,6 +70,95 @@ export function EquipmentTypesTable() {
     );
   }
 
+  // Vue mobile - Cards empilées
+  if (isMobile) {
+    return (
+      <>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Types d'équipement</CardTitle>
+            <Button onClick={handleCreate}>
+              Nouveau type
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {!equipmentTypes || equipmentTypes.length === 0 ? (
+              <div className="flex items-center justify-center py-8">
+                <p className="text-muted-foreground">Aucun type d'équipement</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {equipmentTypes.map((type) => (
+                  <Card key={type.id} className="p-4 animate-fadeIn">
+                    <div className="space-y-3">
+                      {/* En-tête avec nom */}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1">
+                          <p className="font-semibold text-base">{type.name}</p>
+                        </div>
+                      </div>
+
+                      {/* Informations */}
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">Nom</span>
+                          <p className="font-medium">{type.name}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Créé le</span>
+                          <p className="font-medium">
+                            {new Date(type.createdAt).toLocaleDateString('fr-FR')}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex gap-2 pt-2 border-t">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                          onClick={() => handleEdit(type)}
+                        >
+                          <Pencil className="h-4 w-4 mr-2" />
+                          Modifier
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                          onClick={() => handleDelete(type)}
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Supprimer
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <EquipmentTypeFormDialog
+          open={isFormOpen}
+          onOpenChange={setIsFormOpen}
+          onClose={handleFormClose}
+          equipmentType={editingType}
+        />
+
+        <DeleteEquipmentTypeDialog
+          open={isDeleteOpen}
+          onOpenChange={setIsDeleteOpen}
+          onClose={handleDeleteClose}
+          equipmentType={deletingType}
+        />
+      </>
+    );
+  }
+
+  // Vue desktop - Tableau
   return (
     <>
       <Card>
@@ -83,7 +174,8 @@ export function EquipmentTypesTable() {
               <p className="text-muted-foreground">Aucun type d'équipement</p>
             </div>
           ) : (
-            <Table>
+            <div className="overflow-x-auto">
+              <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Nom</TableHead>
@@ -120,6 +212,7 @@ export function EquipmentTypesTable() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           )}
         </CardContent>
       </Card>

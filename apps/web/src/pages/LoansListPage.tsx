@@ -121,17 +121,17 @@ export function LoansListPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Prêts</h1>
+        <h1 className="text-2xl md:text-3xl font-bold">Prêts</h1>
         <p className="text-muted-foreground mt-2">
           Gestion des prêts d'équipements aux employés
         </p>
       </div>
 
       <div className="flex flex-col gap-4">
-        <div className="flex items-center gap-4">
-          <div className="relative flex-1 max-w-sm">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div className="relative flex-1 w-full sm:max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Rechercher par employé..."
@@ -141,7 +141,7 @@ export function LoansListPage() {
             />
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[200px]">
+            <SelectTrigger className="w-full sm:w-[200px]">
               <SelectValue placeholder="Filtrer par statut" />
             </SelectTrigger>
             <SelectContent>
@@ -150,28 +150,32 @@ export function LoansListPage() {
               <SelectItem value={LoanStatus.CLOSED}>Fermé</SelectItem>
             </SelectContent>
           </Select>
-          {isAdmin && selectedLoanIds.length > 0 && (
-            <Button
-              variant="destructive"
-              onClick={() => setIsBulkDeleting(true)}
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Supprimer ({selectedLoanIds.length})
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            {isAdmin && selectedLoanIds.length > 0 && (
+              <Button
+                variant="destructive"
+                onClick={() => setIsBulkDeleting(true)}
+                className="w-full sm:w-auto"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Supprimer ({selectedLoanIds.length})
+              </Button>
+            )}
+            {isAdmin && (
+              <Button
+                variant="outline"
+                onClick={() => setIsPrintDialogOpen(true)}
+                className="w-full sm:w-auto"
+              >
+                <Printer className="h-4 w-4 mr-2" />
+                Imprimer l'historique
+              </Button>
+            )}
+            <Button onClick={() => setIsCreating(true)} className="w-full sm:w-auto">
+              <Plus className="h-4 w-4 mr-2" />
+              Nouveau prêt
             </Button>
-          )}
-          {isAdmin && (
-            <Button
-              variant="outline"
-              onClick={() => setIsPrintDialogOpen(true)}
-            >
-              <Printer className="h-4 w-4 mr-2" />
-              Imprimer l'historique
-            </Button>
-          )}
-          <Button onClick={() => setIsCreating(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Nouveau prêt
-          </Button>
+          </div>
         </div>
       </div>
 

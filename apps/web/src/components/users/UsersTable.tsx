@@ -12,9 +12,11 @@ import {
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Card } from '@/components/ui/card'
 import { Pencil, Trash2 } from 'lucide-react'
 import { UserFormDialog } from './UserFormDialog'
 import { DeleteUserDialog } from './DeleteUserDialog'
+import { useMediaQuery } from '@/lib/hooks/useMediaQuery'
 
 interface UsersTableProps {
   users: User[]
@@ -24,6 +26,7 @@ interface UsersTableProps {
 export function UsersTable({ users, currentUserId }: UsersTableProps) {
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [deletingUser, setDeletingUser] = useState<User | null>(null)
+  const { isMobile } = useMediaQuery()
 
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
@@ -36,9 +39,92 @@ export function UsersTable({ users, currentUserId }: UsersTableProps) {
     }
   }
 
+  // Vue mobile - Cards empilées
+  if (isMobile) {
+    if (users.length === 0) {
+      return (
+        <div className="flex items-center justify-center py-12 text-muted-foreground">
+          Aucun utilisateur trouvé
+        </div>
+      )
+    }
+
+    return (
+      <>
+        <div className="space-y-3">
+          {users.map((user) => (
+            <Card key={user.id} className="p-4 animate-fadeIn">
+              <div className="space-y-3">
+                {/* En-tête avec nom et rôle */}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1">
+                    <p className="font-semibold text-base">{user.username}</p>
+                    <p className="text-sm text-muted-foreground mt-1">{user.email}</p>
+                  </div>
+                  <Badge variant={getRoleBadgeVariant(user.role)}>
+                    {UserRoleLabels[user.role]}
+                  </Badge>
+                </div>
+
+                {/* Informations */}
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Rôle</span>
+                    <p className="font-medium">{UserRoleLabels[user.role]}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Créé le</span>
+                    <p className="font-medium">{formatDate(user.createdAt)}</p>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-2 pt-2 border-t">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => setEditingUser(user)}
+                  >
+                    <Pencil className="h-4 w-4 mr-2" />
+                    Modifier
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => setDeletingUser(user)}
+                    disabled={user.id === currentUserId}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Supprimer
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+
+        <UserFormDialog
+          user={editingUser}
+          open={!!editingUser}
+          onClose={() => setEditingUser(null)}
+        />
+
+        <DeleteUserDialog
+          user={deletingUser}
+          open={!!deletingUser}
+          onClose={() => setDeletingUser(null)}
+        />
+      </>
+    )
+  }
+
+  // Vue desktop - Tableau
   return (
     <>
-      <Table>
+      <div className="overflow-x-auto">
+        <Table>
         <TableHeader>
           <TableRow>
             <TableHead>Nom d'utilisateur</TableHead>
@@ -90,6 +176,7 @@ export function UsersTable({ users, currentUserId }: UsersTableProps) {
           )}
         </TableBody>
       </Table>
+      </div>
 
       <UserFormDialog
         user={editingUser}

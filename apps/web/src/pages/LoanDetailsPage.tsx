@@ -53,6 +53,7 @@ import { ArrowLeft, Plus, Trash2, Pen, CheckCircle, AlertCircle } from 'lucide-r
 import { BASE_URL } from '@/lib/utils/constants'
 import { useAuthStore } from '@/lib/stores/authStore'
 import { UserRole } from '@/lib/types/enums'
+import { useMediaQuery } from '@/lib/hooks/useMediaQuery'
 
 /**
  * Loan details page component
@@ -81,6 +82,7 @@ export function LoanDetailsPage() {
   const closeLoan = useCloseLoan()
   const deletePickup = useDeletePickupSignature()
   const deleteReturn = useDeleteReturnSignature()
+  const { isMobile } = useMediaQuery()
 
   const [isAddingLine, setIsAddingLine] = useState(false)
   const [showPickupCanvas, setShowPickupCanvas] = useState(false)
@@ -142,16 +144,16 @@ export function LoanDetailsPage() {
   const canClose = isOpen && hasLines && hasPickupSignature
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="sm" onClick={() => navigate('/loans')}>
+    <div className="space-y-4 md:space-y-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+        <Button variant="ghost" size="sm" onClick={() => navigate('/loans')} className="w-full sm:w-auto">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Retour
         </Button>
         <div className="flex-1">
-          <h1 className="text-3xl font-bold">Détails du prêt</h1>
+          <h1 className="text-2xl md:text-3xl font-bold">Détails du prêt</h1>
         </div>
-        <Badge variant={isOpen ? 'default' : 'secondary'} className="text-lg px-4 py-2">
+        <Badge variant={isOpen ? 'default' : 'secondary'} className="text-base sm:text-lg px-4 py-2">
           {isOpen ? 'Ouvert' : 'Fermé'}
         </Badge>
       </div>
@@ -159,10 +161,10 @@ export function LoanDetailsPage() {
       {/* Info employé */}
       <Card>
         <CardHeader>
-          <CardTitle>Informations</CardTitle>
+          <CardTitle className="text-lg md:text-xl">Informations</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <p className="text-sm text-muted-foreground">Employé</p>
               <p className="font-medium">
@@ -194,13 +196,13 @@ export function LoanDetailsPage() {
       {/* Articles prêtés */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <CardTitle>Articles prêtés</CardTitle>
+              <CardTitle className="text-lg md:text-xl">Articles prêtés</CardTitle>
               <CardDescription>{loan.lines?.length || 0} article(s)</CardDescription>
             </div>
             {isOpen && (
-              <Button onClick={() => setIsAddingLine(true)} size="sm">
+              <Button onClick={() => setIsAddingLine(true)} size="sm" className="w-full sm:w-auto">
                 <Plus className="h-4 w-4 mr-2" />
                 Ajouter
               </Button>
@@ -215,54 +217,113 @@ export function LoanDetailsPage() {
                 Aucun article n'a encore été ajouté à ce prêt
               </AlertDescription>
             </Alert>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Article</TableHead>
-                  <TableHead>N° de série</TableHead>
-                  <TableHead>Quantité</TableHead>
-                  <TableHead>Date du prêt</TableHead>
-                  {isOpen && <TableHead className="text-right">Actions</TableHead>}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loan.lines?.map((line) => (
-                  <TableRow key={line.id}>
-                    <TableCell>
-                      <Badge variant="outline">
-                        {line.assetItem ? 'Équipement' : 'Stock'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {line.assetItem
-                        ? `${line.assetItem.assetTag} - ${line.assetItem.assetModel?.brand} ${line.assetItem.assetModel?.modelName}`
-                        : line.stockItem?.assetModel ? `${line.stockItem.assetModel.brand} ${line.stockItem.assetModel.modelName}` : 'Inconnu'}
-                    </TableCell>
-                    <TableCell>
-                      {line.assetItem?.serial || '-'}
-                    </TableCell>
-                    <TableCell>{line.quantity}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {line.addedAt ? formatDate(line.addedAt) : formatDate(loan.createdAt)}
-                    </TableCell>
+          ) : isMobile ? (
+            /* Vue mobile - Cards empilées */
+            <div className="space-y-3">
+              {loan.lines?.map((line) => (
+                <Card key={line.id} className="p-4 animate-fadeIn">
+                  <div className="space-y-3">
+                    {/* En-tête avec type et article */}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Badge variant="outline">
+                            {line.assetItem ? 'Équipement' : 'Stock'}
+                          </Badge>
+                          <span className="text-sm font-semibold">x{line.quantity}</span>
+                        </div>
+                        <p className="font-semibold text-base">
+                          {line.assetItem
+                            ? `${line.assetItem.assetTag} - ${line.assetItem.assetModel?.brand} ${line.assetItem.assetModel?.modelName}`
+                            : line.stockItem?.assetModel ? `${line.stockItem.assetModel.brand} ${line.stockItem.assetModel.modelName}` : 'Inconnu'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Informations */}
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">N° de série</span>
+                        <p className="font-medium">{line.assetItem?.serial || '-'}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Date du prêt</span>
+                        <p className="font-medium">
+                          {line.addedAt ? formatDate(line.addedAt) : formatDate(loan.createdAt)}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
                     {isOpen && (
-                      <TableCell className="text-right">
+                      <div className="pt-2 border-t">
                         <Button
-                          variant="ghost"
+                          variant="outline"
                           size="sm"
+                          className="w-full"
                           onClick={() => handleRemoveLine(line.id)}
                           disabled={removeLine.isPending}
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Retirer du prêt
                         </Button>
-                      </TableCell>
+                      </div>
                     )}
+                  </div>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            /* Vue desktop - Tableau */
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Article</TableHead>
+                    <TableHead>N° de série</TableHead>
+                    <TableHead>Quantité</TableHead>
+                    <TableHead>Date du prêt</TableHead>
+                    {isOpen && <TableHead className="text-right">Actions</TableHead>}
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {loan.lines?.map((line) => (
+                    <TableRow key={line.id}>
+                      <TableCell>
+                        <Badge variant="outline">
+                          {line.assetItem ? 'Équipement' : 'Stock'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {line.assetItem
+                          ? `${line.assetItem.assetTag} - ${line.assetItem.assetModel?.brand} ${line.assetItem.assetModel?.modelName}`
+                          : line.stockItem?.assetModel ? `${line.stockItem.assetModel.brand} ${line.stockItem.assetModel.modelName}` : 'Inconnu'}
+                      </TableCell>
+                      <TableCell>
+                        {line.assetItem?.serial || '-'}
+                      </TableCell>
+                      <TableCell>{line.quantity}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {line.addedAt ? formatDate(line.addedAt) : formatDate(loan.createdAt)}
+                      </TableCell>
+                      {isOpen && (
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveLine(line.id)}
+                            disabled={removeLine.isPending}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -272,7 +333,7 @@ export function LoanDetailsPage() {
         {/* Signature retrait */}
         <Card>
           <CardHeader>
-            <CardTitle>Signature de retrait</CardTitle>
+            <CardTitle className="text-lg md:text-xl">Signature de retrait</CardTitle>
             <CardDescription>Signature de l'employé au retrait</CardDescription>
           </CardHeader>
           <CardContent>
@@ -346,7 +407,7 @@ export function LoanDetailsPage() {
         {/* Signature retour */}
         <Card>
           <CardHeader>
-            <CardTitle>Signature de retour</CardTitle>
+            <CardTitle className="text-lg md:text-xl">Signature de retour</CardTitle>
             <CardDescription>Signature de l'employé au retour</CardDescription>
           </CardHeader>
           <CardContent>
@@ -422,7 +483,7 @@ export function LoanDetailsPage() {
       {isOpen && (
         <Card>
           <CardHeader>
-            <CardTitle>Fermer le prêt</CardTitle>
+            <CardTitle className="text-lg md:text-xl">Fermer le prêt</CardTitle>
             <CardDescription>
               Fermez le prêt une fois tous les articles retournés
             </CardDescription>
@@ -432,6 +493,7 @@ export function LoanDetailsPage() {
               onClick={handleCloseLoan}
               disabled={!canClose || closeLoan.isPending}
               variant="default"
+              className="w-full sm:w-auto"
             >
               <CheckCircle className="h-4 w-4 mr-2" />
               {closeLoan.isPending ? 'Fermeture...' : 'Fermer le prêt'}

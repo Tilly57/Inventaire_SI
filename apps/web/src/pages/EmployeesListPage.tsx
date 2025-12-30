@@ -127,16 +127,16 @@ export function EmployeesListPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Employés</h1>
+        <h1 className="text-2xl md:text-3xl font-bold">Employés</h1>
         <p className="text-muted-foreground mt-2">
           Gérez les employés qui peuvent emprunter du matériel
         </p>
       </div>
 
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+        <div className="relative flex-1 w-full sm:max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Rechercher par nom, email ou département..."
@@ -145,20 +145,22 @@ export function EmployeesListPage() {
             className="pl-10"
           />
         </div>
-        {selectedEmployees.length > 0 && (
-          <Button variant="destructive" onClick={handleBulkDelete}>
-            <Trash2 className="h-4 w-4 mr-2" />
-            Supprimer ({selectedEmployees.length})
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          {selectedEmployees.length > 0 && (
+            <Button variant="destructive" onClick={handleBulkDelete} className="w-full sm:w-auto">
+              <Trash2 className="h-4 w-4 mr-2" />
+              Supprimer ({selectedEmployees.length})
+            </Button>
+          )}
+          <Button variant="outline" onClick={() => setIsImporting(true)} className="w-full sm:w-auto">
+            <Upload className="h-4 w-4 mr-2" />
+            Importer Excel
           </Button>
-        )}
-        <Button variant="outline" onClick={() => setIsImporting(true)}>
-          <Upload className="h-4 w-4 mr-2" />
-          Importer Excel
-        </Button>
-        <Button onClick={() => setIsCreating(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Nouvel employé
-        </Button>
+          <Button onClick={() => setIsCreating(true)} className="w-full sm:w-auto">
+            <Plus className="h-4 w-4 mr-2" />
+            Nouvel employé
+          </Button>
+        </div>
       </div>
 
       {selectedEmployees.length > 0 && (

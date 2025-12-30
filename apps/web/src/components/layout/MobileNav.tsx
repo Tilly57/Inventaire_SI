@@ -68,7 +68,7 @@ export function MobileNav() {
         </SheetHeader>
 
         {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-1">
+        <nav className="flex-1 p-4 space-y-2">
           {visibleItems.map((item) => {
             const Icon = iconMap[item.icon as keyof typeof iconMap]
             const isActive = location.pathname === item.path
@@ -79,7 +79,7 @@ export function MobileNav() {
                 to={item.path}
                 onClick={() => setOpen(false)}
                 className={cn(
-                  'flex items-center gap-3 px-4 py-3 rounded-md transition-colors',
+                  'flex items-center gap-3 px-4 py-4 rounded-md transition-colors min-h-[48px]',
                   'hover:bg-accent hover:text-accent-foreground',
                   isActive
                     ? 'bg-primary text-primary-foreground hover:bg-primary/90'

@@ -45,7 +45,7 @@ export function LoginPage() {
             />
           </div>
 
-          <CardTitle className="text-2xl font-bold text-center">
+          <CardTitle className="text-xl md:text-2xl font-bold text-center">
             Inventaire SI
           </CardTitle>
           <CardDescription className="text-center">

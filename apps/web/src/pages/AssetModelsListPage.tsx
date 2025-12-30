@@ -75,9 +75,9 @@ export function AssetModelsListPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Modèles d'équipements</h1>
+        <h1 className="text-2xl md:text-3xl font-bold">Modèles d'équipements</h1>
         <p className="text-muted-foreground mt-2">
           Gérez les modèles d'équipements disponibles
         </p>
@@ -89,9 +89,9 @@ export function AssetModelsListPage() {
           {isAdmin && <TabsTrigger value="types">Types d'équipement</TabsTrigger>}
         </TabsList>
 
-        <TabsContent value="models" className="space-y-6 mt-6">
-          <div className="flex items-center gap-4">
-        <div className="relative flex-1 max-w-sm">
+        <TabsContent value="models" className="space-y-4 md:space-y-6 mt-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+        <div className="relative flex-1 w-full sm:max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Rechercher par marque, modèle ou type..."
@@ -100,19 +100,22 @@ export function AssetModelsListPage() {
             className="pl-10"
           />
         </div>
-        {isAdmin && selectedModelIds.length > 0 && (
-          <Button
-            variant="destructive"
-            onClick={() => setIsBulkDeleting(true)}
-          >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Supprimer ({selectedModelIds.length})
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          {isAdmin && selectedModelIds.length > 0 && (
+            <Button
+              variant="destructive"
+              onClick={() => setIsBulkDeleting(true)}
+              className="w-full sm:w-auto"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Supprimer ({selectedModelIds.length})
+            </Button>
+          )}
+          <Button onClick={() => setIsCreating(true)} className="w-full sm:w-auto">
+            <Plus className="h-4 w-4 mr-2" />
+            Nouveau modèle
           </Button>
-        )}
-        <Button onClick={() => setIsCreating(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Nouveau modèle
-        </Button>
+        </div>
       </div>
 
       {isAdmin && selectedModelIds.length > 0 && (

@@ -32,13 +32,13 @@ export function Header() {
       </div>
 
       {/* Logo and Company Name - Centered */}
-      <div className="flex-1 flex items-center justify-center gap-3">
+      <div className="flex-1 flex items-center justify-center gap-2 sm:gap-3">
         {/* Logo */}
         <div className="flex items-center">
           <img
             src="/images/logo.jpg"
             alt="Groupe Tilly Logo"
-            className="h-12 w-auto object-contain"
+            className="h-10 sm:h-12 w-auto object-contain"
             onError={(e) => {
               // Fallback si le logo n'existe pas encore
               e.currentTarget.style.display = 'none'
@@ -48,7 +48,7 @@ export function Header() {
 
         {/* Company Name */}
         <div className="flex flex-col">
-          <h1 className="text-xl font-bold text-[#EE2722] leading-tight">Groupe Tilly</h1>
+          <h1 className="text-lg sm:text-xl font-bold text-[#EE2722] leading-tight">Groupe Tilly</h1>
           <p className="text-xs text-gray-400 hidden md:block">Inventaire SI</p>
         </div>
       </div>

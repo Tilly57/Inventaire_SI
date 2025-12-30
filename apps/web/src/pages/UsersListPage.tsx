@@ -68,16 +68,16 @@ export function UsersListPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Utilisateurs</h1>
+        <h1 className="text-2xl md:text-3xl font-bold">Utilisateurs</h1>
         <p className="text-muted-foreground mt-2">
           Gérez les utilisateurs du système et leurs permissions
         </p>
       </div>
 
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="relative flex-1 w-full sm:max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Rechercher par nom ou email..."
@@ -86,7 +86,7 @@ export function UsersListPage() {
             className="pl-10"
           />
         </div>
-        <Button onClick={() => setIsCreating(true)}>
+        <Button onClick={() => setIsCreating(true)} className="w-full sm:w-auto">
           <Plus className="h-4 w-4 mr-2" />
           Nouvel utilisateur
         </Button>
