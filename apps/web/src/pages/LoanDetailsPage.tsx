@@ -220,58 +220,67 @@ export function LoanDetailsPage() {
           ) : isMobile ? (
             /* Vue mobile - Cards empilées */
             <div className="space-y-3">
-              {loan.lines?.map((line) => (
-                <Card key={line.id} className="p-4 animate-fadeIn">
-                  <div className="space-y-3">
-                    {/* En-tête avec type et article */}
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Badge variant="outline">
-                            {line.assetItem ? 'Équipement' : 'Stock'}
-                          </Badge>
-                          <span className="text-sm font-semibold">x{line.quantity}</span>
+              {loan.lines?.map((line) => {
+                const isOutOfService = line.assetItem?.status === 'HS'
+                return (
+                  <Card
+                    key={line.id}
+                    className={`p-4 animate-fadeIn ${isOutOfService ? 'border-destructive bg-destructive/5' : ''}`}
+                  >
+                    <div className="space-y-3">
+                      {/* En-tête avec type et article */}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Badge variant="outline">
+                              {line.assetItem ? 'Équipement' : 'Stock'}
+                            </Badge>
+                            <span className="text-sm font-semibold">x{line.quantity}</span>
+                            {isOutOfService && (
+                              <Badge variant="destructive">Hors service</Badge>
+                            )}
+                          </div>
+                          <p className="font-semibold text-base">
+                            {line.assetItem
+                              ? `${line.assetItem.assetTag} - ${line.assetItem.assetModel?.brand} ${line.assetItem.assetModel?.modelName}`
+                              : line.stockItem?.assetModel ? `${line.stockItem.assetModel.brand} ${line.stockItem.assetModel.modelName}` : 'Inconnu'}
+                          </p>
                         </div>
-                        <p className="font-semibold text-base">
-                          {line.assetItem
-                            ? `${line.assetItem.assetTag} - ${line.assetItem.assetModel?.brand} ${line.assetItem.assetModel?.modelName}`
-                            : line.stockItem?.assetModel ? `${line.stockItem.assetModel.brand} ${line.stockItem.assetModel.modelName}` : 'Inconnu'}
-                        </p>
                       </div>
-                    </div>
 
-                    {/* Informations */}
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div>
-                        <span className="text-muted-foreground">N° de série</span>
-                        <p className="font-medium">{line.assetItem?.serial || '-'}</p>
+                      {/* Informations */}
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">N° de série</span>
+                          <p className="font-medium">{line.assetItem?.serial || '-'}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Date du prêt</span>
+                          <p className="font-medium">
+                            {line.addedAt ? formatDate(line.addedAt) : formatDate(loan.createdAt)}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <span className="text-muted-foreground">Date du prêt</span>
-                        <p className="font-medium">
-                          {line.addedAt ? formatDate(line.addedAt) : formatDate(loan.createdAt)}
-                        </p>
-                      </div>
-                    </div>
 
-                    {/* Actions */}
-                    {isOpen && (
-                      <div className="pt-2 border-t">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full"
-                          onClick={() => handleRemoveLine(line.id)}
-                          disabled={removeLine.isPending}
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Retirer du prêt
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                </Card>
-              ))}
+                      {/* Actions */}
+                      {isOpen && (
+                        <div className="pt-2 border-t">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full"
+                            onClick={() => handleRemoveLine(line.id)}
+                            disabled={removeLine.isPending}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Retirer du prêt
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+                )
+              })}
             </div>
           ) : (
             /* Vue desktop - Tableau */
@@ -282,45 +291,81 @@ export function LoanDetailsPage() {
                     <TableHead>Type</TableHead>
                     <TableHead>Article</TableHead>
                     <TableHead>N° de série</TableHead>
+                    <TableHead>Statut</TableHead>
                     <TableHead>Quantité</TableHead>
                     <TableHead>Date du prêt</TableHead>
                     {isOpen && <TableHead className="text-right">Actions</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {loan.lines?.map((line) => (
-                    <TableRow key={line.id}>
-                      <TableCell>
-                        <Badge variant="outline">
-                          {line.assetItem ? 'Équipement' : 'Stock'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {line.assetItem
-                          ? `${line.assetItem.assetTag} - ${line.assetItem.assetModel?.brand} ${line.assetItem.assetModel?.modelName}`
-                          : line.stockItem?.assetModel ? `${line.stockItem.assetModel.brand} ${line.stockItem.assetModel.modelName}` : 'Inconnu'}
-                      </TableCell>
-                      <TableCell>
-                        {line.assetItem?.serial || '-'}
-                      </TableCell>
-                      <TableCell>{line.quantity}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {line.addedAt ? formatDate(line.addedAt) : formatDate(loan.createdAt)}
-                      </TableCell>
-                      {isOpen && (
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleRemoveLine(line.id)}
-                            disabled={removeLine.isPending}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                  {loan.lines?.map((line) => {
+                    const isOutOfService = line.assetItem?.status === 'HS'
+                    const getStatusLabel = (status?: string) => {
+                      if (!status) return '-'
+                      switch (status) {
+                        case 'HS': return 'Hors service'
+                        case 'EN_STOCK': return 'En stock'
+                        case 'PRETE': return 'Prêté'
+                        case 'REPARATION': return 'Réparation'
+                        default: return status
+                      }
+                    }
+                    const getStatusVariant = (status?: string): 'default' | 'destructive' | 'secondary' | 'outline' => {
+                      if (!status) return 'outline'
+                      switch (status) {
+                        case 'HS': return 'destructive'
+                        case 'EN_STOCK': return 'default'
+                        case 'PRETE': return 'secondary'
+                        case 'REPARATION': return 'outline'
+                        default: return 'outline'
+                      }
+                    }
+                    return (
+                      <TableRow
+                        key={line.id}
+                        className={isOutOfService ? 'bg-destructive/5 border-l-4 border-l-destructive' : ''}
+                      >
+                        <TableCell>
+                          <Badge variant="outline">
+                            {line.assetItem ? 'Équipement' : 'Stock'}
+                          </Badge>
                         </TableCell>
-                      )}
-                    </TableRow>
-                  ))}
+                        <TableCell>
+                          {line.assetItem
+                            ? `${line.assetItem.assetTag} - ${line.assetItem.assetModel?.brand} ${line.assetItem.assetModel?.modelName}`
+                            : line.stockItem?.assetModel ? `${line.stockItem.assetModel.brand} ${line.stockItem.assetModel.modelName}` : 'Inconnu'}
+                        </TableCell>
+                        <TableCell>
+                          {line.assetItem?.serial || '-'}
+                        </TableCell>
+                        <TableCell>
+                          {line.assetItem ? (
+                            <Badge variant={getStatusVariant(line.assetItem.status)}>
+                              {getStatusLabel(line.assetItem.status)}
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>{line.quantity}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {line.addedAt ? formatDate(line.addedAt) : formatDate(loan.createdAt)}
+                        </TableCell>
+                        {isOpen && (
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleRemoveLine(line.id)}
+                              disabled={removeLine.isPending}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        )}
+                      </TableRow>
+                    )
+                  })}
                 </TableBody>
               </Table>
             </div>

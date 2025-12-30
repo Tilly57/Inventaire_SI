@@ -2,7 +2,7 @@ import { useDashboardStats } from '@/lib/hooks/useDashboard'
 import { StatsCard } from '@/components/dashboard/StatsCard'
 import { RecentLoans } from '@/components/dashboard/RecentLoans'
 import { LowStockAlert } from '@/components/dashboard/LowStockAlert'
-import { Users, Laptop, FileText, TrendingUp } from 'lucide-react'
+import { Users, Laptop, FileText, TrendingUp, AlertTriangle } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertCircle } from 'lucide-react'
 
@@ -34,13 +34,13 @@ export function DashboardPage() {
 
       {/* Statistics Cards */}
       {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-          {[1, 2, 3, 4].map((i) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6">
+          {[1, 2, 3, 4, 5].map((i) => (
             <div key={i} className="h-32 bg-muted/50 animate-pulse rounded-lg" />
           ))}
         </div>
       ) : stats ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6">
           <div className="animate-slideIn" style={{ animationDelay: '100ms' }}>
             <StatsCard
               title="Employés"
@@ -75,6 +75,15 @@ export function DashboardPage() {
               icon={TrendingUp}
               color="warning"
               description="Actuellement en prêt"
+            />
+          </div>
+          <div className="animate-slideIn" style={{ animationDelay: '500ms' }}>
+            <StatsCard
+              title="Hors service"
+              value={stats.outOfServiceAssets}
+              icon={AlertTriangle}
+              color="danger"
+              description="Appareils hors service"
             />
           </div>
         </div>

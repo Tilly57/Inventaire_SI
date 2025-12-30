@@ -243,6 +243,7 @@ export interface DashboardStats {
   totalAssets: number
   activeLoans: number
   loanedAssets: number
+  outOfServiceAssets: number
 }
 
 // Low stock alert item (unified type for StockItem and grouped AssetItem)

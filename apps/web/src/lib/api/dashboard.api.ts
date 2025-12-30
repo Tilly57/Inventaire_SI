@@ -27,6 +27,7 @@ import { LOW_STOCK_THRESHOLD } from '@/lib/utils/constants'
  * - totalAssets: Count of all physical asset items
  * - activeLoans: Count of loans with status='OPEN'
  * - loanedAssets: Total count of lines in all active loans
+ * - outOfServiceAssets: Count of assets with status='HS' (hors service)
  *
  * Returns default values (all zeros) if any endpoint fails to prevent
  * dashboard from crashing.
@@ -39,7 +40,8 @@ import { LOW_STOCK_THRESHOLD } from '@/lib/utils/constants'
  * //   totalEmployees: 125,
  * //   totalAssets: 450,
  * //   activeLoans: 23,
- * //   loanedAssets: 67  // Sum of all lines in active loans
+ * //   loanedAssets: 67,  // Sum of all lines in active loans
+ * //   outOfServiceAssets: 8  // Assets with status='HS'
  * // }
  */
 export async function getDashboardStatsApi(): Promise<DashboardStats> {
@@ -69,15 +71,29 @@ export async function getDashboardStatsApi(): Promise<DashboardStats> {
 
     // Count total loaned items (sum of line counts in active loans)
     // Each loan line represents one loaned item or stock quantity
+    // Exclude items with status='HS' (out of service)
     const loanedAssets = loans
       .filter(loan => loan.status === 'OPEN')
-      .reduce((sum, loan) => sum + (loan.lines?.length || 0), 0)
+      .reduce((sum, loan) => {
+        const validLines = loan.lines?.filter(line => {
+          // Exclude AssetItems that are out of service (HS)
+          if (line.assetItem && line.assetItem.status === 'HS') {
+            return false
+          }
+          return true
+        }) || []
+        return sum + validLines.length
+      }, 0)
+
+    // Count out of service assets (status='HS')
+    const outOfServiceAssets = assets.filter(asset => asset.status === 'HS').length
 
     return {
       totalEmployees: employees.length,
       totalAssets: assets.length,
       activeLoans,
       loanedAssets,
+      outOfServiceAssets,
     }
   } catch (error) {
     // Return default values if endpoints fail
@@ -87,6 +103,7 @@ export async function getDashboardStatsApi(): Promise<DashboardStats> {
       totalAssets: 0,
       activeLoans: 0,
       loanedAssets: 0,
+      outOfServiceAssets: 0,
     }
   }
 }
@@ -179,14 +196,17 @@ export async function getLowStockItemsApi(): Promise<LowStockAlertItem[]> {
     })
 
     // Process AssetItems (individual equipment) - group by model
+    // Exclude out of service items (HS) from stock alerts
     const assetsByModel = new Map<string, AssetItem[]>()
 
-    assetItems.forEach(item => {
-      if (!assetsByModel.has(item.assetModelId)) {
-        assetsByModel.set(item.assetModelId, [])
-      }
-      assetsByModel.get(item.assetModelId)!.push(item)
-    })
+    assetItems
+      .filter(item => item.status !== 'HS') // Exclude HS items from stock alerts
+      .forEach(item => {
+        if (!assetsByModel.has(item.assetModelId)) {
+          assetsByModel.set(item.assetModelId, [])
+        }
+        assetsByModel.get(item.assetModelId)!.push(item)
+      })
 
     // Count EN_STOCK items per model and create alerts
     assetsByModel.forEach((items, modelId) => {
