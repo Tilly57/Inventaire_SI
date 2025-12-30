@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.4] - 2025-12-30
+
+### Added
+- **Date de prêt par article** - Chaque article dans un prêt affiche maintenant sa propre date d'ajout (colonne "Date du prêt")
+- Champ `addedAt` dans LoanLine pour tracker quand chaque article est prêté
+
+### Fixed
+- **Rafraîchissement cache équipements** - Les modifications s'affichent immédiatement dans le tableau
+
 ## [0.6.3] - 2025-12-30
 
 ### Fixed
