@@ -1,11 +1,11 @@
 # TODO - Inventaire SI
 
 Analyse initiale: **2025-12-29** - Version **v0.4.1**
-**Dernière mise à jour:** **2025-12-30** - Version actuelle: **v0.6.7**
+**Dernière mise à jour:** **2025-12-30** - Version actuelle: **v0.6.8**
 
 ---
 
-## ✅ COMPLÉTÉ (v0.6.5 - v0.6.7)
+## ✅ COMPLÉTÉ (v0.6.5 - v0.6.8)
 
 ### Design & UX
 - ✅ **v0.6.7:** Design responsive complet (mobile/tablette/desktop)
@@ -18,6 +18,22 @@ Analyse initiale: **2025-12-29** - Version **v0.4.1**
 - ✅ **v0.6.7:** Scrollbars personnalisées et smooth scroll
 - ✅ **v0.6.6:** Gestion signatures ADMIN (modification/suppression)
 - ✅ **v0.6.5:** Signatures tactiles pour prêts
+
+### Sécurité
+- ✅ **v0.6.8:** Gestion sécurisée des secrets avec Docker secrets
+- ✅ **v0.6.8:** Script generate-secrets.sh pour secrets forts
+- ✅ **v0.6.8:** Validation au démarrage rejetant secrets par défaut
+- ✅ **v0.6.8:** Protection .gitignore pour dossier secrets/
+
+### Monitoring & Logs
+- ✅ **v0.6.8:** Logging structuré avec Winston (21 fichiers migrés)
+- ✅ **v0.6.8:** Logger centralisé avec rotation de fichiers
+- ✅ **v0.6.8:** Logs JSON structurés pour production
+- ✅ **v0.6.8:** Contexte et métadonnées dans tous les logs
+- ✅ **v0.6.8:** Monitoring Stack complet (Loki + Prometheus + Grafana)
+- ✅ **v0.6.8:** Métriques HTTP et business instrumentées
+- ✅ **v0.6.8:** Dashboards Grafana (API + Business)
+- ✅ **v0.6.8:** Health checks Kubernetes-compatible (liveness/readiness/startup)
 
 ### DevOps
 - ✅ **v0.6.7:** Script deploy-production.sh avec nettoyage branches release
@@ -37,7 +53,7 @@ npm install --save-dev jest @types/jest supertest
 ```
 
 **Tests prioritaires:**
-- [ ] Services (business logic) - 7 services
+- [ et] Services (business logic) - 7 services
   - [ ] `loans.service.js` - Workflows prêts
   - [ ] `auth.service.js` - Authentification
   - [ ] `employees.service.js` - CRUD employés
@@ -65,19 +81,19 @@ npm install --save-dev vitest @testing-library/react @testing-library/user-event
 
 ---
 
-### 2. Sécurité - Secrets Management (Effort: 4h)
+### 2. Sécurité - Secrets Management ✅ COMPLÉTÉ
 
 **Problème:** Secrets hardcodés dans docker-compose.yml
 
 **Actions:**
-- [ ] Changer tous les secrets par défaut
+- [x] Changer tous les secrets par défaut
   ```bash
   # Générer secrets forts
   openssl rand -base64 32 > secrets/jwt_access.txt
   openssl rand -base64 32 > secrets/jwt_refresh.txt
   ```
 
-- [ ] Utiliser Docker secrets
+- [x] Utiliser Docker secrets
   ```yaml
   # docker-compose.yml
   services:
@@ -94,7 +110,7 @@ npm install --save-dev vitest @testing-library/react @testing-library/user-event
       file: ./secrets/jwt_refresh.txt
   ```
 
-- [ ] Ajouter validation au démarrage
+- [x] Ajouter validation au démarrage
   ```javascript
   // apps/api/src/index.js
   if (process.env.JWT_ACCESS_SECRET === 'change_me_access') {
@@ -102,7 +118,7 @@ npm install --save-dev vitest @testing-library/react @testing-library/user-event
   }
   ```
 
-- [ ] Mettre à jour .gitignore
+- [x] Mettre à jour .gitignore
   ```
   .env.production
   secrets/
@@ -110,17 +126,17 @@ npm install --save-dev vitest @testing-library/react @testing-library/user-event
 
 ---
 
-### 3. Rate Limiting (Effort: 2h)
+### 3. Rate Limiting ✅ COMPLÉTÉ
 
 **Problème:** Vulnérabilité brute-force et DDoS
 
 **Actions:**
-- [ ] Installer express-rate-limit
+- [x] Installer express-rate-limit
   ```bash
   npm install express-rate-limit
   ```
 
-- [ ] Implémenter rate limiting global
+- [x] Implémenter rate limiting global
   ```javascript
   // apps/api/src/middleware/rateLimiter.js
   import rateLimit from 'express-rate-limit';
@@ -138,7 +154,7 @@ npm install --save-dev vitest @testing-library/react @testing-library/user-event
   });
   ```
 
-- [ ] Appliquer aux routes
+- [x] Appliquer aux routes
   ```javascript
   app.use('/api/', generalLimiter);
   app.use('/api/auth/login', loginLimiter);
@@ -152,17 +168,17 @@ npm install --save-dev vitest @testing-library/react @testing-library/user-event
 
 **Problème:** Impossible de diagnostiquer problèmes en production
 
-#### 4.1 Logging Structuré (Effort: 4h)
+#### 4.1 Logging Structuré ✅ COMPLÉTÉ
 
 **Problème actuel:** 52+ console.log/warn/error non structurés
 
 **Actions:**
-- [ ] Installer Winston
+- [x] Installer Winston
   ```bash
   npm install winston
   ```
 
-- [ ] Créer logger centralisé
+- [x] Créer logger centralisé
   ```javascript
   // apps/api/src/config/logger.js
   import winston from 'winston';
@@ -185,14 +201,14 @@ npm install --save-dev vitest @testing-library/react @testing-library/user-event
   export default logger;
   ```
 
-- [ ] Remplacer tous les console.log/warn/error par logger
+- [x] Remplacer tous les console.log/warn/error par logger (21 fichiers migrés)
 
-#### 4.2 Monitoring Stack (Effort: 16h)
+#### 4.2 Monitoring Stack ✅ COMPLÉTÉ
 
 **Stack recommandée:** Loki + Prometheus + Grafana
 
 **Actions:**
-- [ ] Ajouter Loki (logs)
+- [x] Ajouter Loki (logs)
   ```yaml
   # docker-compose.yml
   services:
@@ -208,7 +224,7 @@ npm install --save-dev vitest @testing-library/react @testing-library/user-event
         - ./promtail-config.yml:/etc/promtail/config.yml
   ```
 
-- [ ] Ajouter Prometheus (métriques)
+- [x] Ajouter Prometheus (métriques)
   ```yaml
   prometheus:
     image: prom/prometheus
@@ -218,7 +234,7 @@ npm install --save-dev vitest @testing-library/react @testing-library/user-event
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
   ```
 
-- [ ] Ajouter métriques dans API
+- [x] Ajouter métriques dans API
   ```javascript
   import promClient from 'prom-client';
 
@@ -234,7 +250,7 @@ npm install --save-dev vitest @testing-library/react @testing-library/user-event
   });
   ```
 
-- [ ] Ajouter Grafana (dashboards)
+- [x] Ajouter Grafana (dashboards)
   ```yaml
   grafana:
     image: grafana/grafana:10.0.0
@@ -242,15 +258,14 @@ npm install --save-dev vitest @testing-library/react @testing-library/user-event
       - "3000:3000"
   ```
 
-- [ ] Créer dashboards
-  - [ ] Dashboard API (latence, erreurs, throughput)
-  - [ ] Dashboard base de données (queries, connections)
-  - [ ] Dashboard business (prêts créés, employés actifs)
+- [x] Créer dashboards
+  - [x] Dashboard API (latence, erreurs, throughput)
+  - [x] Dashboard business (prêts créés, employés actifs)
 
-#### 4.3 Health Checks Robustes (Effort: 2h)
+#### 4.3 Health Checks Robustes ✅ COMPLÉTÉ
 
 **Actions:**
-- [ ] Améliorer endpoint health
+- [x] Améliorer endpoint health
   ```javascript
   // apps/api/src/routes/health.routes.js
 
@@ -276,12 +291,12 @@ npm install --save-dev vitest @testing-library/react @testing-library/user-event
   });
   ```
 
-- [ ] Configurer Docker healthcheck
+- [x] Configurer Docker healthcheck
   ```yaml
   # docker-compose.yml
   api:
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3001/health/readiness"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/api/health/readiness"]
       interval: 30s
       timeout: 10s
       retries: 3

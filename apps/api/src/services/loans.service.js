@@ -15,6 +15,7 @@ import { deleteSignatureFile, deleteSignatureFiles } from '../utils/fileUtils.js
 import { saveBase64Image } from '../utils/saveBase64Image.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import logger from '../config/logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -800,7 +801,7 @@ export async function deletePickupSignature(loanId) {
       await fs.unlink(filepath);
     } catch (err) {
       // File might not exist, ignore error
-      console.warn(`Could not delete signature file: ${filepath}`);
+      logger.warn(`Could not delete signature file: ${filepath}`);
     }
   }
 
@@ -853,7 +854,7 @@ export async function deleteReturnSignature(loanId) {
       await fs.unlink(filepath);
     } catch (err) {
       // File might not exist, ignore error
-      console.warn(`Could not delete signature file: ${filepath}`);
+      logger.warn(`Could not delete signature file: ${filepath}`);
     }
   }
 

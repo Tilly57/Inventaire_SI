@@ -21,6 +21,7 @@
 
 import { AppError, ValidationError } from '../utils/errors.js';
 import { Prisma } from '@prisma/client';
+import logger from '../config/logger.js';
 
 /**
  * Global error handler middleware
@@ -126,10 +127,10 @@ export const errorHandler = (err, req, res, next) => {
   // Development: Log all errors with stack traces
   // Production: Only log unexpected (non-operational) errors
   if (process.env.NODE_ENV === 'development') {
-    console.error('❌ Error:', err);
+    logger.error('❌ Error:', { error: err, stack: err.stack });
   } else if (!err.isOperational) {
     // Unexpected errors in production need investigation
-    console.error('❌ Unexpected Error:', err);
+    logger.error('❌ Unexpected Error:', { error: err, stack: err.stack });
   }
 
   // Send standardized JSON error response

@@ -5,11 +5,12 @@
  * by counting the quantity in active (OPEN) loans.
  */
 import { PrismaClient } from '@prisma/client';
+import logger from '../config/logger.js';
 
 const prisma = new PrismaClient();
 
 async function fixLoanedCounters() {
-  console.log('🔧 Fixing loaned counters for StockItems...\n');
+  logger.info('🔧 Fixing loaned counters for StockItems...\n');
 
   try {
     // Get all StockItems
@@ -19,7 +20,7 @@ async function fixLoanedCounters() {
       }
     });
 
-    console.log(`Found ${stockItems.length} StockItems\n`);
+    logger.info(`Found ${stockItems.length} StockItems\n`);
 
     for (const stockItem of stockItems) {
       // Calculate actual loaned quantity from OPEN loans
@@ -51,13 +52,13 @@ async function fixLoanedCounters() {
       const currentLoaned = stockItem.loaned || 0;
 
       if (actualLoaned !== currentLoaned) {
-        console.log(`⚠️  ${stockItem.assetModel.brand} ${stockItem.assetModel.modelName}`);
-        console.log(`   Current loaned: ${currentLoaned}, Actual loaned: ${actualLoaned}`);
+        logger.warn(`⚠️  ${stockItem.assetModel.brand} ${stockItem.assetModel.modelName}`);
+        logger.info(`   Current loaned: ${currentLoaned}, Actual loaned: ${actualLoaned}`);
 
         if (loanLines.length > 0) {
-          console.log(`   Active loans:`);
+          logger.info(`   Active loans:`);
           loanLines.forEach(line => {
-            console.log(`   - ${line.loan.employee.firstName} ${line.loan.employee.lastName}: ${line.quantity} items`);
+            logger.info(`   - ${line.loan.employee.firstName} ${line.loan.employee.lastName}: ${line.quantity} items`);
           });
         }
 
@@ -67,12 +68,12 @@ async function fixLoanedCounters() {
           data: { loaned: actualLoaned }
         });
 
-        console.log(`   ✅ Updated loaned counter to ${actualLoaned}\n`);
+        logger.info(`   ✅ Updated loaned counter to ${actualLoaned}\n`);
       }
     }
 
-    console.log('✅ All loaned counters have been fixed!');
-    console.log('\n📊 Summary:');
+    logger.info('✅ All loaned counters have been fixed!');
+    logger.info('\n📊 Summary:');
 
     // Show final state
     const finalStockItems = await prisma.stockItem.findMany({
@@ -83,12 +84,12 @@ async function fixLoanedCounters() {
 
     for (const item of finalStockItems) {
       if (item.loaned > 0) {
-        console.log(`   ${item.assetModel.brand} ${item.assetModel.modelName}: ${item.loaned} loaned out of ${item.quantity}`);
+        logger.info(`   ${item.assetModel.brand} ${item.assetModel.modelName}: ${item.loaned} loaned out of ${item.quantity}`);
       }
     }
 
   } catch (error) {
-    console.error('❌ Error fixing loaned counters:', error);
+    logger.error('❌ Error fixing loaned counters:', { error });
     throw error;
   } finally {
     await prisma.$disconnect();
@@ -96,4 +97,4 @@ async function fixLoanedCounters() {
 }
 
 fixLoanedCounters()
-  .catch(console.error);
+  .catch((error) => logger.error('Error:', { error }));

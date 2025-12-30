@@ -8,6 +8,7 @@
  */
 import 'dotenv/config';
 import prisma from '../config/database.js';
+import logger from '../config/logger.js';
 
 // Mapping from English enum values to French names
 const TYPE_MAPPING = {
@@ -25,12 +26,12 @@ const TYPE_MAPPING = {
 };
 
 async function main() {
-  console.log('🔄 Starting AssetModel type migration...');
-  console.log('Converting English types to French names\n');
+  logger.info('🔄 Starting AssetModel type migration...');
+  logger.info('Converting English types to French names\n');
 
   // Get all AssetModels
   const assetModels = await prisma.assetModel.findMany();
-  console.log(`Found ${assetModels.length} asset models to process`);
+  logger.info(`Found ${assetModels.length} asset models to process`);
 
   let successCount = 0;
   let skippedCount = 0;
@@ -42,7 +43,7 @@ async function main() {
 
     // If type is already in French or not in mapping, skip
     if (!newType || oldType === newType) {
-      console.log(`⏭️  Skipping: ${model.brand} ${model.modelName} (type: ${oldType}) - Already correct or not in mapping`);
+      logger.info(`⏭️  Skipping: ${model.brand} ${model.modelName} (type: ${oldType}) - Already correct or not in mapping`);
       skippedCount++;
       continue;
     }
@@ -53,30 +54,30 @@ async function main() {
         data: { type: newType }
       });
 
-      console.log(`✅ Converted: ${model.brand} ${model.modelName}`);
-      console.log(`   ${oldType} → ${newType}`);
+      logger.info(`✅ Converted: ${model.brand} ${model.modelName}`);
+      logger.info(`   ${oldType} → ${newType}`);
       successCount++;
     } catch (error) {
-      console.error(`❌ Error updating ${model.brand} ${model.modelName}:`, error.message);
+      logger.error(`❌ Error updating ${model.brand} ${model.modelName}:`, { message: error.message });
       errorCount++;
     }
   }
 
-  console.log('\n📊 Migration Summary:');
-  console.log(`   ✅ Successfully converted: ${successCount}`);
-  console.log(`   ⏭️  Skipped (already correct): ${skippedCount}`);
-  console.log(`   ❌ Errors: ${errorCount}`);
+  logger.info('\n📊 Migration Summary:');
+  logger.info(`   ✅ Successfully converted: ${successCount}`);
+  logger.info(`   ⏭️  Skipped (already correct): ${skippedCount}`);
+  logger.info(`   ❌ Errors: ${errorCount}`);
 
   if (errorCount === 0) {
-    console.log('\n🎉 Migration completed successfully!');
+    logger.info('\n🎉 Migration completed successfully!');
   } else {
-    console.log('\n⚠️  Migration completed with errors. Please review the error messages above.');
+    logger.warn('\n⚠️  Migration completed with errors. Please review the error messages above.');
   }
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Fatal error during migration:', e);
+    logger.error('❌ Fatal error during migration:', { error: e });
     process.exit(1);
   })
   .finally(async () => {

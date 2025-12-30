@@ -8,6 +8,7 @@
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import logger from '../config/logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -16,7 +17,7 @@ const __dirname = dirname(__filename);
 const result = dotenv.config({ path: join(__dirname, '../../.env.test') });
 
 if (result.error) {
-  console.error('Failed to load .env.test:', result.error);
+  logger.error('Failed to load .env.test:', { error: result.error });
   // Fall back to .env
   dotenv.config({ path: join(__dirname, '../../.env') });
 }

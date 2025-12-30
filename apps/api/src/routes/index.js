@@ -10,20 +10,12 @@ import assetModelsRoutes from './assetModels.routes.js';
 import assetItemsRoutes from './assetItems.routes.js';
 import stockItemsRoutes from './stockItems.routes.js';
 import loansRoutes from './loans.routes.js';
+import healthRoutes from './health.routes.js';
 
 const router = express.Router();
 
-// Health check endpoint
-router.get('/health', (req, res) => {
-  res.json({
-    success: true,
-    data: {
-      status: 'healthy',
-      timestamp: new Date().toISOString(),
-      service: 'Inventaire SI API'
-    }
-  });
-});
+// Health check endpoints (Kubernetes-compatible)
+router.use('/', healthRoutes);
 
 // Mount route modules
 router.use('/auth', authRoutes);

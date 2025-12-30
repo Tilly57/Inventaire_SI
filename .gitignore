@@ -4,6 +4,7 @@
 .env
 .env.local
 .env.*.local
+.env.production
 !.env.example
 
 # API environment files
@@ -16,6 +17,10 @@ apps/api/.env.local
 apps/web/.env
 apps/web/.env.local
 !apps/web/.env.example
+
+# Docker secrets directory
+secrets/
+**/secrets/
 
 # ===========================================
 # Dependencies

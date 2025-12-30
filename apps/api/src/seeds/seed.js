@@ -5,12 +5,13 @@ import 'dotenv/config';
 import prisma from '../config/database.js';
 import bcrypt from 'bcryptjs';
 import { BCRYPT_SALT_ROUNDS } from '../utils/constants.js';
+import logger from '../config/logger.js';
 
 async function main() {
-  console.log('🌱 Starting database seeding...');
+  logger.info('🌱 Starting database seeding...');
 
   // Clear existing data (in reverse order of dependencies)
-  console.log('Clearing existing data...');
+  logger.info('Clearing existing data...');
   await prisma.loanLine.deleteMany();
   await prisma.loan.deleteMany();
   await prisma.assetItem.deleteMany();
@@ -21,7 +22,7 @@ async function main() {
   await prisma.user.deleteMany();
 
   // Create users
-  console.log('Creating users...');
+  logger.info('Creating users...');
   const passwordHash = await bcrypt.hash('Admin123!', BCRYPT_SALT_ROUNDS);
 
   const adminUser = await prisma.user.create({
@@ -56,10 +57,10 @@ async function main() {
     }
   });
 
-  console.log(`✅ Created ${4} users`);
+  logger.info(`✅ Created ${4} users`);
 
   // Create equipment types
-  console.log('Creating equipment types...');
+  logger.info('Creating equipment types...');
   const equipmentTypes = await Promise.all([
     prisma.equipmentType.create({ data: { name: 'Ordinateur portable' } }),
     prisma.equipmentType.create({ data: { name: 'Ordinateur fixe' } }),
@@ -73,10 +74,10 @@ async function main() {
     prisma.equipmentType.create({ data: { name: 'Adaptateur' } }),
     prisma.equipmentType.create({ data: { name: 'Autre' } })
   ]);
-  console.log(`✅ Created ${equipmentTypes.length} equipment types`);
+  logger.info(`✅ Created ${equipmentTypes.length} equipment types`);
 
   // Create employees
-  console.log('Creating employees...');
+  logger.info('Creating employees...');
   const employees = await Promise.all([
     prisma.employee.create({
       data: {
@@ -120,10 +121,10 @@ async function main() {
     })
   ]);
 
-  console.log(`✅ Created ${employees.length} employees`);
+  logger.info(`✅ Created ${employees.length} employees`);
 
   // Create asset models
-  console.log('Creating asset models...');
+  logger.info('Creating asset models...');
   const laptopModel = await prisma.assetModel.create({
     data: {
       type: 'Ordinateur Portable',
@@ -172,10 +173,10 @@ async function main() {
     }
   });
 
-  console.log(`✅ Created ${6} asset models`);
+  logger.info(`✅ Created ${6} asset models`);
 
   // Create asset items
-  console.log('Creating asset items...');
+  logger.info('Creating asset items...');
   const assetItems = [];
 
   for (let i = 1; i <= 4; i++) {
@@ -219,10 +220,10 @@ async function main() {
     );
   }
 
-  console.log(`✅ Created ${assetItems.length} asset items`);
+  logger.info(`✅ Created ${assetItems.length} asset items`);
 
   // Create stock items
-  console.log('Creating stock items...');
+  logger.info('Creating stock items...');
   const cableHDMI = await prisma.stockItem.create({
     data: {
       assetModelId: cableModel.id,
@@ -250,10 +251,10 @@ async function main() {
     }
   });
 
-  console.log(`✅ Created ${3} stock items`);
+  logger.info(`✅ Created ${3} stock items`);
 
   // Create open loan
-  console.log('Creating open loan...');
+  logger.info('Creating open loan...');
   const openLoan = await prisma.loan.create({
     data: {
       employeeId: employees[0].id,
@@ -294,10 +295,10 @@ async function main() {
     data: { loaned: 2 }
   });
 
-  console.log(`✅ Created open loan with ${3} lines`);
+  logger.info(`✅ Created open loan with ${3} lines`);
 
   // Create closed loan
-  console.log('Creating closed loan...');
+  logger.info('Creating closed loan...');
   const closedLoan = await prisma.loan.create({
     data: {
       employeeId: employees[1].id,
@@ -330,26 +331,26 @@ async function main() {
     data: { loaned: 0 }
   });
 
-  console.log(`✅ Created closed loan with ${2} lines`);
+  logger.info(`✅ Created closed loan with ${2} lines`);
 
-  console.log('\n🎉 Database seeding completed successfully!');
-  console.log('\n📋 Summary:');
-  console.log(`   Users: 4 (1 ADMIN, 2 GESTIONNAIRE, 1 LECTURE)`);
-  console.log(`   Employees: ${employees.length}`);
-  console.log(`   Equipment Types: ${equipmentTypes.length}`);
-  console.log(`   Asset Models: 6`);
-  console.log(`   Asset Items: ${assetItems.length} (2 currently loaned)`);
-  console.log(`   Stock Items: 3`);
-  console.log(`   Loans: 2 (1 OPEN, 1 CLOSED)`);
-  console.log('\n🔑 Login credentials:');
-  console.log(`   Admin: admin@inventaire.local / Admin123!`);
-  console.log(`   Gestionnaire: gestionnaire1@inventaire.local / Gest123!`);
-  console.log(`   Lecture: lecture@inventaire.local / Lect123!`);
+  logger.info('\n🎉 Database seeding completed successfully!');
+  logger.info('\n📋 Summary:');
+  logger.info(`   Users: 4 (1 ADMIN, 2 GESTIONNAIRE, 1 LECTURE)`);
+  logger.info(`   Employees: ${employees.length}`);
+  logger.info(`   Equipment Types: ${equipmentTypes.length}`);
+  logger.info(`   Asset Models: 6`);
+  logger.info(`   Asset Items: ${assetItems.length} (2 currently loaned)`);
+  logger.info(`   Stock Items: 3`);
+  logger.info(`   Loans: 2 (1 OPEN, 1 CLOSED)`);
+  logger.info('\n🔑 Login credentials:');
+  logger.info(`   Admin: admin@inventaire.local / Admin123!`);
+  logger.info(`   Gestionnaire: gestionnaire1@inventaire.local / Gest123!`);
+  logger.info(`   Lecture: lecture@inventaire.local / Lect123!`);
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Error seeding database:', e);
+    logger.error('❌ Error seeding database:', { error: e });
     process.exit(1);
   })
   .finally(async () => {

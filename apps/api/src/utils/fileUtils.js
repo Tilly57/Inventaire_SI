@@ -8,6 +8,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import logger from '../config/logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -39,10 +40,10 @@ export async function deleteSignatureFile(signatureUrl) {
 
     // Delete file
     await fs.unlink(filePath);
-    console.log(`[FileUtils] Deleted signature: ${filename}`);
+    logger.info(`[FileUtils] Deleted signature: ${filename}`);
   } catch (error) {
     // Log but don't throw (allows DB deletion to proceed)
-    console.error(`[FileUtils] Failed to delete signature ${signatureUrl}:`, error.message);
+    logger.error(`[FileUtils] Failed to delete signature ${signatureUrl}:`, { message: error.message });
   }
 }
 

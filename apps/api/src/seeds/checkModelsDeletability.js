@@ -4,11 +4,12 @@
  * Shows which models have items currently loaned and cannot be deleted.
  */
 import { PrismaClient } from '@prisma/client';
+import logger from '../config/logger.js';
 
 const prisma = new PrismaClient();
 
 async function checkModelsDeletability() {
-  console.log('🔍 Checking AssetModel deletability...\n');
+  logger.info('🔍 Checking AssetModel deletability...\n');
 
   try {
     const models = await prisma.assetModel.findMany({
@@ -18,7 +19,7 @@ async function checkModelsDeletability() {
       }
     });
 
-    console.log(`Found ${models.length} AssetModels\n`);
+    logger.info(`Found ${models.length} AssetModels\n`);
 
     const cannotDelete = [];
     const canDelete = [];
@@ -41,41 +42,41 @@ async function checkModelsDeletability() {
     }
 
     if (cannotDelete.length > 0) {
-      console.log('❌ CANNOT DELETE (items currently loaned):\n');
+      logger.info('❌ CANNOT DELETE (items currently loaned):\n');
       cannotDelete.forEach(({ model, loanedAssetItems, loanedStockItems }) => {
-        console.log(`   ${model.brand} ${model.modelName} (${model.type})`);
+        logger.info(`   ${model.brand} ${model.modelName} (${model.type})`);
         if (loanedAssetItems > 0) {
-          console.log(`      - ${loanedAssetItems} AssetItem(s) with status PRETE`);
+          logger.info(`      - ${loanedAssetItems} AssetItem(s) with status PRETE`);
         }
         if (loanedStockItems > 0) {
-          console.log(`      - ${loanedStockItems} StockItem(s) loaned`);
+          logger.info(`      - ${loanedStockItems} StockItem(s) loaned`);
         }
-        console.log();
+        logger.info('');
       });
     }
 
     if (canDelete.length > 0) {
-      console.log('✅ CAN DELETE (no items loaned):\n');
+      logger.info('✅ CAN DELETE (no items loaned):\n');
       canDelete.forEach(model => {
         const totalAssetItems = model.items.length;
         const totalStockQuantity = model.stockItems.reduce((sum, s) => sum + s.quantity, 0);
 
-        console.log(`   ${model.brand} ${model.modelName} (${model.type})`);
+        logger.info(`   ${model.brand} ${model.modelName} (${model.type})`);
         if (totalAssetItems > 0) {
-          console.log(`      - Will delete ${totalAssetItems} AssetItem(s)`);
+          logger.info(`      - Will delete ${totalAssetItems} AssetItem(s)`);
         }
         if (totalStockQuantity > 0) {
-          console.log(`      - Will delete ${totalStockQuantity} StockItem(s)`);
+          logger.info(`      - Will delete ${totalStockQuantity} StockItem(s)`);
         }
       });
     }
 
-    console.log('\n📊 Summary:');
-    console.log(`   ✅ Can delete: ${canDelete.length} model(s)`);
-    console.log(`   ❌ Cannot delete: ${cannotDelete.length} model(s)`);
+    logger.info('\n📊 Summary:');
+    logger.info(`   ✅ Can delete: ${canDelete.length} model(s)`);
+    logger.info(`   ❌ Cannot delete: ${cannotDelete.length} model(s)`);
 
   } catch (error) {
-    console.error('❌ Error checking models:', error);
+    logger.error('❌ Error checking models:', { error });
     throw error;
   } finally {
     await prisma.$disconnect();
@@ -83,4 +84,4 @@ async function checkModelsDeletability() {
 }
 
 checkModelsDeletability()
-  .catch(console.error);
+  .catch((error) => logger.error('Error:', { error }));

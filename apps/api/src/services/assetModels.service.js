@@ -14,6 +14,9 @@
 import prisma from '../config/database.js';
 import { NotFoundError, ValidationError } from '../utils/errors.js';
 import { createAssetItemsBulk } from './assetItems.service.js';
+import { createContextLogger } from '../config/logger.js';
+
+const logger = createContextLogger('AssetModelsService');
 
 /**
  * Types d'équipements uniques (trackés individuellement)
@@ -175,16 +178,16 @@ export async function createAssetModel(data) {
   // If quantity is provided, create items automatically
   if (quantity && quantity > 0) {
     const { type } = assetModel;
-    console.log('🔍 Type detected:', type);
-    console.log('🔍 Is CONSUMABLE_TYPE?', CONSUMABLE_TYPES.includes(type));
+    logger.debug('🔍 Type detected:', { type });
+    logger.debug('🔍 Is CONSUMABLE_TYPE?', { isConsumable: CONSUMABLE_TYPES.includes(type) });
 
     // By default, all types are treated as unique assets (individually tracked)
     // unless explicitly defined as consumables
     if (!CONSUMABLE_TYPES.includes(type)) {
       // Create individual AssetItems with auto-generated tags
       const tagPrefix = generateTagPrefix(type);
-      console.log('🔍 Tag prefix generated:', tagPrefix);
-      console.log('🔍 Calling createAssetItemsBulk with:', {
+      logger.debug('🔍 Tag prefix generated:', { tagPrefix });
+      logger.debug('🔍 Calling createAssetItemsBulk with:', {
         assetModelId: assetModel.id,
         tagPrefix,
         quantity
@@ -198,10 +201,10 @@ export async function createAssetModel(data) {
           status: 'EN_STOCK',
           notes: `Créé automatiquement depuis le modèle ${assetModel.brand} ${assetModel.modelName}`
         });
-        console.log('✅ createAssetItemsBulk returned:', assetItems.length, 'items');
+        logger.info('✅ createAssetItemsBulk returned:', { count: assetItems.length });
         result.created.assetItems = assetItems;
       } catch (error) {
-        console.error('❌ Error in createAssetItemsBulk:', error);
+        logger.error('❌ Error in createAssetItemsBulk:', { error });
         throw error;
       }
     } else if (CONSUMABLE_TYPES.includes(type)) {

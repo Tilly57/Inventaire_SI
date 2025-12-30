@@ -4,11 +4,12 @@
  * Lists all OPEN loans with their items.
  */
 import { PrismaClient } from '@prisma/client';
+import logger from '../config/logger.js';
 
 const prisma = new PrismaClient();
 
 async function showActiveLoans() {
-  console.log('📋 Active Loans (status: OPEN)\n');
+  logger.info('📋 Active Loans (status: OPEN)\n');
 
   try {
     const activeLoans = await prisma.loan.findMany({
@@ -36,38 +37,38 @@ async function showActiveLoans() {
     });
 
     if (activeLoans.length === 0) {
-      console.log('✅ No active loans found!\n');
+      logger.info('✅ No active loans found!\n');
       return;
     }
 
-    console.log(`Found ${activeLoans.length} active loan(s)\n`);
+    logger.info(`Found ${activeLoans.length} active loan(s)\n`);
 
     activeLoans.forEach((loan, index) => {
-      console.log(`\n📦 Loan #${index + 1} (ID: ${loan.id})`);
-      console.log(`   Employee: ${loan.employee.firstName} ${loan.employee.lastName}`);
-      console.log(`   Created: ${new Date(loan.createdAt).toLocaleDateString()}`);
-      console.log(`   Status: ${loan.status}`);
-      console.log(`   Items:`);
+      logger.info(`\n📦 Loan #${index + 1} (ID: ${loan.id})`);
+      logger.info(`   Employee: ${loan.employee.firstName} ${loan.employee.lastName}`);
+      logger.info(`   Created: ${new Date(loan.createdAt).toLocaleDateString()}`);
+      logger.info(`   Status: ${loan.status}`);
+      logger.info(`   Items:`);
 
       loan.lines.forEach(line => {
         if (line.assetItem) {
-          console.log(`      - ${line.assetItem.assetTag}: ${line.assetItem.assetModel.brand} ${line.assetItem.assetModel.modelName}`);
+          logger.info(`      - ${line.assetItem.assetTag}: ${line.assetItem.assetModel.brand} ${line.assetItem.assetModel.modelName}`);
         } else if (line.stockItem) {
-          console.log(`      - ${line.quantity}x ${line.stockItem.assetModel.brand} ${line.stockItem.assetModel.modelName}`);
+          logger.info(`      - ${line.quantity}x ${line.stockItem.assetModel.brand} ${line.stockItem.assetModel.modelName}`);
         }
       });
 
-      console.log(`\n   ➡️  To close this loan, use the UI or run:`);
-      console.log(`      PATCH http://localhost:3001/api/loans/${loan.id}/close`);
+      logger.info(`\n   ➡️  To close this loan, use the UI or run:`);
+      logger.info(`      PATCH http://localhost:3001/api/loans/${loan.id}/close`);
     });
 
-    console.log('\n\n💡 Instructions:');
-    console.log('   1. Go to the Loans page in the web interface');
-    console.log('   2. Close each active loan (add return signature if needed)');
-    console.log('   3. After all loans are closed, you can delete the AssetModels');
+    logger.info('\n\n💡 Instructions:');
+    logger.info('   1. Go to the Loans page in the web interface');
+    logger.info('   2. Close each active loan (add return signature if needed)');
+    logger.info('   3. After all loans are closed, you can delete the AssetModels');
 
   } catch (error) {
-    console.error('❌ Error:', error);
+    logger.error('❌ Error:', { error });
     throw error;
   } finally {
     await prisma.$disconnect();
@@ -75,4 +76,4 @@ async function showActiveLoans() {
 }
 
 showActiveLoans()
-  .catch(console.error);
+  .catch((error) => logger.error('Error:', { error }));

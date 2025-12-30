@@ -4,11 +4,12 @@
  * Shows which employees have loans and cannot be deleted.
  */
 import { PrismaClient } from '@prisma/client';
+import logger from '../config/logger.js';
 
 const prisma = new PrismaClient();
 
 async function checkEmployeeDeletability() {
-  console.log('🔍 Checking Employee deletability...\n');
+  logger.info('🔍 Checking Employee deletability...\n');
 
   try {
     const employees = await prisma.employee.findMany({
@@ -24,7 +25,7 @@ async function checkEmployeeDeletability() {
       }
     });
 
-    console.log(`Found ${employees.length} employees\n`);
+    logger.info(`Found ${employees.length} employees\n`);
 
     const cannotDelete = [];
     const canDelete = [];
@@ -45,33 +46,33 @@ async function checkEmployeeDeletability() {
     }
 
     if (cannotDelete.length > 0) {
-      console.log('❌ CANNOT DELETE (has loan history):\n');
+      logger.info('❌ CANNOT DELETE (has loan history):\n');
       cannotDelete.forEach(({ employee, activeLoans, closedLoans }) => {
-        console.log(`   ${employee.firstName} ${employee.lastName} (${employee.email})`);
+        logger.info(`   ${employee.firstName} ${employee.lastName} (${employee.email})`);
         if (activeLoans > 0) {
-          console.log(`      - ${activeLoans} active loan(s) (OPEN)`);
+          logger.info(`      - ${activeLoans} active loan(s) (OPEN)`);
         }
         if (closedLoans > 0) {
-          console.log(`      - ${closedLoans} closed loan(s) (CLOSED)`);
+          logger.info(`      - ${closedLoans} closed loan(s) (CLOSED)`);
         }
-        console.log();
+        logger.info('');
       });
     }
 
     if (canDelete.length > 0) {
-      console.log('✅ CAN DELETE (no loan history):\n');
+      logger.info('✅ CAN DELETE (no loan history):\n');
       canDelete.forEach(employee => {
-        console.log(`   ${employee.firstName} ${employee.lastName} (${employee.email})`);
+        logger.info(`   ${employee.firstName} ${employee.lastName} (${employee.email})`);
       });
-      console.log();
+      logger.info('');
     }
 
-    console.log('📊 Summary:');
-    console.log(`   ✅ Can delete: ${canDelete.length} employee(s)`);
-    console.log(`   ❌ Cannot delete: ${cannotDelete.length} employee(s)`);
+    logger.info('📊 Summary:');
+    logger.info(`   ✅ Can delete: ${canDelete.length} employee(s)`);
+    logger.info(`   ❌ Cannot delete: ${cannotDelete.length} employee(s)`);
 
   } catch (error) {
-    console.error('❌ Error checking employees:', error);
+    logger.error('❌ Error checking employees:', { error });
     throw error;
   } finally {
     await prisma.$disconnect();
@@ -79,4 +80,4 @@ async function checkEmployeeDeletability() {
 }
 
 checkEmployeeDeletability()
-  .catch(console.error);
+  .catch((error) => logger.error('Error:', { error }));
