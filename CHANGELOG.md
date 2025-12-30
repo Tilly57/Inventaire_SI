@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.2] - 2025-12-30
+
+### Added
+
+**Import Bulk d'Employés**
+- Endpoint `POST /api/employees/bulk` pour création en masse d'employés
+- Validation Zod `bulkCreateEmployeesSchema` pour arrays d'employés
+- Service `bulkCreateEmployees` avec gestion des doublons et erreurs détaillées
+- Frontend `ImportEmployeesDialog` utilise le bulk endpoint au lieu de requêtes individuelles
+
+### Fixed
+- **Résolution rate limiting (429 Too Many Requests)** lors de l'import Excel d'employés
+- Import de 100+ employés maintenant possible en une seule requête au lieu de 100+ requêtes séparées
+
 ## [0.5.0] - 2025-12-29
 
 ### Added
