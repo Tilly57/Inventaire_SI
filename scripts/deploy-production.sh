@@ -74,6 +74,24 @@ print_info "Pushing to origin..."
 git push origin main
 git push origin "v${VERSION}"
 
+# Delete release branch if it exists
+RELEASE_BRANCH="release/${VERSION}"
+print_info "Checking for release branch..."
+
+# Check if branch exists locally
+if git show-ref --verify --quiet "refs/heads/${RELEASE_BRANCH}"; then
+    print_info "Deleting local branch ${RELEASE_BRANCH}..."
+    git branch -D "${RELEASE_BRANCH}"
+    print_success "Local branch deleted"
+fi
+
+# Check if branch exists on origin
+if git ls-remote --heads origin "${RELEASE_BRANCH}" | grep -q "${RELEASE_BRANCH}"; then
+    print_info "Deleting remote branch ${RELEASE_BRANCH}..."
+    git push origin --delete "${RELEASE_BRANCH}"
+    print_success "Remote branch deleted"
+fi
+
 print_success "Deployment completed! 🎉"
 echo ""
 print_info "Version ${VERSION} is now live on main"
