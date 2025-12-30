@@ -205,8 +205,9 @@ export function useUpdateAssetItem() {
     mutationFn: ({ id, data }: { id: string; data: UpdateAssetItemDto }) =>
       updateAssetItemApi(id, data),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['assetItems'] })
-      await queryClient.refetchQueries({ queryKey: ['assetItems'] })
+      // Invalidate and refetch to ensure UI updates immediately
+      await queryClient.invalidateQueries({ queryKey: ['assetItems'], refetchType: 'active' })
+      await queryClient.refetchQueries({ queryKey: ['assetItems'], type: 'active' })
       toast({
         title: 'Équipement modifié',
         description: 'L\'équipement a été modifié avec succès',

@@ -123,6 +123,7 @@ model LoanLine {
   assetItemId String?
   stockItemId String?
   quantity    Int      @default(1)
+  addedAt     DateTime @default(now())
 
   loan        Loan       @relation(fields: [loanId], references: [id])
   assetItem   AssetItem? @relation(fields: [assetItemId], references: [id])

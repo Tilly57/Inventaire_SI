@@ -202,6 +202,7 @@ export function LoanDetailsPage() {
                   <TableHead>Type</TableHead>
                   <TableHead>Article</TableHead>
                   <TableHead>Quantité</TableHead>
+                  <TableHead>Date du prêt</TableHead>
                   {isOpen && <TableHead className="text-right">Actions</TableHead>}
                 </TableRow>
               </TableHeader>
@@ -219,6 +220,9 @@ export function LoanDetailsPage() {
                         : line.stockItem?.assetModel ? `${line.stockItem.assetModel.brand} ${line.stockItem.assetModel.modelName}` : 'Inconnu'}
                     </TableCell>
                     <TableCell>{line.quantity}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {line.addedAt ? formatDate(line.addedAt) : formatDate(loan.openedAt)}
+                    </TableCell>
                     {isOpen && (
                       <TableCell className="text-right">
                         <Button
