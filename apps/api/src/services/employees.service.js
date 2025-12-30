@@ -163,13 +163,14 @@ export async function updateEmployee(id, data) {
  * await deleteEmployee('empId123');
  */
 export async function deleteEmployee(id) {
-  // Check if employee exists and fetch all loans
+  // Check if employee exists and fetch active loans (exclude soft-deleted)
   const existingEmployee = await prisma.employee.findUnique({
     where: { id },
     include: {
-      loans: true,  // Include ALL loans (active and closed)
-      _count: {
-        select: { loans: true }
+      loans: {
+        where: {
+          deletedAt: null  // Only count non-deleted loans
+        }
       }
     }
   });
@@ -178,9 +179,9 @@ export async function deleteEmployee(id) {
     throw new NotFoundError('Employé non trouvé');
   }
 
-  // Business rule: Cannot delete employees with ANY loan history
-  // This preserves audit trail and prevents data integrity issues
-  if (existingEmployee._count.loans > 0) {
+  // Business rule: Cannot delete employees with ANY active loan history
+  // Soft-deleted loans are excluded from this check
+  if (existingEmployee.loans.length > 0) {
     const activeLoans = existingEmployee.loans.filter(loan => loan.status === 'OPEN').length;
     const closedLoans = existingEmployee.loans.filter(loan => loan.status === 'CLOSED').length;
 
@@ -200,6 +201,36 @@ export async function deleteEmployee(id) {
     }
   }
 
+  // Delete all soft-deleted loans for this employee
+  // Must delete in cascade: LoanLines -> Loans -> Employee
+  // This is necessary because foreign key constraints prevent deletion
+  const softDeletedLoans = await prisma.loan.findMany({
+    where: {
+      employeeId: id,
+      deletedAt: { not: null }
+    },
+    select: { id: true }
+  });
+
+  if (softDeletedLoans.length > 0) {
+    const loanIds = softDeletedLoans.map(loan => loan.id);
+
+    // First, delete all LoanLines for these soft-deleted loans
+    await prisma.loanLine.deleteMany({
+      where: {
+        loanId: { in: loanIds }
+      }
+    });
+
+    // Then, delete the soft-deleted loans themselves
+    await prisma.loan.deleteMany({
+      where: {
+        id: { in: loanIds }
+      }
+    });
+  }
+
+  // Finally, delete the employee
   await prisma.employee.delete({ where: { id } });
 
   return { message: 'Employé supprimé avec succès' };
