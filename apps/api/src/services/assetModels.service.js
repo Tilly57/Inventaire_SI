@@ -233,33 +233,112 @@ export async function createAssetModel(data) {
  * Updates model details. Changes cascade to all items using this model
  * (items reference the model, so they see updated info automatically).
  *
+ * If quantity is provided, creates additional AssetItems without touching existing ones.
+ *
  * @param {string} id - Asset model ID to update
  * @param {Object} data - Updated model data
  * @param {string} [data.type] - Updated equipment type
  * @param {string} [data.brand] - Updated brand
  * @param {string} [data.modelName] - Updated model name
+ * @param {number} [data.quantity] - Additional quantity to create
  * @param {string} [data.description] - Updated description
- * @returns {Promise<Object>} Updated asset model
+ * @returns {Promise<Object>} Updated asset model with creation results
  * @throws {NotFoundError} If model doesn't exist
  *
  * @example
+ * // Add 5 more keyboards to existing model
  * const updated = await updateAssetModel('modelId123', {
- *   modelName: 'Latitude 5430'
+ *   quantity: 5
  * });
+ * // → Creates 5 new AssetItems (continues numbering from existing)
  */
 export async function updateAssetModel(id, data) {
-  // Check if asset model exists
-  const existingModel = await prisma.assetModel.findUnique({ where: { id } });
+  const { quantity, ...updateData } = data;
+
+  // Check if asset model exists and get existing items count
+  const existingModel = await prisma.assetModel.findUnique({
+    where: { id },
+    include: {
+      items: true,
+      stockItems: true
+    }
+  });
+
   if (!existingModel) {
     throw new NotFoundError('Modèle d\'équipement non trouvé');
   }
 
-  const assetModel = await prisma.assetModel.update({
-    where: { id },
-    data
-  });
+  // Update the model if there are changes
+  const assetModel = Object.keys(updateData).length > 0
+    ? await prisma.assetModel.update({
+        where: { id },
+        data: updateData
+      })
+    : existingModel;
 
-  return assetModel;
+  const result = {
+    assetModel,
+    created: {
+      assetItems: [],
+      stockItem: null
+    }
+  };
+
+  // If quantity is provided, create additional items
+  if (quantity && quantity > 0) {
+    const { type } = existingModel;
+
+    // Create additional AssetItems (unique assets)
+    if (!CONSUMABLE_TYPES.includes(type)) {
+      const tagPrefix = generateTagPrefix(type);
+      const existingItemsCount = existingModel.items.length;
+
+      logger.info('Création d\'équipements supplémentaires', {
+        modelId: id,
+        existingCount: existingItemsCount,
+        newQuantity: quantity
+      });
+
+      const assetItems = await createAssetItemsBulk({
+        assetModelId: id,
+        tagPrefix,
+        quantity,
+        status: 'EN_STOCK',
+        notes: `Ajouté le ${new Date().toLocaleDateString('fr-FR')} (quantité: +${quantity})`
+      });
+
+      result.created.assetItems = assetItems;
+    }
+    // For consumables, update the existing StockItem quantity
+    else if (CONSUMABLE_TYPES.includes(type)) {
+      if (existingModel.stockItems.length > 0) {
+        // Update existing stock item
+        const stockItem = await prisma.stockItem.update({
+          where: { id: existingModel.stockItems[0].id },
+          data: {
+            quantity: { increment: quantity },
+            notes: `Stock augmenté de ${quantity} le ${new Date().toLocaleDateString('fr-FR')}`
+          },
+          include: { assetModel: true }
+        });
+        result.created.stockItem = stockItem;
+      } else {
+        // Create new stock item if none exists
+        const stockItem = await prisma.stockItem.create({
+          data: {
+            assetModelId: id,
+            quantity,
+            loaned: 0,
+            notes: `Créé le ${new Date().toLocaleDateString('fr-FR')} avec quantité ${quantity}`
+          },
+          include: { assetModel: true }
+        });
+        result.created.stockItem = stockItem;
+      }
+    }
+  }
+
+  return result;
 }
 
 /**

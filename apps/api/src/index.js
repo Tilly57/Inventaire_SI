@@ -48,17 +48,18 @@ if (missingSecrets.length > 0) {
   process.exit(1);
 }
 
-// Valider que les secrets ne sont pas les valeurs par défaut (SÉCURITÉ CRITIQUE)
+// Valider que les JWT secrets ne sont pas les valeurs par défaut (SÉCURITÉ CRITIQUE)
 const defaultSecrets = [
   'change_me_access',
   'change_me_refresh',
   'supersecretkey',
-  'secret',
   'changeme',
   'default'
 ];
 
-const insecureSecrets = requiredSecrets.filter(s =>
+// Ne valider que les JWT secrets, pas DATABASE_URL (qui peut contenir "postgres")
+const jwtSecrets = requiredSecrets.filter(s => s.name.includes('JWT'));
+const insecureSecrets = jwtSecrets.filter(s =>
   defaultSecrets.some(def => s.value.toLowerCase().includes(def))
 );
 

@@ -23,7 +23,7 @@
  * />
  */
 
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { useMediaQuery } from '@/lib/hooks/useMediaQuery';
 import { Card } from '@/components/ui/card';
 import {
@@ -38,7 +38,7 @@ import {
 /**
  * Définition d'une colonne du tableau
  */
-export interface ResponsiveTableColumn<T = any> {
+export interface ResponsiveTableColumn<_T = any> {
   /** Clé unique de la colonne */
   key: string;
   /** Label affiché dans l'en-tête (desktop) */

@@ -13,7 +13,8 @@ export const createAssetModelSchema = z.object({
 export const updateAssetModelSchema = z.object({
   type: z.string().min(1, 'Type requis').optional(),
   brand: z.string().min(1, 'Marque requise').optional(),
-  modelName: z.string().min(1, 'Nom du modèle requis').optional()
+  modelName: z.string().min(1, 'Nom du modèle requis').optional(),
+  quantity: z.number().int().min(1).max(100).optional()
 });
 
 export const batchDeleteAssetModelsSchema = z.object({

@@ -154,32 +154,38 @@ export function AssetModelFormDialog({ model, open, onClose }: AssetModelFormDia
               )}
             />
 
-            {!isEdit && (
-              <FormField
-                control={form.control}
-                name="quantity"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Quantité (optionnel)</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min={1}
-                        max={100}
-                        placeholder="Créer automatiquement des équipements..."
-                        {...field}
-                        onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value, 10) : undefined)}
-                        value={field.value || ''}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Si renseigné, crée automatiquement des équipements avec tags auto-générés
-                    </p>
-                  </FormItem>
-                )}
-              />
-            )}
+            <FormField
+              control={form.control}
+              name="quantity"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    {isEdit ? 'Ajouter une quantité (optionnel)' : 'Quantité (optionnel)'}
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={100}
+                      placeholder={
+                        isEdit
+                          ? 'Nombre d\'équipements à ajouter...'
+                          : 'Créer automatiquement des équipements...'
+                      }
+                      {...field}
+                      onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value, 10) : undefined)}
+                      value={field.value || ''}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {isEdit
+                      ? 'Crée de nouveaux équipements avec tags auto-générés (sans modifier les existants)'
+                      : 'Si renseigné, crée automatiquement des équipements avec tags auto-générés'}
+                  </p>
+                </FormItem>
+              )}
+            />
 
             <div className="flex gap-2 justify-end">
               <Button type="button" variant="outline" onClick={onClose}>
