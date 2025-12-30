@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.3] - 2025-12-30
+
+### Fixed
+- **Support types d'équipement dynamiques** - Les types créés par ADMIN (ex: Téléphone portable) génèrent maintenant correctement des AssetItems individuels
+- **Invalidation cache frontend** - La liste des équipements se rafraîchit automatiquement après création d'un modèle avec quantité
+- **Préfixe TEL-** - Ajout du préfixe de tag pour les téléphones portables
+
+### Changed
+- Logique backend : tous les types sont trackés individuellement par défaut, sauf les consommables (Câble, Adaptateur, Autre)
+
 ## [0.6.2] - 2025-12-30
 
 ### Added
