@@ -108,6 +108,72 @@ export async function createEmployee(data) {
 }
 
 /**
+ * Bulk create employees
+ *
+ * Creates multiple employees in a single transaction.
+ * Skips employees with duplicate emails.
+ *
+ * @param {Array<Object>} employees - Array of employee data
+ * @returns {Promise<Object>} Result with created, skipped, and error counts
+ *
+ * @example
+ * const result = await bulkCreateEmployees([
+ *   { firstName: 'Jean', lastName: 'Dupont', email: 'jean@example.com' },
+ *   { firstName: 'Marie', lastName: 'Martin', email: 'marie@example.com' }
+ * ]);
+ * // result: { created: 2, skipped: 0, errors: [] }
+ */
+export async function bulkCreateEmployees(employees) {
+  const result = {
+    created: 0,
+    skipped: 0,
+    errors: []
+  };
+
+  // Get all existing emails in one query
+  const existingEmployees = await prisma.employee.findMany({
+    where: {
+      email: {
+        in: employees.map(emp => emp.email).filter(Boolean)
+      }
+    },
+    select: { email: true }
+  });
+
+  const existingEmails = new Set(existingEmployees.map(emp => emp.email.toLowerCase()));
+
+  // Process each employee
+  for (let i = 0; i < employees.length; i++) {
+    const data = employees[i];
+
+    try {
+      // Skip if email already exists
+      if (data.email && existingEmails.has(data.email.toLowerCase())) {
+        result.skipped++;
+        continue;
+      }
+
+      // Create employee
+      await prisma.employee.create({ data });
+      result.created++;
+
+      // Add to existing emails set to avoid duplicates within this batch
+      if (data.email) {
+        existingEmails.add(data.email.toLowerCase());
+      }
+    } catch (error) {
+      result.errors.push({
+        row: i + 1,
+        data: data,
+        error: error.message
+      });
+    }
+  }
+
+  return result;
+}
+
+/**
  * Update an existing employee
  *
  * Validates email uniqueness if email is being changed.

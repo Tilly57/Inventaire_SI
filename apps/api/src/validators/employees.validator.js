@@ -16,3 +16,7 @@ export const updateEmployeeSchema = z.object({
   email: z.string().email('Email invalide').optional().nullable(),
   dept: z.string().optional().nullable()
 });
+
+export const bulkCreateEmployeesSchema = z.object({
+  employees: z.array(createEmployeeSchema).min(1, 'Au moins un employé requis')
+});

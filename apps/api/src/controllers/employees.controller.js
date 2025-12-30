@@ -156,6 +156,48 @@ export const createEmployee = asyncHandler(async (req, res) => {
 });
 
 /**
+ * Bulk create employees
+ *
+ * Route: POST /api/employees/bulk
+ * Access: Protected (requires authentication)
+ *
+ * Creates multiple employees in a single request. Skips employees with
+ * duplicate emails (both with existing database records and within the batch).
+ *
+ * @param {Object} req.body - Bulk creation data
+ * @param {Array} req.body.employees - Array of employee objects
+ *
+ * @returns {Object} 201 - Bulk creation result
+ *
+ * @example
+ * POST /api/employees/bulk
+ * {
+ *   "employees": [
+ *     { "firstName": "Jane", "lastName": "Smith", "email": "jane@example.com" },
+ *     { "firstName": "John", "lastName": "Doe", "email": "john@example.com" }
+ *   ]
+ * }
+ *
+ * Response 201:
+ * {
+ *   "success": true,
+ *   "data": {
+ *     "created": 2,
+ *     "skipped": 0,
+ *     "errors": []
+ *   }
+ * }
+ */
+export const bulkCreateEmployees = asyncHandler(async (req, res) => {
+  const result = await employeesService.bulkCreateEmployees(req.body.employees);
+
+  res.status(201).json({
+    success: true,
+    data: result
+  });
+});
+
+/**
  * Update an existing employee
  *
  * Route: PATCH /api/employees/:id

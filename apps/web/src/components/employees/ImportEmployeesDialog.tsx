@@ -46,7 +46,7 @@ import { Input } from '@/components/ui/input'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useToast } from '@/lib/hooks/use-toast'
 import { useEmployees } from '@/lib/hooks/useEmployees'
-import { createEmployeeApi } from '@/lib/api/employees.api'
+import { bulkCreateEmployeesApi } from '@/lib/api/employees.api'
 import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, Loader2, Info } from 'lucide-react'
 
 /**
@@ -182,49 +182,62 @@ export function ImportEmployeesDialog({ open, onClose }: ImportEmployeesDialogPr
         existingEmployees.map(emp => emp.email.toLowerCase())
       )
 
-      // Import each employee
+      // Validate all rows and prepare employees for bulk creation
+      const employeesToCreate: Array<{
+        firstName: string
+        lastName: string
+        email: string
+        dept?: string
+      }> = []
+
       for (let i = 0; i < rows.length; i++) {
         const row = rows[i]
         const rowNumber = i + 2 // +2 because Excel starts at 1 and has header row
 
-        try {
-          // Validate required fields
-          if (!row.Nom || !row.Prénom) {
-            importResult.errors.push({
-              row: rowNumber,
-              name: `${row.Prénom || ''} ${row.Nom || ''}`.trim() || 'Inconnu',
-              error: 'Nom ou Prénom manquant',
-            })
-            continue
-          }
-
-          // Generate clean email
-          const firstName = sanitizeForEmail(row.Prénom)
-          const lastName = sanitizeForEmail(row.Nom)
-          const email = `${firstName}.${lastName}@groupetilly.com`
-
-          // Check if employee already exists
-          if (existingEmails.has(email.toLowerCase())) {
-            importResult.skipped++
-            continue
-          }
-
-          // Create employee
-          await createEmployeeApi({
-            firstName: row.Prénom.trim(),
-            lastName: row.Nom.trim(),
-            email: email,
-            dept: row.Agence?.trim() || undefined,
-          })
-
-          importResult.success++
-        } catch (error: any) {
+        // Validate required fields
+        if (!row.Nom || !row.Prénom) {
           importResult.errors.push({
             row: rowNumber,
-            name: `${row.Prénom} ${row.Nom}`,
-            error: error.response?.data?.error || error.message || 'Erreur inconnue',
+            name: `${row.Prénom || ''} ${row.Nom || ''}`.trim() || 'Inconnu',
+            error: 'Nom ou Prénom manquant',
           })
+          continue
         }
+
+        // Generate clean email
+        const firstName = sanitizeForEmail(row.Prénom)
+        const lastName = sanitizeForEmail(row.Nom)
+        const email = `${firstName}.${lastName}@groupetilly.com`
+
+        // Check if employee already exists
+        if (existingEmails.has(email.toLowerCase())) {
+          importResult.skipped++
+          continue
+        }
+
+        // Add to bulk creation list
+        employeesToCreate.push({
+          firstName: row.Prénom.trim(),
+          lastName: row.Nom.trim(),
+          email: email,
+          dept: row.Agence?.trim() || undefined,
+        })
+      }
+
+      // Bulk create all validated employees in a single request
+      if (employeesToCreate.length > 0) {
+        const bulkResult = await bulkCreateEmployeesApi(employeesToCreate)
+        importResult.success = bulkResult.created
+        importResult.skipped += bulkResult.skipped
+
+        // Add any errors from the bulk creation
+        bulkResult.errors.forEach(err => {
+          importResult.errors.push({
+            row: err.row,
+            name: `${err.data.firstName} ${err.data.lastName}`,
+            error: err.error,
+          })
+        })
       }
 
       setResult(importResult)
