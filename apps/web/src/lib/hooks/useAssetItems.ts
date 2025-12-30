@@ -147,8 +147,8 @@ export function useCreateAssetItem() {
   return useMutation({
     mutationFn: (data: CreateAssetItemDto) => createAssetItemApi(data),
     onSuccess: async () => {
+      // Invalidate only - React Query will automatically refetch active queries
       await queryClient.invalidateQueries({ queryKey: ['assetItems'] })
-      await queryClient.refetchQueries({ queryKey: ['assetItems'] })
       toast({
         title: 'Équipement créé',
         description: 'L\'équipement a été créé avec succès',
@@ -205,9 +205,8 @@ export function useUpdateAssetItem() {
     mutationFn: ({ id, data }: { id: string; data: UpdateAssetItemDto }) =>
       updateAssetItemApi(id, data),
     onSuccess: async () => {
-      // Invalidate and refetch to ensure UI updates immediately
-      await queryClient.invalidateQueries({ queryKey: ['assetItems'], refetchType: 'active' })
-      await queryClient.refetchQueries({ queryKey: ['assetItems'], type: 'active' })
+      // Invalidate only - React Query will automatically refetch active queries
+      await queryClient.invalidateQueries({ queryKey: ['assetItems'] })
       toast({
         title: 'Équipement modifié',
         description: 'L\'équipement a été modifié avec succès',

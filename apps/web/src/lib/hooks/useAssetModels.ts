@@ -137,8 +137,8 @@ export function useCreateAssetModel() {
   return useMutation({
     mutationFn: (data: CreateAssetModelDto) => createAssetModelApi(data),
     onSuccess: async () => {
+      // Invalidate only - React Query will automatically refetch active queries
       await queryClient.invalidateQueries({ queryKey: ['assetModels'] })
-      await queryClient.refetchQueries({ queryKey: ['assetModels'] })
       // Invalidate assetItems cache to show newly created items
       await queryClient.invalidateQueries({ queryKey: ['assetItems'] })
       toast({
@@ -186,9 +186,14 @@ export function useUpdateAssetModel() {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateAssetModelDto }) =>
       updateAssetModelApi(id, data),
-    onSuccess: async () => {
+    onSuccess: async (_result, variables) => {
       await queryClient.invalidateQueries({ queryKey: ['assetModels'] })
-      await queryClient.refetchQueries({ queryKey: ['assetModels'] })
+
+      // Only invalidate assetItems if quantity was provided (new items were created)
+      if (variables.data.quantity && variables.data.quantity > 0) {
+        await queryClient.invalidateQueries({ queryKey: ['assetItems'] })
+      }
+
       toast({
         title: 'Modèle modifié',
         description: 'Le modèle d\'équipement a été modifié avec succès',
