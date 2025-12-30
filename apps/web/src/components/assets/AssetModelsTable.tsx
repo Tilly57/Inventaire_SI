@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import type { AssetModel } from '@/lib/types/models.types'
 import { formatDate } from '@/lib/utils/formatters'
-import { AssetTypeLabels } from '@/lib/types/enums'
 import {
   Table,
   TableBody,
@@ -85,7 +84,7 @@ export function AssetModelsTable({ models, selectedModels, onSelectionChange }: 
                     />
                   </TableCell>
                 )}
-                <TableCell className="font-medium">{AssetTypeLabels[model.type] || model.type}</TableCell>
+                <TableCell className="font-medium">{model.type}</TableCell>
                 <TableCell>{model.brand}</TableCell>
                 <TableCell>{model.modelName}</TableCell>
                 <TableCell>{model._count?.items || 0}</TableCell>

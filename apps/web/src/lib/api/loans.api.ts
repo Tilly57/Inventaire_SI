@@ -184,18 +184,25 @@ export async function removeLoanLineApi(loanId: string, lineId: string): Promise
  * const file = new File([blob], 'signature.png', { type: 'image/png' });
  * const loan = await uploadPickupSignatureApi('loanId123', file);
  */
-export async function uploadPickupSignatureApi(loanId: string, file: File): Promise<Loan> {
-  const formData = new FormData()
-  formData.append('signature', file)
+export async function uploadPickupSignatureApi(loanId: string, fileOrBase64: File | string): Promise<Loan> {
+  let requestData: FormData | { signatureBase64: string }
+  let headers: Record<string, string> = {}
+
+  if (typeof fileOrBase64 === 'string') {
+    // Base64 string - send as JSON
+    requestData = { signatureBase64: fileOrBase64 }
+    headers = { 'Content-Type': 'application/json' }
+  } else {
+    // File object - send as FormData
+    requestData = new FormData()
+    requestData.append('signature', fileOrBase64)
+    headers = { 'Content-Type': 'multipart/form-data' }
+  }
 
   const response = await apiClient.post<ApiResponse<Loan>>(
     `/loans/${loanId}/pickup-signature`,
-    formData,
-    {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    }
+    requestData,
+    { headers }
   )
   return response.data.data
 }
@@ -219,18 +226,25 @@ export async function uploadPickupSignatureApi(loanId: string, file: File): Prom
  * const file = new File([blob], 'signature.png', { type: 'image/png' });
  * const loan = await uploadReturnSignatureApi('loanId123', file);
  */
-export async function uploadReturnSignatureApi(loanId: string, file: File): Promise<Loan> {
-  const formData = new FormData()
-  formData.append('signature', file)
+export async function uploadReturnSignatureApi(loanId: string, fileOrBase64: File | string): Promise<Loan> {
+  let requestData: FormData | { signatureBase64: string }
+  let headers: Record<string, string> = {}
+
+  if (typeof fileOrBase64 === 'string') {
+    // Base64 string - send as JSON
+    requestData = { signatureBase64: fileOrBase64 }
+    headers = { 'Content-Type': 'application/json' }
+  } else {
+    // File object - send as FormData
+    requestData = new FormData()
+    requestData.append('signature', fileOrBase64)
+    headers = { 'Content-Type': 'multipart/form-data' }
+  }
 
   const response = await apiClient.post<ApiResponse<Loan>>(
     `/loans/${loanId}/return-signature`,
-    formData,
-    {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    }
+    requestData,
+    { headers }
   )
   return response.data.data
 }

@@ -36,6 +36,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useLoan, useRemoveLoanLine, useUploadPickupSignature, useUploadReturnSignature, useCloseLoan } from '@/lib/hooks/useLoans'
 import { formatDate, formatFullName } from '@/lib/utils/formatters'
 import { AddLoanLineDialog } from '@/components/loans/AddLoanLineDialog'
+import { SignatureCanvas } from '@/components/common/SignatureCanvas'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -48,8 +49,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { ArrowLeft, Plus, Trash2, Upload, CheckCircle, AlertCircle } from 'lucide-react'
-import { API_URL } from '@/lib/utils/constants'
+import { ArrowLeft, Plus, Trash2, Pen, CheckCircle, AlertCircle } from 'lucide-react'
+import { BASE_URL } from '@/lib/utils/constants'
 
 /**
  * Loan details page component
@@ -77,6 +78,8 @@ export function LoanDetailsPage() {
   const closeLoan = useCloseLoan()
 
   const [isAddingLine, setIsAddingLine] = useState(false)
+  const [showPickupCanvas, setShowPickupCanvas] = useState(false)
+  const [showReturnCanvas, setShowReturnCanvas] = useState(false)
 
   if (isLoading) {
     return (
@@ -104,18 +107,14 @@ export function LoanDetailsPage() {
     await removeLine.mutateAsync({ loanId: loan.id, lineId })
   }
 
-  const handlePickupSignature = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      await uploadPickup.mutateAsync({ loanId: loan.id, file })
-    }
+  const handleSavePickupSignature = async (dataUrl: string) => {
+    await uploadPickup.mutateAsync({ loanId: loan.id, signature: dataUrl })
+    setShowPickupCanvas(false)
   }
 
-  const handleReturnSignature = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      await uploadReturn.mutateAsync({ loanId: loan.id, file })
-    }
+  const handleSaveReturnSignature = async (dataUrl: string) => {
+    await uploadReturn.mutateAsync({ loanId: loan.id, signature: dataUrl })
+    setShowReturnCanvas(false)
   }
 
   const handleCloseLoan = async () => {
@@ -164,6 +163,10 @@ export function LoanDetailsPage() {
               <p className="font-medium">{formatDate(loan.createdAt)}</p>
             </div>
             <div>
+              <p className="text-sm text-muted-foreground">Retiré le</p>
+              <p className="font-medium">{loan.pickupSignedAt ? formatDate(loan.pickupSignedAt) : '-'}</p>
+            </div>
+            <div>
               <p className="text-sm text-muted-foreground">Fermé le</p>
               <p className="font-medium">{loan.closedAt ? formatDate(loan.closedAt) : '-'}</p>
             </div>
@@ -201,6 +204,7 @@ export function LoanDetailsPage() {
                 <TableRow>
                   <TableHead>Type</TableHead>
                   <TableHead>Article</TableHead>
+                  <TableHead>N° de série</TableHead>
                   <TableHead>Quantité</TableHead>
                   <TableHead>Date du prêt</TableHead>
                   {isOpen && <TableHead className="text-right">Actions</TableHead>}
@@ -219,9 +223,12 @@ export function LoanDetailsPage() {
                         ? `${line.assetItem.assetTag} - ${line.assetItem.assetModel?.brand} ${line.assetItem.assetModel?.modelName}`
                         : line.stockItem?.assetModel ? `${line.stockItem.assetModel.brand} ${line.stockItem.assetModel.modelName}` : 'Inconnu'}
                     </TableCell>
+                    <TableCell>
+                      {line.assetItem?.serial || '-'}
+                    </TableCell>
                     <TableCell>{line.quantity}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                      {line.addedAt ? formatDate(line.addedAt) : formatDate(loan.openedAt)}
+                      {line.addedAt ? formatDate(line.addedAt) : formatDate(loan.createdAt)}
                     </TableCell>
                     {isOpen && (
                       <TableCell className="text-right">
@@ -255,7 +262,7 @@ export function LoanDetailsPage() {
             {hasPickupSignature ? (
               <div className="space-y-4">
                 <img
-                  src={`${API_URL}${loan.pickupSignatureUrl}`}
+                  src={`${BASE_URL}${loan.pickupSignatureUrl}`}
                   alt="Signature retrait"
                   className="w-full border rounded-lg"
                 />
@@ -265,33 +272,30 @@ export function LoanDetailsPage() {
               </div>
             ) : isOpen ? (
               <div>
-                <input
-                  type="file"
-                  id="pickup-signature"
-                  accept="image/*"
-                  onChange={handlePickupSignature}
-                  className="hidden"
-                  disabled={uploadPickup.isPending || !hasLines}
-                />
-                <label htmlFor="pickup-signature">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => document.getElementById('pickup-signature')?.click()}
-                    disabled={uploadPickup.isPending || !hasLines}
-                    asChild
-                  >
-                    <span>
-                      <Upload className="h-4 w-4 mr-2" />
-                      {uploadPickup.isPending ? 'Upload...' : 'Télécharger signature'}
-                    </span>
-                  </Button>
-                </label>
-                {!hasLines && (
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Ajoutez d'abord des articles au prêt
-                  </p>
+                {showPickupCanvas ? (
+                  <SignatureCanvas
+                    onSave={handleSavePickupSignature}
+                    onCancel={() => setShowPickupCanvas(false)}
+                    disabled={uploadPickup.isPending}
+                  />
+                ) : (
+                  <>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => setShowPickupCanvas(true)}
+                      disabled={uploadPickup.isPending || !hasLines}
+                    >
+                      <Pen className="h-4 w-4 mr-2" />
+                      Signer
+                    </Button>
+                    {!hasLines && (
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Ajoutez d'abord des articles au prêt
+                      </p>
+                    )}
+                  </>
                 )}
               </div>
             ) : (
@@ -310,7 +314,7 @@ export function LoanDetailsPage() {
             {hasReturnSignature ? (
               <div className="space-y-4">
                 <img
-                  src={`${API_URL}${loan.returnSignatureUrl}`}
+                  src={`${BASE_URL}${loan.returnSignatureUrl}`}
                   alt="Signature retour"
                   className="w-full border rounded-lg"
                 />
@@ -320,33 +324,30 @@ export function LoanDetailsPage() {
               </div>
             ) : isOpen ? (
               <div>
-                <input
-                  type="file"
-                  id="return-signature"
-                  accept="image/*"
-                  onChange={handleReturnSignature}
-                  className="hidden"
-                  disabled={uploadReturn.isPending || !hasPickupSignature}
-                />
-                <label htmlFor="return-signature">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => document.getElementById('return-signature')?.click()}
-                    disabled={uploadReturn.isPending || !hasPickupSignature}
-                    asChild
-                  >
-                    <span>
-                      <Upload className="h-4 w-4 mr-2" />
-                      {uploadReturn.isPending ? 'Upload...' : 'Télécharger signature'}
-                    </span>
-                  </Button>
-                </label>
-                {!hasPickupSignature && (
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Ajoutez d'abord la signature de retrait
-                  </p>
+                {showReturnCanvas ? (
+                  <SignatureCanvas
+                    onSave={handleSaveReturnSignature}
+                    onCancel={() => setShowReturnCanvas(false)}
+                    disabled={uploadReturn.isPending}
+                  />
+                ) : (
+                  <>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => setShowReturnCanvas(true)}
+                      disabled={uploadReturn.isPending || !hasPickupSignature}
+                    >
+                      <Pen className="h-4 w-4 mr-2" />
+                      Signer
+                    </Button>
+                    {!hasPickupSignature && (
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Ajoutez d'abord la signature de retrait
+                      </p>
+                    )}
+                  </>
                 )}
               </div>
             ) : (

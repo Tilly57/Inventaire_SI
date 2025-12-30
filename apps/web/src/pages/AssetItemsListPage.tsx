@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Plus, Search, Trash2 } from 'lucide-react'
+import { Search, Trash2 } from 'lucide-react'
 import { AssetStatus, AssetStatusLabels } from '@/lib/types/enums'
 import { DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS } from '@/lib/utils/constants'
 import { useToast } from '@/lib/hooks/use-toast'
@@ -38,7 +38,7 @@ export function AssetItemsListPage() {
   const filteredItems = itemsList.filter((item) => {
     const matchesSearch =
       item.assetTag?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.serialNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.serial?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.assetModel?.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.assetModel?.modelName?.toLowerCase().includes(searchTerm.toLowerCase())
 

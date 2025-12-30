@@ -1,7 +1,6 @@
 import type { AssetModel } from '@/lib/types/models.types'
 import { formatDate } from '@/lib/utils/formatters'
 import { LOW_STOCK_THRESHOLD } from '@/lib/utils/constants'
-import { AssetTypeLabels } from '@/lib/types/enums'
 import {
   Table,
   TableBody,
@@ -44,7 +43,7 @@ export function StockItemsTable({ items }: StockItemsTableProps) {
             return (
               <TableRow key={model.id}>
                 <TableCell className="font-medium">
-                  {AssetTypeLabels[model.type] || model.type}
+                  {model.type}
                 </TableCell>
                 <TableCell>{model.brand}</TableCell>
                 <TableCell>{model.modelName}</TableCell>

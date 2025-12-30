@@ -1,4 +1,4 @@
-import { UserRole, AssetStatus, LoanStatus, AssetType } from './enums'
+import { UserRole, AssetStatus, LoanStatus } from './enums'
 
 // User types
 export interface User {
@@ -103,7 +103,7 @@ export interface UpdateAssetModelDto {
 export interface AssetItem {
   id: string
   assetTag: string
-  serialNumber: string | null
+  serial: string | null
   status: AssetStatus
   notes: string | null
   modelId: string
@@ -114,7 +114,7 @@ export interface AssetItem {
 
 export interface CreateAssetItemDto {
   assetTag: string
-  serialNumber?: string
+  serial?: string
   status?: AssetStatus
   notes?: string
   assetModelId: string
@@ -122,7 +122,7 @@ export interface CreateAssetItemDto {
 
 export interface UpdateAssetItemDto {
   assetTag?: string
-  serialNumber?: string | null
+  serial?: string | null
   status?: AssetStatus
   notes?: string | null
   assetModelId?: string

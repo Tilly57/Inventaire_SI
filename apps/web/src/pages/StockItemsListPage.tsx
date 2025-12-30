@@ -2,16 +2,13 @@ import { useState, useEffect } from 'react'
 import { useAssetModels } from '@/lib/hooks/useAssetModels'
 import { StockItemsTable } from '@/components/stock/StockItemsTable'
 import { Pagination } from '@/components/common/Pagination'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Plus, Search, AlertTriangle } from 'lucide-react'
+import { Search, AlertTriangle } from 'lucide-react'
 import { LOW_STOCK_THRESHOLD, DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS } from '@/lib/utils/constants'
-import { useNavigate } from 'react-router-dom'
 
 export function StockItemsListPage() {
   const { data: models, isLoading, error } = useAssetModels()
-  const navigate = useNavigate()
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)

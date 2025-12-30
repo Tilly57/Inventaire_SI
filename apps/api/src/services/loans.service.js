@@ -12,6 +12,7 @@
 import prisma from '../config/database.js';
 import { NotFoundError, ValidationError } from '../utils/errors.js';
 import { deleteSignatureFile, deleteSignatureFiles } from '../utils/fileUtils.js';
+import { saveBase64Image } from '../utils/saveBase64Image.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -369,7 +370,7 @@ export async function removeLoanLine(loanId, lineId) {
  * @example
  * const updatedLoan = await uploadPickupSignature('loan123', req.file);
  */
-export async function uploadPickupSignature(loanId, file) {
+export async function uploadPickupSignature(loanId, fileOrBase64) {
   // Check if loan exists
   const loan = await prisma.loan.findUnique({ where: { id: loanId } });
   if (!loan) {
@@ -379,8 +380,22 @@ export async function uploadPickupSignature(loanId, file) {
     throw new ValidationError('Impossible de modifier un prêt supprimé');
   }
 
+  let filename;
+
+  // Check if it's a base64 string or multer file
+  if (typeof fileOrBase64 === 'string') {
+    // Base64 string - save it to file
+    const signaturesDir = process.env.SIGNATURES_DIR || path.join(__dirname, '../../uploads/signatures');
+    filename = await saveBase64Image(fileOrBase64, signaturesDir);
+  } else if (fileOrBase64 && fileOrBase64.filename) {
+    // Multer file object
+    filename = fileOrBase64.filename;
+  } else {
+    throw new ValidationError('Aucune signature fournie');
+  }
+
   // Generate signature URL path (accessible via static file serving)
-  const signatureUrl = `/uploads/signatures/${file.filename}`;
+  const signatureUrl = `/uploads/signatures/${filename}`;
 
   // Update loan with pickup signature
   const updatedLoan = await prisma.loan.update({
@@ -422,7 +437,7 @@ export async function uploadPickupSignature(loanId, file) {
  * @example
  * const updatedLoan = await uploadReturnSignature('loan123', req.file);
  */
-export async function uploadReturnSignature(loanId, file) {
+export async function uploadReturnSignature(loanId, fileOrBase64) {
   // Check if loan exists
   const loan = await prisma.loan.findUnique({ where: { id: loanId } });
   if (!loan) {
@@ -432,8 +447,22 @@ export async function uploadReturnSignature(loanId, file) {
     throw new ValidationError('Impossible de modifier un prêt supprimé');
   }
 
+  let filename;
+
+  // Check if it's a base64 string or multer file
+  if (typeof fileOrBase64 === 'string') {
+    // Base64 string - save it to file
+    const signaturesDir = process.env.SIGNATURES_DIR || path.join(__dirname, '../../uploads/signatures');
+    filename = await saveBase64Image(fileOrBase64, signaturesDir);
+  } else if (fileOrBase64 && fileOrBase64.filename) {
+    // Multer file object
+    filename = fileOrBase64.filename;
+  } else {
+    throw new ValidationError('Aucune signature fournie');
+  }
+
   // Generate signature URL path
-  const signatureUrl = `/uploads/signatures/${file.filename}`;
+  const signatureUrl = `/uploads/signatures/${filename}`;
 
   // Update loan with return signature
   const updatedLoan = await prisma.loan.update({

@@ -96,7 +96,7 @@ export function AssetItemsTable({
                     ? `${item.assetModel.brand} ${item.assetModel.modelName}`
                     : 'Non défini'}
                 </TableCell>
-                <TableCell>{item.serialNumber || '-'}</TableCell>
+                <TableCell>{item.serial || '-'}</TableCell>
                 <TableCell>
                   <StatusBadge status={item.status} />
                 </TableCell>

@@ -277,14 +277,17 @@ export const removeLoanLine = asyncHandler(async (req, res) => {
  * }
  */
 export const uploadPickupSignature = asyncHandler(async (req, res) => {
-  if (!req.file) {
+  // Accept either file upload (multipart/form-data) or base64 (application/json)
+  const signatureData = req.file || req.body.signatureBase64;
+
+  if (!signatureData) {
     return res.status(400).json({
       success: false,
-      error: 'Aucun fichier fourni'
+      error: 'Aucune signature fournie'
     });
   }
 
-  const loan = await loansService.uploadPickupSignature(req.params.id, req.file);
+  const loan = await loansService.uploadPickupSignature(req.params.id, signatureData);
 
   res.json({
     success: true,
@@ -324,14 +327,17 @@ export const uploadPickupSignature = asyncHandler(async (req, res) => {
  * }
  */
 export const uploadReturnSignature = asyncHandler(async (req, res) => {
-  if (!req.file) {
+  // Accept either file upload (multipart/form-data) or base64 (application/json)
+  const signatureData = req.file || req.body.signatureBase64;
+
+  if (!signatureData) {
     return res.status(400).json({
       success: false,
-      error: 'Aucun fichier fourni'
+      error: 'Aucune signature fournie'
     });
   }
 
-  const loan = await loansService.uploadReturnSignature(req.params.id, req.file);
+  const loan = await loansService.uploadReturnSignature(req.params.id, signatureData);
 
   res.json({
     success: true,

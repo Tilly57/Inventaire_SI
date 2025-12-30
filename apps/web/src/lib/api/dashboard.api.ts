@@ -182,10 +182,10 @@ export async function getLowStockItemsApi(): Promise<LowStockAlertItem[]> {
     const assetsByModel = new Map<string, AssetItem[]>()
 
     assetItems.forEach(item => {
-      if (!assetsByModel.has(item.assetModelId || item.modelId)) {
-        assetsByModel.set(item.assetModelId || item.modelId, [])
+      if (!assetsByModel.has(item.modelId)) {
+        assetsByModel.set(item.modelId, [])
       }
-      assetsByModel.get(item.assetModelId || item.modelId)!.push(item)
+      assetsByModel.get(item.modelId)!.push(item)
     })
 
     // Count EN_STOCK items per model and create alerts

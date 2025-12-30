@@ -88,7 +88,7 @@ export function LoansPrintView({ loans, employeeName, onPrintComplete }: LoansPr
                 <div>
                   <p className="text-sm text-gray-600">Dates</p>
                   <p className="text-sm">
-                    <span className="font-medium">Ouvert :</span> {formatDate(loan.openedAt)}
+                    <span className="font-medium">Ouvert :</span> {formatDate(loan.createdAt)}
                   </p>
                   {loan.closedAt && (
                     <p className="text-sm">

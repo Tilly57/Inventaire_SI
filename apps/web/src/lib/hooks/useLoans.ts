@@ -347,8 +347,8 @@ export function useUploadPickupSignature() {
   const { toast } = useToast()
 
   return useMutation({
-    mutationFn: ({ loanId, file }: { loanId: string; file: File }) =>
-      uploadPickupSignatureApi(loanId, file),
+    mutationFn: ({ loanId, signature }: { loanId: string; signature: File | string }) =>
+      uploadPickupSignatureApi(loanId, signature),
     onSuccess: async (_, variables) => {
       await queryClient.invalidateQueries({ queryKey: ['loans'] })
       await queryClient.invalidateQueries({ queryKey: ['loans', variables.loanId] })
@@ -408,8 +408,8 @@ export function useUploadReturnSignature() {
   const { toast } = useToast()
 
   return useMutation({
-    mutationFn: ({ loanId, file }: { loanId: string; file: File }) =>
-      uploadReturnSignatureApi(loanId, file),
+    mutationFn: ({ loanId, signature }: { loanId: string; signature: File | string }) =>
+      uploadReturnSignatureApi(loanId, signature),
     onSuccess: async (_, variables) => {
       await queryClient.invalidateQueries({ queryKey: ['loans'] })
       await queryClient.invalidateQueries({ queryKey: ['loans', variables.loanId] })

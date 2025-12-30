@@ -1,7 +1,9 @@
 import { UserRole } from '@/lib/types/enums'
 
 // API Configuration
-export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api'
+const baseApiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001/api'
+export const API_URL = baseApiUrl
+export const BASE_URL = baseApiUrl.replace('/api', '')
 
 // Pagination
 export const DEFAULT_PAGE_SIZE = 20

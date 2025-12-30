@@ -3,7 +3,7 @@ import { AssetStatus } from '@/lib/types/enums'
 
 export const createAssetItemSchema = z.object({
   assetTag: z.string().min(1, 'Le tag est requis'),
-  serialNumber: z.string().optional(),
+  serial: z.string().optional(),
   status: z.nativeEnum(AssetStatus, { message: 'Statut invalide' }).optional(),
   notes: z.string().optional(),
   assetModelId: z.string().min(1, 'Le modèle est requis'),
@@ -11,7 +11,7 @@ export const createAssetItemSchema = z.object({
 
 export const updateAssetItemSchema = z.object({
   assetTag: z.string().min(1, 'Le tag est requis').optional(),
-  serialNumber: z.string().optional().nullable(),
+  serial: z.string().optional().nullable(),
   status: z.nativeEnum(AssetStatus, { message: 'Statut invalide' }).optional(),
   notes: z.string().optional().nullable(),
   assetModelId: z.string().min(1, 'Le modèle est requis').optional(),
@@ -40,7 +40,7 @@ export const assetItemFormSchema = z.object({
   notes: z.string().optional(),
   assetTag: z.string().optional(),
   tagPrefix: z.string().optional(),
-  serialNumber: z.string().optional(),
+  serial: z.string().optional(),
 }).refine(
   (data) => {
     // Si quantity === 1, assetTag requis

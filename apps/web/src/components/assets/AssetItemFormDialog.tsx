@@ -62,7 +62,7 @@ export function AssetItemFormDialog({ item, open, onClose }: AssetItemFormDialog
       quantity: 1,
       assetTag: '',
       tagPrefix: '',
-      serialNumber: '',
+      serial: '',
       status: AssetStatus.EN_STOCK,
       notes: '',
       assetModelId: '',
@@ -90,7 +90,7 @@ export function AssetItemFormDialog({ item, open, onClose }: AssetItemFormDialog
         quantity: 1,
         assetTag: item.assetTag,
         tagPrefix: '',
-        serialNumber: item.serialNumber || '',
+        serial: item.serial || '',
         status: item.status,
         notes: item.notes || '',
         assetModelId: item.modelId,
@@ -101,7 +101,7 @@ export function AssetItemFormDialog({ item, open, onClose }: AssetItemFormDialog
         quantity: 1,
         assetTag: '',
         tagPrefix: '',
-        serialNumber: '',
+        serial: '',
         status: AssetStatus.EN_STOCK,
         notes: '',
         assetModelId: '',
@@ -118,7 +118,7 @@ export function AssetItemFormDialog({ item, open, onClose }: AssetItemFormDialog
           id: item.id,
           data: {
             assetTag: data.assetTag,
-            serialNumber: data.serialNumber,
+            serial: data.serial,
             status: data.status,
             notes: data.notes,
             assetModelId: data.assetModelId,
@@ -137,7 +137,7 @@ export function AssetItemFormDialog({ item, open, onClose }: AssetItemFormDialog
         // Mode création simple (inchangé)
         await createItem.mutateAsync({
           assetTag: data.assetTag!,
-          serialNumber: data.serialNumber,
+          serial: data.serial,
           assetModelId: data.assetModelId,
           status: data.status,
           notes: data.notes,
@@ -244,7 +244,7 @@ export function AssetItemFormDialog({ item, open, onClose }: AssetItemFormDialog
               {!isBulkMode && (
                 <FormField
                   control={form.control}
-                  name="serialNumber"
+                  name="serial"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Numéro de série</FormLabel>
