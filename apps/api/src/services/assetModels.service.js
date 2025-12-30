@@ -47,6 +47,7 @@ function generateTagPrefix(type) {
     'Casque audio': 'HS-',
     'Webcam': 'WC-',
     'Station d\'accueil': 'DOCK-',
+    'Téléphone portable': 'TEL-',
     'Câble': 'CAB-',
     'Adaptateur': 'ADP-',
     'Autre': 'OTH-'
@@ -175,10 +176,11 @@ export async function createAssetModel(data) {
   if (quantity && quantity > 0) {
     const { type } = assetModel;
     console.log('🔍 Type detected:', type);
-    console.log('🔍 Is UNIQUE_ASSET_TYPE?', UNIQUE_ASSET_TYPES.includes(type));
     console.log('🔍 Is CONSUMABLE_TYPE?', CONSUMABLE_TYPES.includes(type));
 
-    if (UNIQUE_ASSET_TYPES.includes(type)) {
+    // By default, all types are treated as unique assets (individually tracked)
+    // unless explicitly defined as consumables
+    if (!CONSUMABLE_TYPES.includes(type)) {
       // Create individual AssetItems with auto-generated tags
       const tagPrefix = generateTagPrefix(type);
       console.log('🔍 Tag prefix generated:', tagPrefix);

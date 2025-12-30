@@ -139,6 +139,8 @@ export function useCreateAssetModel() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['assetModels'] })
       await queryClient.refetchQueries({ queryKey: ['assetModels'] })
+      // Invalidate assetItems cache to show newly created items
+      await queryClient.invalidateQueries({ queryKey: ['assetItems'] })
       toast({
         title: 'Modèle créé',
         description: 'Le modèle d\'équipement a été créé avec succès',
