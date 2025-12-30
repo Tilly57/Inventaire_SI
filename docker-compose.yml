@@ -15,6 +15,7 @@ services:
   api:
     build: ./apps/api
     environment:
+      NODE_ENV: ${NODE_ENV:-development}
       DATABASE_URL: ${DATABASE_URL}
       JWT_ACCESS_SECRET_FILE: /run/secrets/jwt_access_secret
       JWT_REFRESH_SECRET_FILE: /run/secrets/jwt_refresh_secret

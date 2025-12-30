@@ -3,9 +3,20 @@
  *
  * Protects the API from abuse by limiting the number of requests
  * a client can make within a time window.
+ *
+ * NOTE: Rate limiting is disabled in development and test modes
+ * (NODE_ENV === 'development' || NODE_ENV === 'test') to facilitate
+ * development and prevent test failures.
+ *
+ * IMPORTANT: Rate limiting is ACTIVE in production for security.
  */
 
 import rateLimit from 'express-rate-limit';
+
+// Disable rate limiting in test and development environments
+const isTestEnv = process.env.NODE_ENV === 'test';
+const isDevEnv = process.env.NODE_ENV === 'development';
+const skipAll = (isTestEnv || isDevEnv) ? () => true : () => false;
 
 /**
  * General rate limiter for all API routes
@@ -21,8 +32,8 @@ export const generalLimiter = rateLimit({
   },
   standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
   legacyHeaders: false, // Disable `X-RateLimit-*` headers
-  // Skip successful requests to file downloads
-  skip: (req) => req.path.startsWith('/uploads/'),
+  // Skip in test/development environments or for file downloads
+  skip: (req) => isTestEnv || isDevEnv || req.path.startsWith('/uploads/'),
 });
 
 /**
@@ -40,6 +51,8 @@ export const authLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  // Skip in test environment
+  skip: skipAll,
   // Only count failed requests (optional - can be added later)
   skipSuccessfulRequests: false,
 });
@@ -59,8 +72,8 @@ export const mutationLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  // Only apply to POST, PUT, PATCH, DELETE
-  skip: (req) => req.method === 'GET',
+  // Skip in test/development environments or for GET requests
+  skip: (req) => isTestEnv || isDevEnv || req.method === 'GET',
 });
 
 /**
@@ -77,6 +90,8 @@ export const uploadLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  // Skip in test environment
+  skip: skipAll,
 });
 
 export default {

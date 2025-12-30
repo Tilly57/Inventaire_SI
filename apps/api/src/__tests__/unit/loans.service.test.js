@@ -37,54 +37,51 @@ describe('Loans Service - createLoan()', () => {
   test('should create loan with asset item', async () => {
     const assetItem = await createTestAssetItem({ status: 'EN_STOCK' });
 
-    const loanData = {
-      employeeId: employee.id,
-      lines: [
-        {
-          assetItemId: assetItem.id,
-        },
-      ],
-    };
+    // Create loan
+    const loan = await loansService.createLoan(employee.id, user.id);
 
-    const loan = await loansService.createLoan(loanData, user.id);
+    // Add asset item to loan
+    await loansService.addLoanLine(loan.id, {
+      assetItemId: assetItem.id,
+    });
 
-    expect(loan).toBeDefined();
-    expect(loan.employeeId).toBe(employee.id);
-    expect(loan.status).toBe('OPEN');
-    expect(loan.lines).toHaveLength(1);
-    expect(loan.lines[0].assetItemId).toBe(assetItem.id);
+    // Fetch updated loan
+    const updatedLoan = await loansService.getLoanById(loan.id);
+
+    expect(updatedLoan).toBeDefined();
+    expect(updatedLoan.employeeId).toBe(employee.id);
+    expect(updatedLoan.status).toBe('OPEN');
+    expect(updatedLoan.lines).toHaveLength(1);
+    expect(updatedLoan.lines[0].assetItemId).toBe(assetItem.id);
   });
 
   test('should create loan with stock item', async () => {
     const stockItem = await createTestStockItem({ quantity: 10, loaned: 0 });
 
-    const loanData = {
-      employeeId: employee.id,
-      lines: [
-        {
-          stockItemId: stockItem.id,
-          quantity: 2,
-        },
-      ],
-    };
+    // Create loan
+    const loan = await loansService.createLoan(employee.id, user.id);
 
-    const loan = await loansService.createLoan(loanData, user.id);
+    // Add stock item to loan
+    await loansService.addLoanLine(loan.id, {
+      stockItemId: stockItem.id,
+      quantity: 2,
+    });
 
-    expect(loan).toBeDefined();
-    expect(loan.lines).toHaveLength(1);
-    expect(loan.lines[0].stockItemId).toBe(stockItem.id);
-    expect(loan.lines[0].quantity).toBe(2);
+    // Fetch updated loan
+    const updatedLoan = await loansService.getLoanById(loan.id);
+
+    expect(updatedLoan).toBeDefined();
+    expect(updatedLoan.lines).toHaveLength(1);
+    expect(updatedLoan.lines[0].stockItemId).toBe(stockItem.id);
+    expect(updatedLoan.lines[0].quantity).toBe(2);
   });
 
   test('should update asset status to PRETE', async () => {
     const assetItem = await createTestAssetItem({ status: 'EN_STOCK' });
 
-    const loanData = {
-      employeeId: employee.id,
-      lines: [{ assetItemId: assetItem.id }],
-    };
-
-    await loansService.createLoan(loanData, user.id);
+    // Create loan and add asset item
+    const loan = await loansService.createLoan(employee.id, user.id);
+    await loansService.addLoanLine(loan.id, { assetItemId: assetItem.id });
 
     // Check asset status was updated
     const updatedAsset = await prisma.assetItem.findUnique({
@@ -96,12 +93,9 @@ describe('Loans Service - createLoan()', () => {
   test('should update stock loaned quantity', async () => {
     const stockItem = await createTestStockItem({ quantity: 10, loaned: 0 });
 
-    const loanData = {
-      employeeId: employee.id,
-      lines: [{ stockItemId: stockItem.id, quantity: 3 }],
-    };
-
-    await loansService.createLoan(loanData, user.id);
+    // Create loan and add stock item
+    const loan = await loansService.createLoan(employee.id, user.id);
+    await loansService.addLoanLine(loan.id, { stockItemId: stockItem.id, quantity: 3 });
 
     // Check stock loaned was updated
     const updatedStock = await prisma.stockItem.findUnique({
@@ -114,27 +108,23 @@ describe('Loans Service - createLoan()', () => {
   test('should throw ValidationError if asset already loaned', async () => {
     const assetItem = await createTestAssetItem({ status: 'PRETE' });
 
-    const loanData = {
-      employeeId: employee.id,
-      lines: [{ assetItemId: assetItem.id }],
-    };
+    // Create loan and try to add already loaned asset
+    const loan = await loansService.createLoan(employee.id, user.id);
 
-    await expect(loansService.createLoan(loanData, user.id)).rejects.toThrow(
-      ValidationError
-    );
+    await expect(
+      loansService.addLoanLine(loan.id, { assetItemId: assetItem.id })
+    ).rejects.toThrow(ValidationError);
   });
 
   test('should throw ValidationError if insufficient stock', async () => {
     const stockItem = await createTestStockItem({ quantity: 5, loaned: 3 });
 
-    const loanData = {
-      employeeId: employee.id,
-      lines: [{ stockItemId: stockItem.id, quantity: 5 }], // Only 2 available
-    };
+    // Create loan and try to add more stock than available (only 2 available)
+    const loan = await loansService.createLoan(employee.id, user.id);
 
-    await expect(loansService.createLoan(loanData, user.id)).rejects.toThrow(
-      ValidationError
-    );
+    await expect(
+      loansService.addLoanLine(loan.id, { stockItemId: stockItem.id, quantity: 5 })
+    ).rejects.toThrow(ValidationError);
   });
 });
 
@@ -274,7 +264,7 @@ describe('Loans Service - deleteLoan()', () => {
     const updatedStock = await prisma.stockItem.findUnique({
       where: { id: stockItem.id },
     });
-    expect(updatedStock.quantity).toBe(13); // 10 + 3
+    expect(updatedStock.quantity).toBe(10); // Quantity unchanged
     expect(updatedStock.loaned).toBe(0); // 3 - 3
   });
 });

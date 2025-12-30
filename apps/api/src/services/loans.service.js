@@ -254,9 +254,10 @@ export async function addLoanLine(loanId, data) {
 
     const quantity = data.quantity || 1;
 
-    // Verify sufficient quantity available
-    if (stockItem.quantity < quantity) {
-      throw new ValidationError('Quantité insuffisante en stock');
+    // Verify sufficient quantity available (total - loaned)
+    const available = stockItem.quantity - (stockItem.loaned || 0);
+    if (available < quantity) {
+      throw new ValidationError(`Quantité insuffisante en stock (disponible: ${available})`);
     }
 
     // Use transaction to ensure atomicity:
@@ -275,8 +276,7 @@ export async function addLoanLine(loanId, data) {
       prisma.stockItem.update({
         where: { id: data.stockItemId },
         data: {
-          quantity: stockItem.quantity - quantity,  // Decrement available stock
-          loaned: (stockItem.loaned || 0) + quantity  // Increment loaned quantity
+          loaned: (stockItem.loaned || 0) + quantity  // Only increment loaned, quantity stays the same
         }
       })
     ]);
@@ -339,15 +339,14 @@ export async function removeLoanLine(loanId, lineId) {
     ]);
   }
 
-  // If stock item, restore quantity and decrement loaned
+  // If stock item, decrement loaned (quantity stays the same)
   if (loanLine.stockItemId) {
     await prisma.$transaction([
       prisma.loanLine.delete({ where: { id: lineId } }),
       prisma.stockItem.update({
         where: { id: loanLine.stockItemId },
         data: {
-          quantity: { increment: loanLine.quantity },  // Return stock to inventory
-          loaned: { decrement: loanLine.quantity }  // Decrement loaned quantity
+          loaned: { decrement: loanLine.quantity }  // Decrement loaned quantity, total quantity unchanged
         }
       })
     ]);
@@ -644,14 +643,13 @@ export async function deleteLoan(loanId, userId) {
       );
     }
 
-    // Restore stock quantity and decrement loaned
+    // Decrement loaned (quantity stays unchanged)
     if (line.stockItemId) {
       updates.push(
         prisma.stockItem.update({
           where: { id: line.stockItemId },
           data: {
-            quantity: { increment: line.quantity },
-            loaned: { decrement: line.quantity }
+            loaned: { decrement: line.quantity }  // Only decrement loaned, total quantity unchanged
           }
         })
       );

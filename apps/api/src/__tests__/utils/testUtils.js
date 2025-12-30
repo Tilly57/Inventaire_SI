@@ -68,11 +68,15 @@ export async function createTestAdmin(overrides = {}) {
  * @returns {Promise<Object>} Created employee
  */
 export async function createTestEmployee(overrides = {}) {
+  // Generate unique email to avoid conflicts in tests
+  const timestamp = Date.now();
+  const random = Math.floor(Math.random() * 10000);
+
   return prisma.employee.create({
     data: {
       firstName: overrides.firstName || 'John',
       lastName: overrides.lastName || 'Doe',
-      email: overrides.email || 'john.doe@example.com',
+      email: overrides.email || `john.doe.${timestamp}.${random}@example.com`,
       dept: overrides.dept || 'IT',
       ...overrides,
     },
@@ -111,11 +115,15 @@ export async function createTestAssetItem(overrides = {}) {
     assetModelId = model.id;
   }
 
+  // Generate unique serial and tag to avoid conflicts in tests
+  const timestamp = Date.now();
+  const random = Math.floor(Math.random() * 10000);
+
   return prisma.assetItem.create({
     data: {
       assetModelId,
-      serialNumber: overrides.serialNumber || 'SN123456',
-      assetTag: overrides.assetTag || 'TAG001',
+      serial: overrides.serial || `SN${timestamp}${random}`,
+      assetTag: overrides.assetTag || `TAG${timestamp}${random}`,
       status: overrides.status || 'EN_STOCK',
       ...overrides,
     },
