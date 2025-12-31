@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import StatsCard from '@/components/dashboard/StatsCard';
+import { StatsCard } from '@/components/dashboard/StatsCard';
 import { Package } from 'lucide-react';
 
 describe('StatsCard', () => {

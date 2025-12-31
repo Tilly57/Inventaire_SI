@@ -254,3 +254,10 @@ export interface LowStockAlertItem {
   availableQuantity: number // For StockItem: quantity - loaned, For AssetItem: count of EN_STOCK items
   itemType: 'stock' | 'asset' // Distinguish between StockItem and grouped AssetItem
 }
+
+// Equipment by type chart data
+export interface EquipmentByType {
+  type: string
+  count: number
+  percentage: number
+}

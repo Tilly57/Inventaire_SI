@@ -13,7 +13,7 @@
  */
 
 import { apiClient } from './client'
-import type { ApiResponse, DashboardStats, Loan, StockItem, Employee, AssetItem, LowStockAlertItem } from '@/lib/types/models.types'
+import type { ApiResponse, DashboardStats, Loan, StockItem, Employee, AssetItem, LowStockAlertItem, EquipmentByType } from '@/lib/types/models.types'
 import { LOW_STOCK_THRESHOLD } from '@/lib/utils/constants'
 
 /**
@@ -225,6 +225,82 @@ export async function getLowStockItemsApi(): Promise<LowStockAlertItem[]> {
     })
 
     return alerts
+  } catch (error) {
+    // Return empty array on error to prevent dashboard crash
+    return []
+  }
+}
+
+/**
+ * Get out of service items
+ *
+ * Fetches all asset items with status='HS' (hors service) with their model details.
+ *
+ * @returns Promise resolving to array of out-of-service asset items
+ *
+ * @example
+ * const outOfService = await getOutOfServiceItemsApi();
+ * // outOfService = [
+ * //   { id, assetTag, status: 'HS', assetModel: { brand, modelName, type }, ... },
+ * //   ...
+ * // ]
+ */
+export async function getOutOfServiceItemsApi(): Promise<AssetItem[]> {
+  try {
+    const response = await apiClient.get<ApiResponse<any>>('/asset-items?limit=1000')
+    const data = response.data.data
+    const assetItems: AssetItem[] = Array.isArray(data) ? data : data.items || []
+
+    // Filter only HS (Hors Service) items
+    return assetItems.filter(item => item.status === 'HS')
+  } catch (error) {
+    // Return empty array on error to prevent dashboard crash
+    return []
+  }
+}
+
+/**
+ * Get equipment count by type
+ *
+ * Fetches all asset items and groups them by equipment type,
+ * calculating count and percentage for each type.
+ *
+ * @returns Promise resolving to array of equipment type statistics
+ *
+ * @example
+ * const byType = await getEquipmentByTypeApi();
+ * // byType = [
+ * //   { type: 'Ordinateur portable', count: 45, percentage: 35.4 },
+ * //   { type: 'Écran', count: 30, percentage: 23.6 },
+ * //   ...
+ * // ]
+ */
+export async function getEquipmentByTypeApi(): Promise<EquipmentByType[]> {
+  try {
+    const response = await apiClient.get<ApiResponse<any>>('/asset-items?limit=1000')
+    const data = response.data.data
+    const assetItems: AssetItem[] = Array.isArray(data) ? data : data.items || []
+
+    // Group by type and count
+    const typeCounts = new Map<string, number>()
+
+    assetItems.forEach(item => {
+      const type = item.assetModel?.type || 'Non classé'
+      typeCounts.set(type, (typeCounts.get(type) || 0) + 1)
+    })
+
+    // Calculate total for percentages
+    const total = assetItems.length
+
+    // Convert to array and calculate percentages
+    const result: EquipmentByType[] = Array.from(typeCounts.entries()).map(([type, count]) => ({
+      type,
+      count,
+      percentage: total > 0 ? Math.round((count / total) * 1000) / 10 : 0 // Round to 1 decimal
+    }))
+
+    // Sort by count descending
+    return result.sort((a, b) => b.count - a.count)
   } catch (error) {
     // Return empty array on error to prevent dashboard crash
     return []

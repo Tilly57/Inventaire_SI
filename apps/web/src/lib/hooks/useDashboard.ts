@@ -14,7 +14,7 @@
  */
 
 import { useQuery } from '@tanstack/react-query'
-import { getDashboardStatsApi, getRecentLoansApi, getLowStockItemsApi } from '@/lib/api/dashboard.api'
+import { getDashboardStatsApi, getRecentLoansApi, getLowStockItemsApi, getOutOfServiceItemsApi, getEquipmentByTypeApi } from '@/lib/api/dashboard.api'
 
 /**
  * Hook to get dashboard statistics
@@ -131,5 +131,70 @@ export const useLowStockItems = () => {
   return useQuery({
     queryKey: ['dashboard', 'low-stock'],
     queryFn: getLowStockItemsApi,
+  })
+}
+
+/**
+ * Hook to get out of service items
+ *
+ * Fetches all asset items with status='HS' (hors service)
+ * for displaying in dashboard widget.
+ *
+ * @returns React Query result object
+ * @returns {AssetItem[] | undefined} data - Array of out-of-service assets
+ * @returns {boolean} isLoading - Whether initial fetch is in progress
+ * @returns {boolean} isError - Whether fetch failed
+ *
+ * @example
+ * function OutOfServiceWidget() {
+ *   const { data: items = [], isLoading } = useOutOfServiceItems();
+ *
+ *   if (isLoading) return <Skeleton />;
+ *   if (items.length === 0) return <p>No out-of-service items</p>;
+ *
+ *   return (
+ *     <ul>
+ *       {items.map(item => (
+ *         <li key={item.id}>
+ *           {item.assetModel.brand} {item.assetModel.modelName} - {item.assetTag}
+ *         </li>
+ *       ))}
+ *     </ul>
+ *   );
+ * }
+ */
+export const useOutOfServiceItems = () => {
+  return useQuery({
+    queryKey: ['dashboard', 'out-of-service'],
+    queryFn: getOutOfServiceItemsApi,
+  })
+}
+
+/**
+ * Hook to get equipment count by type
+ *
+ * Fetches all asset items grouped by equipment type with counts
+ * and percentages for charting and statistics.
+ *
+ * @returns React Query result object
+ * @returns {EquipmentByType[] | undefined} data - Array of equipment type stats
+ * @returns {boolean} isLoading - Whether initial fetch is in progress
+ * @returns {boolean} isError - Whether fetch failed
+ *
+ * @example
+ * function EquipmentByTypeChart() {
+ *   const { data: types = [], isLoading } = useEquipmentByType();
+ *
+ *   if (isLoading) return <Skeleton />;
+ *
+ *   return (
+ *     <PieChart data={types} />
+ *   );
+ * }
+ */
+export const useEquipmentByType = () => {
+  return useQuery({
+    queryKey: ['dashboard', 'equipment-by-type'],
+    queryFn: getEquipmentByTypeApi,
   })
 }

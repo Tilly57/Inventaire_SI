@@ -111,3 +111,42 @@ else
     print_info "Create GitHub release manually at:"
     print_info "https://github.com/Tilly57/Inventaire_SI/releases/new?tag=v${VERSION}"
 fi
+
+echo ""
+
+# Calculate next version (increment patch)
+print_info "Preparing next release branch..."
+IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+NEXT_PATCH=$((PATCH + 1))
+NEXT_VERSION="${MAJOR}.${MINOR}.${NEXT_PATCH}"
+NEXT_RELEASE_BRANCH="release/${NEXT_VERSION}"
+
+print_info "Next version will be: ${NEXT_VERSION}"
+
+# Create next release branch from main
+print_info "Creating branch ${NEXT_RELEASE_BRANCH}..."
+git checkout -b "${NEXT_RELEASE_BRANCH}"
+
+# Update VERSION file
+echo "${NEXT_VERSION}" > VERSION
+git add VERSION
+git commit -m "chore: prepare release ${NEXT_VERSION}
+
+Initialize release branch for version ${NEXT_VERSION}
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
+
+# Push new release branch
+print_info "Pushing ${NEXT_RELEASE_BRANCH} to origin..."
+git push origin "${NEXT_RELEASE_BRANCH}"
+
+print_success "Next release branch created: ${NEXT_RELEASE_BRANCH}"
+echo ""
+print_info "Summary:"
+print_info "  ✓ Released: v${VERSION}"
+print_info "  ✓ Current branch: ${NEXT_RELEASE_BRANCH}"
+print_info "  ✓ Ready for development of v${NEXT_VERSION}"
+echo ""
+print_success "You are now on ${NEXT_RELEASE_BRANCH} - ready to start working on v${NEXT_VERSION}!"

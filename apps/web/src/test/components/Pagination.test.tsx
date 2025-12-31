@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import Pagination from '@/components/common/Pagination';
+import { Pagination } from '@/components/common/Pagination';
 
 describe('Pagination', () => {
   it('should render current page and total', () => {

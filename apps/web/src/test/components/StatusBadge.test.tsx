@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import StatusBadge from '@/components/assets/StatusBadge';
+import { StatusBadge } from '@/components/assets/StatusBadge';
 
 describe('StatusBadge', () => {
   it('should render EN_STOCK status', () => {

@@ -2,6 +2,8 @@ import { useDashboardStats } from '@/lib/hooks/useDashboard'
 import { StatsCard } from '@/components/dashboard/StatsCard'
 import { RecentLoans } from '@/components/dashboard/RecentLoans'
 import { LowStockAlert } from '@/components/dashboard/LowStockAlert'
+import { OutOfServiceList } from '@/components/dashboard/OutOfServiceList'
+import { EquipmentByTypeChart } from '@/components/dashboard/EquipmentByTypeChart'
 import { Users, Laptop, FileText, TrendingUp, AlertTriangle } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertCircle } from 'lucide-react'
@@ -93,6 +95,12 @@ export function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
         <RecentLoans />
         <LowStockAlert />
+      </div>
+
+      {/* Additional Widgets - Hors Service & Equipment Chart */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+        <OutOfServiceList />
+        <EquipmentByTypeChart />
       </div>
     </div>
   )
