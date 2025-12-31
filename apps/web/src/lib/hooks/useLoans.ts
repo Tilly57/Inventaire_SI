@@ -159,8 +159,9 @@ export function useCreateLoan() {
   return useMutation({
     mutationFn: (data: CreateLoanDto) => createLoanApi(data),
     onSuccess: async () => {
+      // Invalidate all related queries (no refetch needed - invalidate triggers automatic refetch)
       await queryClient.invalidateQueries({ queryKey: ['loans'] })
-      await queryClient.refetchQueries({ queryKey: ['loans'] })
+      await queryClient.invalidateQueries({ queryKey: ['dashboard'] })
       toast({
         title: 'Prêt créé',
         description: 'Le prêt a été créé avec succès',
@@ -220,14 +221,12 @@ export function useAddLoanLine() {
     mutationFn: ({ loanId, data }: { loanId: string; data: AddLoanLineDto }) =>
       addLoanLineApi(loanId, data),
     onSuccess: async (_, variables) => {
-      // Invalidate loans, asset items, and asset models
+      // Invalidate all related queries (no refetch needed - invalidate triggers automatic refetch)
       await queryClient.invalidateQueries({ queryKey: ['loans'] })
       await queryClient.invalidateQueries({ queryKey: ['loans', variables.loanId] })
       await queryClient.invalidateQueries({ queryKey: ['assetItems'] })
       await queryClient.invalidateQueries({ queryKey: ['assetModels'] })
-      await queryClient.refetchQueries({ queryKey: ['loans', variables.loanId] })
-      await queryClient.refetchQueries({ queryKey: ['assetItems'] })
-      await queryClient.refetchQueries({ queryKey: ['assetModels'] })
+      await queryClient.invalidateQueries({ queryKey: ['dashboard'] })
       toast({
         title: 'Ligne ajoutée',
         description: 'La ligne a été ajoutée au prêt',
@@ -285,13 +284,12 @@ export function useRemoveLoanLine() {
     mutationFn: ({ loanId, lineId }: { loanId: string; lineId: string }) =>
       removeLoanLineApi(loanId, lineId),
     onSuccess: async (_, variables) => {
+      // Invalidate all related queries (no refetch needed - invalidate triggers automatic refetch)
       await queryClient.invalidateQueries({ queryKey: ['loans'] })
       await queryClient.invalidateQueries({ queryKey: ['loans', variables.loanId] })
       await queryClient.invalidateQueries({ queryKey: ['assetItems'] })
       await queryClient.invalidateQueries({ queryKey: ['assetModels'] })
-      await queryClient.refetchQueries({ queryKey: ['loans', variables.loanId] })
-      await queryClient.refetchQueries({ queryKey: ['assetItems'] })
-      await queryClient.refetchQueries({ queryKey: ['assetModels'] })
+      await queryClient.invalidateQueries({ queryKey: ['dashboard'] })
       toast({
         title: 'Ligne supprimée',
         description: 'La ligne a été retirée du prêt',
@@ -352,9 +350,9 @@ export function useUploadPickupSignature() {
     mutationFn: ({ loanId, signature }: { loanId: string; signature: File | string }) =>
       uploadPickupSignatureApi(loanId, signature),
     onSuccess: async (_, variables) => {
+      // Invalidate all related queries (no refetch needed - invalidate triggers automatic refetch)
       await queryClient.invalidateQueries({ queryKey: ['loans'] })
       await queryClient.invalidateQueries({ queryKey: ['loans', variables.loanId] })
-      await queryClient.refetchQueries({ queryKey: ['loans', variables.loanId] })
       toast({
         title: 'Signature enregistrée',
         description: 'La signature de retrait a été enregistrée',
@@ -413,9 +411,9 @@ export function useUploadReturnSignature() {
     mutationFn: ({ loanId, signature }: { loanId: string; signature: File | string }) =>
       uploadReturnSignatureApi(loanId, signature),
     onSuccess: async (_, variables) => {
+      // Invalidate all related queries (no refetch needed - invalidate triggers automatic refetch)
       await queryClient.invalidateQueries({ queryKey: ['loans'] })
       await queryClient.invalidateQueries({ queryKey: ['loans', variables.loanId] })
-      await queryClient.refetchQueries({ queryKey: ['loans', variables.loanId] })
       toast({
         title: 'Signature enregistrée',
         description: 'La signature de retour a été enregistrée',
@@ -482,13 +480,12 @@ export function useCloseLoan() {
   return useMutation({
     mutationFn: (loanId: string) => closeLoanApi(loanId),
     onSuccess: async (_, loanId) => {
+      // Invalidate all related queries (no refetch needed - invalidate triggers automatic refetch)
       await queryClient.invalidateQueries({ queryKey: ['loans'] })
       await queryClient.invalidateQueries({ queryKey: ['loans', loanId] })
       await queryClient.invalidateQueries({ queryKey: ['assetItems'] })
       await queryClient.invalidateQueries({ queryKey: ['assetModels'] })
-      await queryClient.refetchQueries({ queryKey: ['loans'] })
-      await queryClient.refetchQueries({ queryKey: ['assetItems'] })
-      await queryClient.refetchQueries({ queryKey: ['assetModels'] })
+      await queryClient.invalidateQueries({ queryKey: ['dashboard'] })
       toast({
         title: 'Prêt fermé',
         description: 'Le prêt a été fermé avec succès',
@@ -552,8 +549,12 @@ export function useDeleteLoan() {
   return useMutation({
     mutationFn: (id: string) => deleteLoanApi(id),
     onSuccess: async () => {
+      // Invalidate all related queries (no refetch needed - invalidate triggers automatic refetch)
       await queryClient.invalidateQueries({ queryKey: ['loans'] })
-      await queryClient.refetchQueries({ queryKey: ['loans'] })
+      await queryClient.invalidateQueries({ queryKey: ['assetItems'] })
+      await queryClient.invalidateQueries({ queryKey: ['assetModels'] })
+      await queryClient.invalidateQueries({ queryKey: ['stockItems'] })
+      await queryClient.invalidateQueries({ queryKey: ['dashboard'] })
       toast({
         title: 'Prêt supprimé',
         description: 'Le prêt a été supprimé avec succès',
@@ -588,11 +589,12 @@ export function useBatchDeleteLoans() {
   return useMutation({
     mutationFn: (loanIds: string[]) => batchDeleteLoansApi(loanIds),
     onSuccess: async (result) => {
-      // Invalidate all affected caches
+      // Invalidate all related queries (no refetch needed - invalidate triggers automatic refetch)
       await queryClient.invalidateQueries({ queryKey: ['loans'] })
       await queryClient.invalidateQueries({ queryKey: ['assetItems'] })
+      await queryClient.invalidateQueries({ queryKey: ['assetModels'] })
       await queryClient.invalidateQueries({ queryKey: ['stockItems'] })
-      await queryClient.refetchQueries({ queryKey: ['loans'] })
+      await queryClient.invalidateQueries({ queryKey: ['dashboard'] })
 
       toast({
         title: 'Prêts supprimés',

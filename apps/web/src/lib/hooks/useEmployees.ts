@@ -135,9 +135,9 @@ export function useCreateEmployee() {
   return useMutation({
     mutationFn: (data: CreateEmployeeDto) => createEmployeeApi(data),
     onSuccess: async () => {
-      // Invalidate and refetch for immediate UI update
+      // Invalidate all related queries (no refetch needed - invalidate triggers automatic refetch)
       await queryClient.invalidateQueries({ queryKey: ['employees'] })
-      await queryClient.refetchQueries({ queryKey: ['employees'] })
+      await queryClient.invalidateQueries({ queryKey: ['dashboard'] })
 
       toast({
         title: 'Employé créé',
@@ -185,8 +185,8 @@ export function useUpdateEmployee() {
     mutationFn: ({ id, data }: { id: string; data: UpdateEmployeeDto }) =>
       updateEmployeeApi(id, data),
     onSuccess: async () => {
+      // Invalidate all related queries (no refetch needed - invalidate triggers automatic refetch)
       await queryClient.invalidateQueries({ queryKey: ['employees'] })
-      await queryClient.refetchQueries({ queryKey: ['employees'] })
 
       toast({
         title: 'Employé modifié',
@@ -251,8 +251,9 @@ export function useDeleteEmployee() {
   return useMutation({
     mutationFn: (id: string) => deleteEmployeeApi(id),
     onSuccess: async () => {
+      // Invalidate all related queries (no refetch needed - invalidate triggers automatic refetch)
       await queryClient.invalidateQueries({ queryKey: ['employees'] })
-      await queryClient.refetchQueries({ queryKey: ['employees'] })
+      await queryClient.invalidateQueries({ queryKey: ['dashboard'] })
 
       toast({
         title: 'Employé supprimé',

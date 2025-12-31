@@ -147,8 +147,10 @@ export function useCreateAssetItem() {
   return useMutation({
     mutationFn: (data: CreateAssetItemDto) => createAssetItemApi(data),
     onSuccess: async () => {
-      // Invalidate only - React Query will automatically refetch active queries
+      // Invalidate all related queries (React Query will automatically refetch active queries)
       await queryClient.invalidateQueries({ queryKey: ['assetItems'] })
+      await queryClient.invalidateQueries({ queryKey: ['assetModels'] })
+      await queryClient.invalidateQueries({ queryKey: ['dashboard'] })
       toast({
         title: 'Équipement créé',
         description: 'L\'équipement a été créé avec succès',
@@ -205,8 +207,10 @@ export function useUpdateAssetItem() {
     mutationFn: ({ id, data }: { id: string; data: UpdateAssetItemDto }) =>
       updateAssetItemApi(id, data),
     onSuccess: async () => {
-      // Invalidate only - React Query will automatically refetch active queries
+      // Invalidate all related queries
       await queryClient.invalidateQueries({ queryKey: ['assetItems'] })
+      await queryClient.invalidateQueries({ queryKey: ['assetModels'] })
+      await queryClient.invalidateQueries({ queryKey: ['dashboard'] })
       toast({
         title: 'Équipement modifié',
         description: 'L\'équipement a été modifié avec succès',
@@ -270,10 +274,10 @@ export function useDeleteAssetItem() {
   return useMutation({
     mutationFn: (id: string) => deleteAssetItemApi(id),
     onSuccess: async () => {
+      // Invalidate all related queries (no refetch needed - invalidate triggers automatic refetch)
       await queryClient.invalidateQueries({ queryKey: ['assetItems'] })
       await queryClient.invalidateQueries({ queryKey: ['assetModels'] })
-      await queryClient.refetchQueries({ queryKey: ['assetItems'] })
-      await queryClient.refetchQueries({ queryKey: ['assetModels'] })
+      await queryClient.invalidateQueries({ queryKey: ['dashboard'] })
       toast({
         title: 'Équipement supprimé',
         description: 'L\'équipement a été supprimé avec succès',
@@ -382,8 +386,10 @@ export function useCreateAssetItemsBulk() {
   return useMutation({
     mutationFn: (data: CreateBulkAssetItemsDto) => createAssetItemsBulkApi(data),
     onSuccess: async (data) => {
+      // Invalidate all related queries (no refetch needed - invalidate triggers automatic refetch)
       await queryClient.invalidateQueries({ queryKey: ['assetItems'] })
-      await queryClient.refetchQueries({ queryKey: ['assetItems'] })
+      await queryClient.invalidateQueries({ queryKey: ['assetModels'] })
+      await queryClient.invalidateQueries({ queryKey: ['dashboard'] })
       toast({
         title: 'Équipements créés',
         description: `${data.length} équipement(s) créé(s) avec succès`,
