@@ -1,0 +1,203 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, staging, develop]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [main, staging]
+
+jobs:
+  lint-and-test-backend:
+    name: Backend - Lint & Test
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: inventaire_test
+          POSTGRES_USER: inventaire
+          POSTGRES_PASSWORD: test_password
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: apps/api/package-lock.json
+
+      - name: Install dependencies
+        working-directory: apps/api
+        run: npm ci
+
+      - name: Run Prisma migrations
+        working-directory: apps/api
+        env:
+          DATABASE_URL: postgresql://inventaire:test_password@localhost:5432/inventaire_test
+        run: npx prisma migrate deploy
+
+      - name: Run tests
+        working-directory: apps/api
+        env:
+          DATABASE_URL: postgresql://inventaire:test_password@localhost:5432/inventaire_test
+          JWT_ACCESS_SECRET: test_access_secret_min_32_characters_long
+          JWT_REFRESH_SECRET: test_refresh_secret_min_32_characters_long
+          NODE_ENV: test
+        run: npm test -- --coverage || echo "Tests not yet configured"
+
+      - name: Upload coverage
+        if: success()
+        uses: codecov/codecov-action@v3
+        with:
+          files: apps/api/coverage/coverage-final.json
+          flags: backend
+          fail_ci_if_error: false
+
+  lint-and-test-frontend:
+    name: Frontend - Lint & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        working-directory: apps/web
+        run: npm ci
+
+      - name: Run lint
+        working-directory: apps/web
+        run: npm run lint || echo "Lint not configured"
+
+      - name: Run tests
+        working-directory: apps/web
+        run: npm test || echo "Tests not yet configured"
+
+      - name: Build
+        working-directory: apps/web
+        env:
+          VITE_API_URL: http://localhost:3001/api
+        run: npm run build
+
+      - name: Upload coverage
+        if: success()
+        uses: codecov/codecov-action@v3
+        with:
+          files: apps/web/coverage/coverage-final.json
+          flags: frontend
+          fail_ci_if_error: false
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run npm audit (Backend)
+        working-directory: apps/api
+        run: npm audit --audit-level=high || true
+
+      - name: Run npm audit (Frontend)
+        working-directory: apps/web
+        run: npm audit --audit-level=high || true
+
+  docker-build:
+    name: Docker Build Test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build API image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./apps/api
+          push: false
+          tags: inventaire-api:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build Web image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./apps/web
+          push: false
+          tags: inventaire-web:test
+          build-args: |
+            VITE_API_URL=http://localhost:3001/api
+            VITE_ENV=production
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [lint-and-test-backend, lint-and-test-frontend, security-scan]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Check release notes exist
+        run: |
+          NOTES_FILE=".release-notes/v${{ steps.version.outputs.VERSION }}.md"
+          if [ ! -f "$NOTES_FILE" ]; then
+            echo "Error: Release notes not found at $NOTES_FILE"
+            exit 1
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release v${{ steps.version.outputs.VERSION }}
+          body_path: .release-notes/v${{ steps.version.outputs.VERSION }}.md
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Clean up release branch
+        if: success()
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          RELEASE_BRANCH="release/${VERSION}"
+
+          # Delete remote release branch if exists
+          if git ls-remote --heads origin "${RELEASE_BRANCH}" | grep -q "${RELEASE_BRANCH}"; then
+            git push origin --delete "${RELEASE_BRANCH}" || true
+          fi

@@ -74,6 +74,10 @@ if (insecureSecrets.length > 0) {
 process.env.JWT_ACCESS_SECRET = JWT_ACCESS_SECRET;
 process.env.JWT_REFRESH_SECRET = JWT_REFRESH_SECRET;
 
+// Validate environment variables with Zod
+import { env } from './config/env.js';
+logger.info('✅ Environment variables validated');
+
 // Test database connection
 async function startServer() {
   try {
