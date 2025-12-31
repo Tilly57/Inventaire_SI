@@ -161,6 +161,8 @@ jobs:
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     needs: [lint-and-test-backend, lint-and-test-frontend, security-scan]
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout code

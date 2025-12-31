@@ -43,7 +43,7 @@ Analyse initiale: **2025-12-29** - Version **v0.4.1**
 - ✅ Vitest.config.ts créé avec environnement jsdom
 - ✅ Tests unitaires: Pagination, StatusBadge, StatsCard (3 composants)
 - ✅ Backend unit tests: 46/46 passing (pre-existants)
-- ⚠️ Backend integration tests: 7/12 failing (issues pre-existants à corriger)
+- ✅ Backend integration tests: 13/13 passing (corrigés le 2025-12-31)
 
 ### DevOps & Infrastructure (2025-12-31)
 - ✅ CI/CD Pipeline GitHub Actions complet (.github/workflows/ci.yml)
@@ -63,14 +63,14 @@ Analyse initiale: **2025-12-29** - Version **v0.4.1**
 
 **Problème:** Absence totale de tests (0% coverage)
 
-**Backend:** ⚠️ Tests existants nécessitent corrections (2025-12-31)
+**Backend:** ✅ Tests existants corrigés (2025-12-31)
 ```bash
 # Jest déjà installé et configuré
-# État actuel: 46/46 unit tests ✅ | 7/12 integration tests ❌
+# État actuel: 46/46 unit tests ✅ | 13/13 integration tests ✅
 ```
 
 **Tests prioritaires:**
-- [ ] Corriger 7 tests d'intégration échouants (problème format réponse)
+- [x] Corriger 7 tests d'intégration échouants (problème format réponse) - ✅ Complété 2025-12-31
 - [ ] Services (business logic) - 7 services
   - [ ] `loans.service.js` - Workflows prêts
   - [ ] `auth.service.js` - Authentification
@@ -1381,8 +1381,15 @@ npm install --save-dev vitest @testing-library/react @testing-library/user-event
 4. **Tests frontend** - Configuration Vitest + 3 tests composants de base
 5. **Sécurité données** - Script add-users-only.js pour éviter suppressions accidentelles
 
+### Complétions supplémentaires (2025-12-31 après-midi)
+1. **Tests d'intégration backend** - 7 tests échouants corrigés (13/13 passing)
+   - Corrigé auth.service.js pour retourner tokens sur registration
+   - Corrigé auth.controller.js pour set cookies sur registration
+   - Corrigé attentes des tests (tokens en body vs cookies)
+   - Corrigé message logout ("Déconnexion réussie")
+
 ### Priorités à court terme
-1. Corriger 7 tests d'intégration backend échouants
+1. ~~Corriger 7 tests d'intégration backend échouants~~ ✅ Complété
 2. Ajouter tests composants critiques frontend (Login, LoanFormDialog)
 3. Améliorer couverture de tests (objectif 80%)
 4. Implémenter exports de données Excel

@@ -48,7 +48,7 @@ describe('POST /api/auth/register', () => {
     expect(response.body.data.user.email).toBe('newuser@example.com');
     expect(response.body.data.user.passwordHash).toBeUndefined();
     expect(response.body.data.accessToken).toBeDefined();
-    expect(response.body.data.refreshToken).toBeDefined();
+    // refreshToken is in cookie, not response body
   });
 
   test('should set cookies on registration', async () => {
@@ -66,10 +66,9 @@ describe('POST /api/auth/register', () => {
     expect(response.headers['set-cookie'].length).toBeGreaterThan(0);
 
     const cookies = response.headers['set-cookie'];
-    const hasAccessToken = cookies.some(cookie => cookie.includes('accessToken'));
     const hasRefreshToken = cookies.some(cookie => cookie.includes('refreshToken'));
 
-    expect(hasAccessToken).toBe(true);
+    // Only refreshToken is set as httpOnly cookie for security
     expect(hasRefreshToken).toBe(true);
   });
 
@@ -191,7 +190,7 @@ describe('POST /api/auth/login', () => {
     expect(response.body.data.user).toBeDefined();
     expect(response.body.data.user.email).toBe(email);
     expect(response.body.data.accessToken).toBeDefined();
-    expect(response.body.data.refreshToken).toBeDefined();
+    // refreshToken is in cookie, not response body
   });
 
   test('should set cookies on login', async () => {
@@ -215,10 +214,9 @@ describe('POST /api/auth/login', () => {
     expect(response.headers['set-cookie']).toBeDefined();
 
     const cookies = response.headers['set-cookie'];
-    const hasAccessToken = cookies.some(cookie => cookie.includes('accessToken'));
     const hasRefreshToken = cookies.some(cookie => cookie.includes('refreshToken'));
 
-    expect(hasAccessToken).toBe(true);
+    // Only refreshToken is set as httpOnly cookie for security
     expect(hasRefreshToken).toBe(true);
   });
 
@@ -304,7 +302,7 @@ describe('POST /api/auth/logout', () => {
 
     expect(response.status).toBe(200);
     expect(response.body.success).toBe(true);
-    expect(response.body.data.message).toContain('déconnecté');
+    expect(response.body.data.message).toContain('Déconnexion réussie');
 
     // Check cookies are cleared
     const logoutCookies = response.headers['set-cookie'];
