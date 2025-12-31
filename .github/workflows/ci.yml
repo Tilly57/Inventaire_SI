@@ -83,7 +83,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: apps/web
-        run: npm ci
+        run: npm ci --legacy-peer-deps
 
       - name: Run lint
         working-directory: apps/web
