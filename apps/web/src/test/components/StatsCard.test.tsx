@@ -10,7 +10,6 @@ describe('StatsCard', () => {
         title="Total Assets"
         value={150}
         icon={Package}
-        trend={{ value: 12, isPositive: true }}
       />
     );
 
@@ -18,33 +17,37 @@ describe('StatsCard', () => {
     expect(screen.getByText('150')).toBeInTheDocument();
   });
 
-  it('should display positive trend correctly', () => {
+  it('should render with description', () => {
     render(
       <StatsCard
         title="Active Loans"
         value={25}
         icon={Package}
-        trend={{ value: 5, isPositive: true }}
+        description="Currently active"
       />
     );
 
-    expect(screen.getByText('+5%')).toBeInTheDocument();
+    expect(screen.getByText('Active Loans')).toBeInTheDocument();
+    expect(screen.getByText('25')).toBeInTheDocument();
+    expect(screen.getByText('Currently active')).toBeInTheDocument();
   });
 
-  it('should display negative trend correctly', () => {
-    render(
+  it('should render with color variant', () => {
+    const { container } = render(
       <StatsCard
         title="Stock Items"
         value={80}
         icon={Package}
-        trend={{ value: 3, isPositive: false }}
+        color="success"
       />
     );
 
-    expect(screen.getByText('-3%')).toBeInTheDocument();
+    expect(screen.getByText('Stock Items')).toBeInTheDocument();
+    expect(screen.getByText('80')).toBeInTheDocument();
+    expect(container.querySelector('.bg-green-100')).toBeInTheDocument();
   });
 
-  it('should render without trend', () => {
+  it('should render without optional props', () => {
     render(
       <StatsCard
         title="Employees"
@@ -55,7 +58,6 @@ describe('StatsCard', () => {
 
     expect(screen.getByText('Employees')).toBeInTheDocument();
     expect(screen.getByText('50')).toBeInTheDocument();
-    expect(screen.queryByText('%')).not.toBeInTheDocument();
   });
 
   it('should handle zero value', () => {

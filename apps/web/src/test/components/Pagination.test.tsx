@@ -5,12 +5,16 @@ import { Pagination } from '@/components/common/Pagination';
 describe('Pagination', () => {
   it('should render current page and total', () => {
     const onPageChange = vi.fn();
+    const onPageSizeChange = vi.fn();
 
     render(
       <Pagination
         currentPage={1}
         totalPages={10}
+        pageSize={20}
+        totalItems={200}
         onPageChange={onPageChange}
+        onPageSizeChange={onPageSizeChange}
       />
     );
 
@@ -19,12 +23,16 @@ describe('Pagination', () => {
 
   it('should disable previous button on first page', () => {
     const onPageChange = vi.fn();
+    const onPageSizeChange = vi.fn();
 
     render(
       <Pagination
         currentPage={1}
         totalPages={10}
+        pageSize={20}
+        totalItems={200}
         onPageChange={onPageChange}
+        onPageSizeChange={onPageSizeChange}
       />
     );
 
@@ -34,12 +42,16 @@ describe('Pagination', () => {
 
   it('should disable next button on last page', () => {
     const onPageChange = vi.fn();
+    const onPageSizeChange = vi.fn();
 
     render(
       <Pagination
         currentPage={10}
         totalPages={10}
+        pageSize={20}
+        totalItems={200}
         onPageChange={onPageChange}
+        onPageSizeChange={onPageSizeChange}
       />
     );
 
@@ -49,12 +61,16 @@ describe('Pagination', () => {
 
   it('should call onPageChange when clicking next', () => {
     const onPageChange = vi.fn();
+    const onPageSizeChange = vi.fn();
 
     render(
       <Pagination
         currentPage={5}
         totalPages={10}
+        pageSize={20}
+        totalItems={200}
         onPageChange={onPageChange}
+        onPageSizeChange={onPageSizeChange}
       />
     );
 
@@ -66,12 +82,16 @@ describe('Pagination', () => {
 
   it('should call onPageChange when clicking previous', () => {
     const onPageChange = vi.fn();
+    const onPageSizeChange = vi.fn();
 
     render(
       <Pagination
         currentPage={5}
         totalPages={10}
+        pageSize={20}
+        totalItems={200}
         onPageChange={onPageChange}
+        onPageSizeChange={onPageSizeChange}
       />
     );
 
@@ -83,12 +103,16 @@ describe('Pagination', () => {
 
   it('should handle single page gracefully', () => {
     const onPageChange = vi.fn();
+    const onPageSizeChange = vi.fn();
 
     render(
       <Pagination
         currentPage={1}
         totalPages={1}
+        pageSize={20}
+        totalItems={20}
         onPageChange={onPageChange}
+        onPageSizeChange={onPageSizeChange}
       />
     );
 
@@ -101,12 +125,16 @@ describe('Pagination', () => {
 
   it('should handle zero pages', () => {
     const onPageChange = vi.fn();
+    const onPageSizeChange = vi.fn();
 
     render(
       <Pagination
         currentPage={1}
         totalPages={0}
+        pageSize={20}
+        totalItems={0}
         onPageChange={onPageChange}
+        onPageSizeChange={onPageSizeChange}
       />
     );
 
