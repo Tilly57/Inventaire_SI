@@ -23,11 +23,11 @@ import { BCRYPT_SALT_ROUNDS, ROLES } from '../utils/constants.js';
  * @param {string} email - User email address (must be unique)
  * @param {string} password - Plain text password (will be hashed)
  * @param {string} [role=ROLES.GESTIONNAIRE] - User role (ADMIN, GESTIONNAIRE, or LECTURE)
- * @returns {Promise<Object>} Created user object (without password hash)
+ * @returns {Promise<Object>} Object containing accessToken, refreshToken, and user data
  * @throws {ConflictError} If email is already registered
  *
  * @example
- * const user = await register('admin@example.com', 'password123', ROLES.ADMIN);
+ * const { accessToken, refreshToken, user } = await register('admin@example.com', 'password123', ROLES.ADMIN);
  */
 export async function register(email, password, role = ROLES.GESTIONNAIRE) {
   // Check if user already exists
@@ -59,7 +59,19 @@ export async function register(email, password, role = ROLES.GESTIONNAIRE) {
     }
   });
 
-  return user;
+  // Generate JWT tokens (same as login)
+  const accessToken = generateAccessToken(user.id, user.email, user.role);
+  const refreshToken = generateRefreshToken(user.id);
+
+  return {
+    accessToken,
+    refreshToken,
+    user: {
+      id: user.id,
+      email: user.email,
+      role: user.role
+    }
+  };
 }
 
 /**
