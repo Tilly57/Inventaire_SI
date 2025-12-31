@@ -63,11 +63,22 @@ import { generateAccessToken, verifyRefreshToken } from '../utils/jwt.js';
 export const register = asyncHandler(async (req, res) => {
   const { email, password, role } = req.body;
 
-  const user = await registerService(email, password, role);
+  const { accessToken, refreshToken, user } = await registerService(email, password, role);
+
+  // Set refresh token in httpOnly cookie for security (same as login)
+  res.cookie('refreshToken', refreshToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+  });
 
   res.status(201).json({
     success: true,
-    data: user
+    data: {
+      accessToken,
+      user
+    }
   });
 });
 
