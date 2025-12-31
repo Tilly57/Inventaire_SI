@@ -32,7 +32,7 @@ describe('StatusBadge', () => {
   });
 
   it('should handle unknown status gracefully', () => {
-    render(<StatusBadge status="UNKNOWN" as any />);
+    render(<StatusBadge status={"UNKNOWN" as any} />);
 
     // Should still render without crashing
     expect(screen.getByText('UNKNOWN')).toBeInTheDocument();
