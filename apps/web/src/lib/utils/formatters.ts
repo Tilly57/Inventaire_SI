@@ -42,6 +42,13 @@ export function formatFullName(firstName: string, lastName: string): string {
 }
 
 /**
+ * Format full name with last name first (for alphabetical sorting display)
+ */
+export function formatFullNameLastFirst(firstName: string, lastName: string): string {
+  return `${lastName} ${firstName}`
+}
+
+/**
  * Truncate text with ellipsis
  */
 export function truncate(text: string, maxLength: number): string {
