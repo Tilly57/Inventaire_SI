@@ -182,10 +182,6 @@ export function LoanDetailsPage() {
               <p className="font-medium">{formatDate(loan.createdAt)}</p>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Retiré le</p>
-              <p className="font-medium">{loan.pickupSignedAt ? formatDate(loan.pickupSignedAt) : '-'}</p>
-            </div>
-            <div>
               <p className="text-sm text-muted-foreground">Fermé le</p>
               <p className="font-medium">{loan.closedAt ? formatDate(loan.closedAt) : '-'}</p>
             </div>
