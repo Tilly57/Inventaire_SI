@@ -28,7 +28,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
-import { formatFullName } from '@/lib/utils/formatters'
+import { formatFullNameLastFirst } from '@/lib/utils/formatters'
 
 interface LoanFormDialogProps {
   open: boolean
@@ -40,7 +40,10 @@ export function LoanFormDialog({ open, onClose, onSuccess }: LoanFormDialogProps
   const createLoan = useCreateLoan()
   const { data: employees } = useEmployees()
 
-  const employeesList = Array.isArray(employees) ? employees : []
+  // Sort employees alphabetically by last name
+  const employeesList = Array.isArray(employees)
+    ? [...employees].sort((a, b) => a.lastName.localeCompare(b.lastName, 'fr'))
+    : []
 
   const form = useForm<CreateLoanFormData>({
     resolver: zodResolver(createLoanSchema),
@@ -94,7 +97,7 @@ export function LoanFormDialog({ open, onClose, onSuccess }: LoanFormDialogProps
                     <SelectContent>
                       {employeesList.map((employee) => (
                         <SelectItem key={employee.id} value={employee.id}>
-                          {formatFullName(employee.firstName, employee.lastName)}
+                          {formatFullNameLastFirst(employee.firstName, employee.lastName)}
                           {employee.email && ` (${employee.email})`}
                         </SelectItem>
                       ))}

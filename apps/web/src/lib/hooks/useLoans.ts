@@ -38,6 +38,7 @@ import {
   deleteReturnSignatureApi,
 } from '@/lib/api/loans.api'
 import type {
+  Loan,
   CreateLoanDto,
   AddLoanLineDto,
 } from '@/lib/types/models.types'
@@ -158,7 +159,10 @@ export function useCreateLoan() {
 
   return useMutation({
     mutationFn: (data: CreateLoanDto) => createLoanApi(data),
-    onSuccess: async () => {
+    onSuccess: async (loan: Loan) => {
+      // Set the created loan data in cache immediately
+      queryClient.setQueryData(['loans', loan.id], loan)
+
       // Invalidate all related queries (no refetch needed - invalidate triggers automatic refetch)
       await queryClient.invalidateQueries({ queryKey: ['loans'] })
       await queryClient.invalidateQueries({ queryKey: ['dashboard'] })
