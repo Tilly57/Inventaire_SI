@@ -1,7 +1,7 @@
 # TODO - Inventaire SI
 
 Analyse initiale: **2025-12-29** - Version **v0.4.1**
-**Dernière mise à jour:** **2026-01-05** - Version actuelle: **v0.6.17**
+**Dernière mise à jour:** **2026-01-05** - Version actuelle: **v0.6.24**
 
 ---
 
@@ -78,7 +78,10 @@ Analyse initiale: **2025-12-29** - Version **v0.4.1**
   - [x] `employees.service.js` - CRUD employés (26 tests) ✅
   - [x] `assetModels.service.js` - Cascade delete (25 tests) ✅
   - [x] `assetItems.service.js` - Gestion équipements (36 tests) ✅
-- [ ] Middleware (auth, RBAC, errorHandler)
+- [x] Middleware (auth, RBAC, errorHandler) - ✅ Complété 2026-01-05 (68 tests)
+  - [x] `auth.test.js` - Authentification JWT (14 tests) ✅
+  - [x] `rbac.test.js` - Contrôle d'accès basé rôles (25 tests) ✅
+  - [x] `errorHandler.test.js` - Gestion erreurs globale (29 tests) ✅
 - [ ] Controllers (HTTP handlers)
 - [ ] Tests d'intégration (routes complètes)
 - [ ] E2E workflows critiques (création prêt → signature → fermeture)
@@ -1370,12 +1373,14 @@ npm install --save-dev vitest @testing-library/react @testing-library/user-event
 ---
 
 **Dernière mise à jour:** 2026-01-05
-**Version actuelle:** v0.6.17
+**Version actuelle:** v0.6.24
 **Analyse effectuée par:** Claude Sonnet 4.5
 
 ## 📝 Notes de mise à jour 2026-01-05
 
-### Complétions du jour (v0.6.17)
+### Complétions du jour (v0.6.17 → v0.6.24)
+
+#### v0.6.17 - Tests services backend
 1. **150 tests unitaires services backend** - Couverture complète des 5 services critiques
    - loans.service.js: 49 tests (CRUD, signatures, soft delete, batch)
    - auth.service.js: 14 tests (register, login, auto-promotion ADMIN)
@@ -1383,13 +1388,58 @@ npm install --save-dev vitest @testing-library/react @testing-library/user-event
    - assetModels.service.js: 25 tests (CRUD, cascade delete, AssetItems/StockItems)
    - assetItems.service.js: 36 tests (CRUD, bulk creation, tags séquentiels)
 2. **Couverture backend services:** ~80% (objectif atteint)
-3. **Performance tests:** 150/150 passing en 1.636s ⚡
-4. **CI/CD:** docker-build activé sur main/staging pushes
-5. **Déploiement production:** v0.6.17 déployé avec succès
+
+#### v0.6.18 - Hotfix Docker Web
+- Fix `npm ci --only=production=false` → `npm ci` dans apps/web/Dockerfile
+
+#### v0.6.19 - Tests middleware backend
+1. **68 tests unitaires middleware backend** - Couverture complète de la sécurité
+   - auth.test.js: 14 tests (extraction token, validation JWT, gestion erreurs)
+   - rbac.test.js: 25 tests (requireRoles, requireAdmin, requireManager, autorisations)
+   - errorHandler.test.js: 29 tests (AppError, Prisma, Multer, notFound, stack traces)
+2. **Couverture middleware:** ~90%
+3. **Performance tests:** 68/68 passing en 0.598s ⚡
+
+#### v0.6.20 - Améliorations UX Prêts
+1. **Tri alphabétique employés** - Liste prêts triée par nom de famille (locale 'fr')
+2. **Format affichage** - "Nom Prénom" au lieu de "Prénom Nom"
+3. **Nettoyage UI** - Suppression champ dupliqué "Retiré le" dans détails prêt
+
+#### v0.6.21 - Fix Date Création Prêt
+1. **Correction createdAt vide** - Régénération client Prisma après migration
+2. **Cache React Query** - Mise en cache immédiate avant navigation vers détails
+3. **Documentation** - Procédure obligatoire `npx prisma generate` après migrations
+
+#### v0.6.22 - Hotfix Docker API (tentative 1)
+- Fix `npm ci --only=production` → `npm ci` dans apps/api/Dockerfile
+- Installation de toutes les dépendances pour génération client Prisma
+
+#### v0.6.23 - Hotfix Docker API (tentative 2)
+- **Fix ordre COPY** - Ajout `COPY prisma ./prisma/` AVANT `npm ci`
+- Permet au postinstall de @prisma/client d'accéder au schema.prisma
+
+#### v0.6.24 - Hotfix Docker Web (final)
+- **Fix peer dependencies** - Ajout `--legacy-peer-deps` à npm ci dans apps/web/Dockerfile
+- Résout conflits React 19 avec packages @radix-ui
+- **CI/CD Pipeline:** Entièrement opérationnel ✅
+
+### Statistiques Tests Backend
+- **Total tests:** 218/218 passing ✅
+  - Services: 150 tests
+  - Middleware: 68 tests
+  - Integration: 13 tests (pre-existants)
+- **Couverture:** ~80% (objectif atteint)
+- **Performance:** Excellent (<2s pour 218 tests)
+
+### Chronologie Fixes Docker
+1. **v0.6.18:** Web - Fix syntax npm ci
+2. **v0.6.22:** API - Installer toutes dépendances
+3. **v0.6.23:** API - Copier schema Prisma avant npm ci
+4. **v0.6.24:** Web - Ajouter --legacy-peer-deps ✅
 
 ### Priorités à court terme
 1. ~~Ajouter tests unitaires services backend (150 tests)~~ ✅ Complété
-2. Ajouter tests middleware (auth, RBAC, errorHandler)
+2. ~~Ajouter tests middleware (auth, RBAC, errorHandler)~~ ✅ Complété
 3. Ajouter tests controllers (HTTP handlers)
 4. Ajouter tests E2E workflow (création prêt → signature → fermeture)
 5. Ajouter tests composants critiques frontend (Login, LoanFormDialog)
