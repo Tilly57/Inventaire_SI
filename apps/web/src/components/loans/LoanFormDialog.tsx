@@ -5,6 +5,7 @@ import { createLoanSchema } from '@/lib/schemas/loans.schema'
 import type { CreateLoanFormData } from '@/lib/schemas/loans.schema'
 import { useCreateLoan } from '@/lib/hooks/useLoans'
 import { useEmployees } from '@/lib/hooks/useEmployees'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   Dialog,
   DialogContent,
@@ -39,6 +40,7 @@ interface LoanFormDialogProps {
 export function LoanFormDialog({ open, onClose, onSuccess }: LoanFormDialogProps) {
   const createLoan = useCreateLoan()
   const { data: employees } = useEmployees()
+  const queryClient = useQueryClient()
 
   // Sort employees alphabetically by last name
   const employeesList = Array.isArray(employees)
@@ -61,6 +63,10 @@ export function LoanFormDialog({ open, onClose, onSuccess }: LoanFormDialogProps
   const onSubmit = async (data: CreateLoanFormData) => {
     try {
       const loan = await createLoan.mutateAsync(data)
+
+      // Set loan in cache immediately before navigation
+      queryClient.setQueryData(['loans', loan.id], loan)
+
       onClose()
       if (onSuccess && loan.id) {
         onSuccess(loan.id)
