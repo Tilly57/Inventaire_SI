@@ -635,17 +635,17 @@ Analyse initiale: **2025-12-29** - Version **v0.4.1**
 
 ---
 
-### 9. Export de Données (Effort: 8h)
+### 9. Export de Données ✅ COMPLÉTÉ
 
 **Problème:** Pas d'export, difficile d'analyser données
 
 **Actions:**
-- [ ] Installer ExcelJS
+- [x] Installer ExcelJS ✅
   ```bash
   npm install exceljs
   ```
 
-- [ ] Créer service export
+- [x] Créer service export ✅
   ```javascript
   // apps/api/src/services/export.service.js
   import { Workbook } from 'exceljs';
@@ -677,7 +677,7 @@ Analyse initiale: **2025-12-29** - Version **v0.4.1**
   }
   ```
 
-- [ ] Ajouter routes
+- [x] Ajouter routes ✅
   ```javascript
   // apps/api/src/routes/export.routes.js
   router.get('/export/employees', requireAuth, async (req, res) => {
@@ -688,7 +688,7 @@ Analyse initiale: **2025-12-29** - Version **v0.4.1**
   });
   ```
 
-- [ ] Ajouter boutons export frontend
+- [x] Ajouter boutons export frontend ✅
   ```typescript
   // apps/web/src/pages/EmployeesListPage.tsx
   <Button onClick={() => window.open('/api/export/employees', '_blank')}>
