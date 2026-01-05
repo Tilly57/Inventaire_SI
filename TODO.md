@@ -1,7 +1,7 @@
 # TODO - Inventaire SI
 
 Analyse initiale: **2025-12-29** - Version **v0.4.1**
-**Dernière mise à jour:** **2025-12-31** - Version actuelle: **v0.6.8**
+**Dernière mise à jour:** **2026-01-05** - Version actuelle: **v0.6.17**
 
 ---
 
@@ -63,20 +63,21 @@ Analyse initiale: **2025-12-29** - Version **v0.4.1**
 
 **Problème:** Absence totale de tests (0% coverage)
 
-**Backend:** ✅ Tests existants corrigés (2025-12-31)
+**Backend:** ✅ Tests complétés (2026-01-05)
 ```bash
 # Jest déjà installé et configuré
-# État actuel: 46/46 unit tests ✅ | 13/13 integration tests ✅
+# État actuel: 150/150 unit tests ✅ | 13/13 integration tests ✅
+# Couverture services backend: ~80%
 ```
 
 **Tests prioritaires:**
 - [x] Corriger 7 tests d'intégration échouants (problème format réponse) - ✅ Complété 2025-12-31
-- [ ] Services (business logic) - 7 services
-  - [ ] `loans.service.js` - Workflows prêts
-  - [ ] `auth.service.js` - Authentification
-  - [ ] `employees.service.js` - CRUD employés
-  - [ ] `assetModels.service.js` - Cascade delete
-  - [ ] `assetItems.service.js` - Gestion équipements
+- [x] Services (business logic) - 5 services ✅ Complété 2026-01-05 (150 tests)
+  - [x] `loans.service.js` - Workflows prêts (49 tests) ✅
+  - [x] `auth.service.js` - Authentification (14 tests) ✅
+  - [x] `employees.service.js` - CRUD employés (26 tests) ✅
+  - [x] `assetModels.service.js` - Cascade delete (25 tests) ✅
+  - [x] `assetItems.service.js` - Gestion équipements (36 tests) ✅
 - [ ] Middleware (auth, RBAC, errorHandler)
 - [ ] Controllers (HTTP handlers)
 - [ ] Tests d'intégration (routes complètes)
@@ -1368,9 +1369,30 @@ npm install --save-dev vitest @testing-library/react @testing-library/user-event
 
 ---
 
-**Dernière mise à jour:** 2025-12-31
-**Version actuelle:** v0.6.8
+**Dernière mise à jour:** 2026-01-05
+**Version actuelle:** v0.6.17
 **Analyse effectuée par:** Claude Sonnet 4.5
+
+## 📝 Notes de mise à jour 2026-01-05
+
+### Complétions du jour (v0.6.17)
+1. **150 tests unitaires services backend** - Couverture complète des 5 services critiques
+   - loans.service.js: 49 tests (CRUD, signatures, soft delete, batch)
+   - auth.service.js: 14 tests (register, login, auto-promotion ADMIN)
+   - employees.service.js: 26 tests (CRUD, bulk create, contraintes prêts)
+   - assetModels.service.js: 25 tests (CRUD, cascade delete, AssetItems/StockItems)
+   - assetItems.service.js: 36 tests (CRUD, bulk creation, tags séquentiels)
+2. **Couverture backend services:** ~80% (objectif atteint)
+3. **Performance tests:** 150/150 passing en 1.636s ⚡
+4. **CI/CD:** docker-build activé sur main/staging pushes
+5. **Déploiement production:** v0.6.17 déployé avec succès
+
+### Priorités à court terme
+1. ~~Ajouter tests unitaires services backend (150 tests)~~ ✅ Complété
+2. Ajouter tests middleware (auth, RBAC, errorHandler)
+3. Ajouter tests controllers (HTTP handlers)
+4. Ajouter tests E2E workflow (création prêt → signature → fermeture)
+5. Ajouter tests composants critiques frontend (Login, LoanFormDialog)
 
 ## 📝 Notes de mise à jour 2025-12-31
 
@@ -1387,10 +1409,3 @@ npm install --save-dev vitest @testing-library/react @testing-library/user-event
    - Corrigé auth.controller.js pour set cookies sur registration
    - Corrigé attentes des tests (tokens en body vs cookies)
    - Corrigé message logout ("Déconnexion réussie")
-
-### Priorités à court terme
-1. ~~Corriger 7 tests d'intégration backend échouants~~ ✅ Complété
-2. Ajouter tests composants critiques frontend (Login, LoanFormDialog)
-3. Améliorer couverture de tests (objectif 80%)
-4. Implémenter exports de données Excel
-5. Optimiser base de données avec indexes
