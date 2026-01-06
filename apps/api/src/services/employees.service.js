@@ -10,6 +10,8 @@
 
 import prisma from '../config/database.js';
 import { NotFoundError, ConflictError, ValidationError } from '../utils/errors.js';
+import { findOneOrFail, validateUniqueFields } from '../utils/prismaHelpers.js';
+import { logCreate, logUpdate, logDelete } from '../utils/auditHelpers.js';
 
 /**
  * Get all employees with loan count
@@ -50,8 +52,7 @@ export async function getAllEmployees() {
  * const employee = await getEmployeeById('clijrn9ht0000...');
  */
 export async function getEmployeeById(id) {
-  const employee = await prisma.employee.findUnique({
-    where: { id },
+  const employee = await findOneOrFail('employee', { id }, {
     include: {
       loans: {
         orderBy: { openedAt: 'desc' },
@@ -60,12 +61,9 @@ export async function getEmployeeById(id) {
       _count: {
         select: { loans: true }
       }
-    }
+    },
+    errorMessage: 'Employé non trouvé'
   });
-
-  if (!employee) {
-    throw new NotFoundError('Employé non trouvé');
-  }
 
   return employee;
 }
@@ -80,6 +78,7 @@ export async function getEmployeeById(id) {
  * @param {string} data.lastName - Employee last name
  * @param {string} data.email - Employee email (must be unique)
  * @param {string} [data.dept] - Department or agency (optional)
+ * @param {Object} req - Express request object (for audit trail)
  * @returns {Promise<Object>} Created employee object
  * @throws {ConflictError} If email already exists
  *
@@ -89,20 +88,22 @@ export async function getEmployeeById(id) {
  *   lastName: 'Dupont',
  *   email: 'jean.dupont@groupetilly.com',
  *   dept: 'Woippy'
- * });
+ * }, req);
  */
-export async function createEmployee(data) {
+export async function createEmployee(data, req) {
   // Validate email uniqueness if provided
   if (data.email) {
-    const existingEmployee = await prisma.employee.findUnique({ where: { email: data.email } });
-    if (existingEmployee) {
-      throw new ConflictError('Un employé avec cet email existe déjà');
-    }
+    await validateUniqueFields('employee', { email: data.email }, {
+      errorMessages: { email: 'Un employé avec cet email existe déjà' }
+    });
   }
 
   const employee = await prisma.employee.create({
     data
   });
+
+  // Audit trail
+  await logCreate('Employee', employee.id, req, employee);
 
   return employee;
 }
@@ -184,32 +185,35 @@ export async function bulkCreateEmployees(employees) {
  * @param {string} [data.lastName] - Updated last name
  * @param {string} [data.email] - Updated email (must be unique)
  * @param {string} [data.dept] - Updated department
+ * @param {Object} req - Express request object (for audit trail)
  * @returns {Promise<Object>} Updated employee object
  * @throws {NotFoundError} If employee doesn't exist
  * @throws {ConflictError} If new email already exists
  *
  * @example
- * const updated = await updateEmployee('empId123', { dept: 'Paris' });
+ * const updated = await updateEmployee('empId123', { dept: 'Paris' }, req);
  */
-export async function updateEmployee(id, data) {
+export async function updateEmployee(id, data, req) {
   // Check if employee exists
-  const existingEmployee = await prisma.employee.findUnique({ where: { id } });
-  if (!existingEmployee) {
-    throw new NotFoundError('Employé non trouvé');
-  }
+  const existingEmployee = await findOneOrFail('employee', { id }, {
+    errorMessage: 'Employé non trouvé'
+  });
 
   // If email is being changed, check for conflicts
   if (data.email && data.email !== existingEmployee.email) {
-    const emailConflict = await prisma.employee.findUnique({ where: { email: data.email } });
-    if (emailConflict) {
-      throw new ConflictError('Un employé avec cet email existe déjà');
-    }
+    await validateUniqueFields('employee', { email: data.email }, {
+      excludeId: id,
+      errorMessages: { email: 'Un employé avec cet email existe déjà' }
+    });
   }
 
   const employee = await prisma.employee.update({
     where: { id },
     data
   });
+
+  // Audit trail
+  await logUpdate('Employee', id, req, existingEmployee, employee);
 
   return employee;
 }
@@ -221,14 +225,15 @@ export async function updateEmployee(id, data) {
  * This preserves data integrity and audit trail.
  *
  * @param {string} id - Employee ID to delete
+ * @param {Object} req - Express request object (for audit trail)
  * @returns {Promise<Object>} Success message
  * @throws {NotFoundError} If employee doesn't exist
  * @throws {ValidationError} If employee has any loans
  *
  * @example
- * await deleteEmployee('empId123');
+ * await deleteEmployee('empId123', req);
  */
-export async function deleteEmployee(id) {
+export async function deleteEmployee(id, req) {
   // Check if employee exists and fetch active loans (exclude soft-deleted)
   const existingEmployee = await prisma.employee.findUnique({
     where: { id },
@@ -298,6 +303,9 @@ export async function deleteEmployee(id) {
 
   // Finally, delete the employee
   await prisma.employee.delete({ where: { id } });
+
+  // Audit trail
+  await logDelete('Employee', id, req, existingEmployee);
 
   return { message: 'Employé supprimé avec succès' };
 }

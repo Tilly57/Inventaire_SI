@@ -78,6 +78,19 @@ export const requireRoles = (allowedRoles) => {
  * router.post('/users', requireAuth, requireAdmin, createUser);
  * router.delete('/users/:id', requireAuth, requireAdmin, deleteUser);
  */
+/**
+ * Require a single specific role
+ *
+ * Shorthand for requiring a single role.
+ *
+ * @param {string} role - Required role name
+ * @returns {Function} Express middleware function
+ *
+ * @example
+ * router.post('/dashboard/refresh', requireAuth, requireRole('ADMIN'), refreshStats);
+ */
+export const requireRole = (role) => requireRoles([role]);
+
 export const requireAdmin = requireRoles(['ADMIN']);
 
 /**

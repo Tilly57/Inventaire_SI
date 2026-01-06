@@ -13,6 +13,7 @@
  */
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import * as employeesService from '../services/employees.service.js';
+import { sendSuccess, sendCreated } from '../utils/responseHelpers.js';
 
 /**
  * Get all employees
@@ -48,10 +49,7 @@ import * as employeesService from '../services/employees.service.js';
 export const getAllEmployees = asyncHandler(async (req, res) => {
   const employees = await employeesService.getAllEmployees();
 
-  res.json({
-    success: true,
-    data: employees
-  });
+  sendSuccess(res, employees);
 });
 
 /**
@@ -97,10 +95,7 @@ export const getAllEmployees = asyncHandler(async (req, res) => {
 export const getEmployeeById = asyncHandler(async (req, res) => {
   const employee = await employeesService.getEmployeeById(req.params.id);
 
-  res.json({
-    success: true,
-    data: employee
-  });
+  sendSuccess(res, employee);
 });
 
 /**
@@ -147,12 +142,9 @@ export const getEmployeeById = asyncHandler(async (req, res) => {
  * }
  */
 export const createEmployee = asyncHandler(async (req, res) => {
-  const employee = await employeesService.createEmployee(req.body);
+  const employee = await employeesService.createEmployee(req.body, req);
 
-  res.status(201).json({
-    success: true,
-    data: employee
-  });
+  sendCreated(res, employee);
 });
 
 /**
@@ -191,10 +183,7 @@ export const createEmployee = asyncHandler(async (req, res) => {
 export const bulkCreateEmployees = asyncHandler(async (req, res) => {
   const result = await employeesService.bulkCreateEmployees(req.body.employees);
 
-  res.status(201).json({
-    success: true,
-    data: result
-  });
+  sendCreated(res, result);
 });
 
 /**
@@ -240,12 +229,9 @@ export const bulkCreateEmployees = asyncHandler(async (req, res) => {
  * }
  */
 export const updateEmployee = asyncHandler(async (req, res) => {
-  const employee = await employeesService.updateEmployee(req.params.id, req.body);
+  const employee = await employeesService.updateEmployee(req.params.id, req.body, req);
 
-  res.json({
-    success: true,
-    data: employee
-  });
+  sendSuccess(res, employee);
 });
 
 /**
@@ -279,10 +265,7 @@ export const updateEmployee = asyncHandler(async (req, res) => {
  * }
  */
 export const deleteEmployee = asyncHandler(async (req, res) => {
-  const result = await employeesService.deleteEmployee(req.params.id);
+  const result = await employeesService.deleteEmployee(req.params.id, req);
 
-  res.json({
-    success: true,
-    data: result
-  });
+  sendSuccess(res, result);
 });

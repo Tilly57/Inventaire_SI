@@ -3,6 +3,7 @@
  */
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import * as stockItemsService from '../services/stockItems.service.js';
+import { sendSuccess, sendCreated } from '../utils/responseHelpers.js';
 
 /**
  * GET /api/stock-items
@@ -10,10 +11,7 @@ import * as stockItemsService from '../services/stockItems.service.js';
 export const getAllStockItems = asyncHandler(async (req, res) => {
   const stockItems = await stockItemsService.getAllStockItems();
 
-  res.json({
-    success: true,
-    data: stockItems
-  });
+  sendSuccess(res, stockItems);
 });
 
 /**
@@ -22,34 +20,25 @@ export const getAllStockItems = asyncHandler(async (req, res) => {
 export const getStockItemById = asyncHandler(async (req, res) => {
   const stockItem = await stockItemsService.getStockItemById(req.params.id);
 
-  res.json({
-    success: true,
-    data: stockItem
-  });
+  sendSuccess(res, stockItem);
 });
 
 /**
  * POST /api/stock-items
  */
 export const createStockItem = asyncHandler(async (req, res) => {
-  const stockItem = await stockItemsService.createStockItem(req.body);
+  const stockItem = await stockItemsService.createStockItem(req.body, req);
 
-  res.status(201).json({
-    success: true,
-    data: stockItem
-  });
+  sendCreated(res, stockItem);
 });
 
 /**
  * PATCH /api/stock-items/:id
  */
 export const updateStockItem = asyncHandler(async (req, res) => {
-  const stockItem = await stockItemsService.updateStockItem(req.params.id, req.body);
+  const stockItem = await stockItemsService.updateStockItem(req.params.id, req.body, req);
 
-  res.json({
-    success: true,
-    data: stockItem
-  });
+  sendSuccess(res, stockItem);
 });
 
 /**
@@ -58,22 +47,16 @@ export const updateStockItem = asyncHandler(async (req, res) => {
 export const adjustQuantity = asyncHandler(async (req, res) => {
   const { quantity } = req.body;
 
-  const stockItem = await stockItemsService.adjustStockQuantity(req.params.id, quantity);
+  const stockItem = await stockItemsService.adjustStockQuantity(req.params.id, quantity, req);
 
-  res.json({
-    success: true,
-    data: stockItem
-  });
+  sendSuccess(res, stockItem);
 });
 
 /**
  * DELETE /api/stock-items/:id
  */
 export const deleteStockItem = asyncHandler(async (req, res) => {
-  const result = await stockItemsService.deleteStockItem(req.params.id);
+  const result = await stockItemsService.deleteStockItem(req.params.id, req);
 
-  res.json({
-    success: true,
-    data: result
-  });
+  sendSuccess(res, result);
 });

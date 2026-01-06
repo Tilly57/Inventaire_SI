@@ -23,6 +23,7 @@
  */
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import * as loansService from '../services/loans.service.js';
+import { sendSuccess, sendCreated } from '../utils/responseHelpers.js';
 
 /**
  * Get all loans with optional filters
@@ -66,10 +67,7 @@ export const getAllLoans = asyncHandler(async (req, res) => {
 
   const loans = await loansService.getAllLoans({ status, employeeId });
 
-  res.json({
-    success: true,
-    data: loans
-  });
+  sendSuccess(res, loans);
 });
 
 /**
@@ -107,10 +105,7 @@ export const getAllLoans = asyncHandler(async (req, res) => {
 export const getLoanById = asyncHandler(async (req, res) => {
   const loan = await loansService.getLoanById(req.params.id);
 
-  res.json({
-    success: true,
-    data: loan
-  });
+  sendSuccess(res, loan);
 });
 
 /**
@@ -155,12 +150,9 @@ export const createLoan = asyncHandler(async (req, res) => {
   const { employeeId } = req.body;
   const createdById = req.user.userId;
 
-  const loan = await loansService.createLoan(employeeId, createdById);
+  const loan = await loansService.createLoan(employeeId, createdById, req);
 
-  res.status(201).json({
-    success: true,
-    data: loan
-  });
+  sendCreated(res, loan);
 });
 
 /**
@@ -204,12 +196,9 @@ export const createLoan = asyncHandler(async (req, res) => {
  * }
  */
 export const addLoanLine = asyncHandler(async (req, res) => {
-  const loanLine = await loansService.addLoanLine(req.params.id, req.body);
+  const loanLine = await loansService.addLoanLine(req.params.id, req.body, req);
 
-  res.status(201).json({
-    success: true,
-    data: loanLine
-  });
+  sendCreated(res, loanLine);
 });
 
 /**
@@ -239,10 +228,7 @@ export const addLoanLine = asyncHandler(async (req, res) => {
 export const removeLoanLine = asyncHandler(async (req, res) => {
   const result = await loansService.removeLoanLine(req.params.id, req.params.lineId);
 
-  res.json({
-    success: true,
-    data: result
-  });
+  sendSuccess(res, result);
 });
 
 /**
@@ -287,12 +273,9 @@ export const uploadPickupSignature = asyncHandler(async (req, res) => {
     });
   }
 
-  const loan = await loansService.uploadPickupSignature(req.params.id, signatureData);
+  const loan = await loansService.uploadPickupSignature(req.params.id, signatureData, req);
 
-  res.json({
-    success: true,
-    data: loan
-  });
+  sendSuccess(res, loan);
 });
 
 /**
@@ -337,12 +320,9 @@ export const uploadReturnSignature = asyncHandler(async (req, res) => {
     });
   }
 
-  const loan = await loansService.uploadReturnSignature(req.params.id, signatureData);
+  const loan = await loansService.uploadReturnSignature(req.params.id, signatureData, req);
 
-  res.json({
-    success: true,
-    data: loan
-  });
+  sendSuccess(res, loan);
 });
 
 /**
@@ -377,12 +357,9 @@ export const uploadReturnSignature = asyncHandler(async (req, res) => {
  * }
  */
 export const closeLoan = asyncHandler(async (req, res) => {
-  const loan = await loansService.closeLoan(req.params.id);
+  const loan = await loansService.closeLoan(req.params.id, req);
 
-  res.json({
-    success: true,
-    data: loan
-  });
+  sendSuccess(res, loan);
 });
 
 /**
@@ -410,12 +387,9 @@ export const closeLoan = asyncHandler(async (req, res) => {
  * }
  */
 export const deleteLoan = asyncHandler(async (req, res) => {
-  const result = await loansService.deleteLoan(req.params.id, req.user.id);
+  const result = await loansService.deleteLoan(req.params.id, req.user.id, req);
 
-  res.json({
-    success: true,
-    data: result
-  });
+  sendSuccess(res, result);
 });
 
 /**
@@ -450,10 +424,7 @@ export const batchDeleteLoans = asyncHandler(async (req, res) => {
   const { loanIds } = req.body;
   const result = await loansService.batchDeleteLoans(loanIds, req.user.id);
 
-  res.json({
-    success: true,
-    data: result
-  });
+  sendSuccess(res, result);
 });
 
 /**
@@ -486,10 +457,7 @@ export const batchDeleteLoans = asyncHandler(async (req, res) => {
 export const deletePickupSignature = asyncHandler(async (req, res) => {
   const loan = await loansService.deletePickupSignature(req.params.id);
 
-  res.json({
-    success: true,
-    data: loan
-  });
+  sendSuccess(res, loan);
 });
 
 /**
@@ -522,8 +490,5 @@ export const deletePickupSignature = asyncHandler(async (req, res) => {
 export const deleteReturnSignature = asyncHandler(async (req, res) => {
   const loan = await loansService.deleteReturnSignature(req.params.id);
 
-  res.json({
-    success: true,
-    data: loan
-  });
+  sendSuccess(res, loan);
 });
