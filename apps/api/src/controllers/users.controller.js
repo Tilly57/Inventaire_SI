@@ -3,6 +3,7 @@
  */
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import * as usersService from '../services/users.service.js';
+import { sendSuccess, sendCreated } from '../utils/responseHelpers.js';
 
 /**
  * GET /api/users
@@ -10,10 +11,7 @@ import * as usersService from '../services/users.service.js';
 export const getAllUsers = asyncHandler(async (req, res) => {
   const users = await usersService.getAllUsers();
 
-  res.json({
-    success: true,
-    data: users
-  });
+  sendSuccess(res, users);
 });
 
 /**
@@ -22,10 +20,7 @@ export const getAllUsers = asyncHandler(async (req, res) => {
 export const getUserById = asyncHandler(async (req, res) => {
   const user = await usersService.getUserById(req.params.id);
 
-  res.json({
-    success: true,
-    data: user
-  });
+  sendSuccess(res, user);
 });
 
 /**
@@ -34,36 +29,27 @@ export const getUserById = asyncHandler(async (req, res) => {
 export const createUser = asyncHandler(async (req, res) => {
   const { email, password, role } = req.body;
 
-  const user = await usersService.createUser(email, password, role);
+  const user = await usersService.createUser(email, password, role, req);
 
-  res.status(201).json({
-    success: true,
-    data: user
-  });
+  sendCreated(res, user);
 });
 
 /**
  * PATCH /api/users/:id
  */
 export const updateUser = asyncHandler(async (req, res) => {
-  const user = await usersService.updateUser(req.params.id, req.body);
+  const user = await usersService.updateUser(req.params.id, req.body, req);
 
-  res.json({
-    success: true,
-    data: user
-  });
+  sendSuccess(res, user);
 });
 
 /**
  * DELETE /api/users/:id
  */
 export const deleteUser = asyncHandler(async (req, res) => {
-  const result = await usersService.deleteUser(req.params.id);
+  const result = await usersService.deleteUser(req.params.id, req);
 
-  res.json({
-    success: true,
-    data: result
-  });
+  sendSuccess(res, result);
 });
 
 /**
@@ -74,8 +60,5 @@ export const changePassword = asyncHandler(async (req, res) => {
 
   const result = await usersService.changePassword(req.params.id, currentPassword, newPassword);
 
-  res.json({
-    success: true,
-    data: result
-  });
+  sendSuccess(res, result);
 });

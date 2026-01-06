@@ -14,6 +14,8 @@
 
 import prisma from '../config/database.js';
 import { NotFoundError, ValidationError } from '../utils/errors.js';
+import { findOneOrFail } from '../utils/prismaHelpers.js';
+import { logCreate, logUpdate, logDelete } from '../utils/auditHelpers.js';
 
 /**
  * Get all stock items
@@ -55,8 +57,7 @@ export async function getAllStockItems() {
  * // item.loanLines = [{ quantity: 5, loan: { employee: {...} } }, ...]
  */
 export async function getStockItemById(id) {
-  const stockItem = await prisma.stockItem.findUnique({
-    where: { id },
+  const stockItem = await findOneOrFail('stockItem', { id }, {
     include: {
       assetModel: true,  // Include model details
       loanLines: {
@@ -73,12 +74,9 @@ export async function getStockItemById(id) {
           }
         }
       }
-    }
+    },
+    errorMessage: 'Article de stock non trouvé'
   });
-
-  if (!stockItem) {
-    throw new NotFoundError('Article de stock non trouvé');
-  }
 
   return stockItem;
 }
@@ -92,6 +90,7 @@ export async function getStockItemById(id) {
  * @param {string} data.assetModelId - Asset model ID (must exist)
  * @param {number} [data.quantity=0] - Initial quantity in stock
  * @param {string} [data.notes] - Optional notes
+ * @param {Object} req - Express request object (for audit trail)
  * @returns {Promise<Object>} Created stock item with assetModel populated
  * @throws {NotFoundError} If asset model doesn't exist
  *
@@ -100,17 +99,13 @@ export async function getStockItemById(id) {
  *   assetModelId: 'modelId123',
  *   quantity: 50,
  *   notes: 'Câbles de recharge pour postes de travail'
- * });
+ * }, req);
  */
-export async function createStockItem(data) {
+export async function createStockItem(data, req) {
   // Validate that asset model exists
-  const assetModel = await prisma.assetModel.findUnique({
-    where: { id: data.assetModelId }
+  await findOneOrFail('assetModel', { id: data.assetModelId }, {
+    errorMessage: 'Modèle d\'équipement non trouvé'
   });
-
-  if (!assetModel) {
-    throw new NotFoundError('Modèle d\'équipement non trouvé');
-  }
 
   const stockItem = await prisma.stockItem.create({
     data,
@@ -118,6 +113,9 @@ export async function createStockItem(data) {
       assetModel: true  // Include model in response
     }
   });
+
+  // Audit trail
+  await logCreate('StockItem', stockItem.id, req, stockItem);
 
   return stockItem;
 }
@@ -133,29 +131,26 @@ export async function createStockItem(data) {
  * @param {string} [data.assetModelId] - Updated asset model ID (must exist)
  * @param {number} [data.quantity] - Updated quantity (prefer adjustStockQuantity)
  * @param {string} [data.notes] - Updated notes
+ * @param {Object} req - Express request object (for audit trail)
  * @returns {Promise<Object>} Updated stock item with assetModel populated
  * @throws {NotFoundError} If stock item or asset model doesn't exist
  *
  * @example
  * const updated = await updateStockItem('stockId123', {
  *   notes: 'Câbles USB-C neufs commandés en décembre'
- * });
+ * }, req);
  */
-export async function updateStockItem(id, data) {
+export async function updateStockItem(id, data, req) {
   // Check if stock item exists
-  const existingItem = await prisma.stockItem.findUnique({ where: { id } });
-  if (!existingItem) {
-    throw new NotFoundError('Article de stock non trouvé');
-  }
+  const existingItem = await findOneOrFail('stockItem', { id }, {
+    errorMessage: 'Article de stock non trouvé'
+  });
 
   // If asset model is being changed, validate it exists
   if (data.assetModelId) {
-    const assetModel = await prisma.assetModel.findUnique({
-      where: { id: data.assetModelId }
+    await findOneOrFail('assetModel', { id: data.assetModelId }, {
+      errorMessage: 'Modèle d\'équipement non trouvé'
     });
-    if (!assetModel) {
-      throw new NotFoundError('Modèle d\'équipement non trouvé');
-    }
   }
 
   const stockItem = await prisma.stockItem.update({
@@ -165,6 +160,9 @@ export async function updateStockItem(id, data) {
       assetModel: true  // Include model in response
     }
   });
+
+  // Audit trail
+  await logUpdate('StockItem', id, req, existingItem, stockItem);
 
   return stockItem;
 }
@@ -181,29 +179,29 @@ export async function updateStockItem(id, data) {
  *
  * @param {string} id - Stock item ID
  * @param {number} adjustment - Quantity to add (positive) or remove (negative)
+ * @param {Object} req - Express request object (for audit trail)
  * @returns {Promise<Object>} Updated stock item with new quantity
  * @throws {NotFoundError} If stock item doesn't exist
  * @throws {ValidationError} If adjustment would result in negative quantity
  *
  * @example
  * // Receive new stock (+50 units)
- * await adjustStockQuantity('stockId123', 50);
+ * await adjustStockQuantity('stockId123', 50, req);
  *
  * @example
  * // Manual removal (-10 units for damaged items)
- * await adjustStockQuantity('stockId123', -10);
+ * await adjustStockQuantity('stockId123', -10, req);
  *
  * @example
  * // This will throw ValidationError if current quantity is 5
- * await adjustStockQuantity('stockId123', -10);
+ * await adjustStockQuantity('stockId123', -10, req);
  * // Error: "La quantité ne peut pas être négative"
  */
-export async function adjustStockQuantity(id, adjustment) {
+export async function adjustStockQuantity(id, adjustment, req) {
   // Check if stock item exists
-  const existingItem = await prisma.stockItem.findUnique({ where: { id } });
-  if (!existingItem) {
-    throw new NotFoundError('Article de stock non trouvé');
-  }
+  const existingItem = await findOneOrFail('stockItem', { id }, {
+    errorMessage: 'Article de stock non trouvé'
+  });
 
   // Calculate new quantity
   const newQuantity = existingItem.quantity + adjustment;
@@ -222,6 +220,9 @@ export async function adjustStockQuantity(id, adjustment) {
     }
   });
 
+  // Audit trail
+  await logUpdate('StockItem', id, req, { quantity: existingItem.quantity }, { quantity: newQuantity, adjustment });
+
   return stockItem;
 }
 
@@ -236,27 +237,27 @@ export async function adjustStockQuantity(id, adjustment) {
  * deleting items that are still physically in stock.
  *
  * @param {string} id - Stock item ID to delete
+ * @param {Object} req - Express request object (for audit trail)
  * @returns {Promise<Object>} Success message
  * @throws {NotFoundError} If stock item doesn't exist
  *
  * @example
- * await deleteStockItem('stockId123');
+ * await deleteStockItem('stockId123', req);
  */
-export async function deleteStockItem(id) {
+export async function deleteStockItem(id, req) {
   // Check if stock item exists and fetch loan history for audit
-  const existingItem = await prisma.stockItem.findUnique({
-    where: { id },
+  const existingItem = await findOneOrFail('stockItem', { id }, {
     include: {
       loanLines: true  // Loan history preserved in database
-    }
+    },
+    errorMessage: 'Article de stock non trouvé'
   });
-
-  if (!existingItem) {
-    throw new NotFoundError('Article de stock non trouvé');
-  }
 
   // Delete item (loan history remains in loanLines table)
   await prisma.stockItem.delete({ where: { id } });
+
+  // Audit trail
+  await logDelete('StockItem', id, req, existingItem);
 
   return { message: 'Article de stock supprimé avec succès' };
 }

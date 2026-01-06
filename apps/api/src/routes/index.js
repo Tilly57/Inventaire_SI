@@ -10,6 +10,8 @@ import assetModelsRoutes from './assetModels.routes.js';
 import assetItemsRoutes from './assetItems.routes.js';
 import stockItemsRoutes from './stockItems.routes.js';
 import loansRoutes from './loans.routes.js';
+import dashboardRoutes from './dashboard.routes.js';
+import auditLogsRoutes from './auditLogs.routes.js';
 import healthRoutes from './health.routes.js';
 
 const router = express.Router();
@@ -26,5 +28,7 @@ router.use('/asset-models', assetModelsRoutes);
 router.use('/asset-items', assetItemsRoutes);
 router.use('/stock-items', stockItemsRoutes);
 router.use('/loans', loansRoutes);
+router.use('/dashboard', dashboardRoutes);
+router.use('/audit-logs', auditLogsRoutes);
 
 export default router;

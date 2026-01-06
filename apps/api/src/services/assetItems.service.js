@@ -14,6 +14,8 @@
 
 import prisma from '../config/database.js';
 import { NotFoundError, ConflictError, ValidationError } from '../utils/errors.js';
+import { findOneOrFail, validateUniqueFields } from '../utils/prismaHelpers.js';
+import { logCreate, logUpdate, logDelete } from '../utils/auditHelpers.js';
 
 /**
  * Get all asset items with optional filters
@@ -93,8 +95,7 @@ export async function getAllAssetItems(filters = {}) {
  * // item.loanLines[0].loan.employee.firstName = 'Jean'
  */
 export async function getAssetItemById(id) {
-  const assetItem = await prisma.assetItem.findUnique({
-    where: { id },
+  const assetItem = await findOneOrFail('assetItem', { id }, {
     include: {
       assetModel: true,  // Model details
       loanLines: {
@@ -111,12 +112,9 @@ export async function getAssetItemById(id) {
           }
         }
       }
-    }
+    },
+    errorMessage: 'Article d\'équipement non trouvé'
   });
-
-  if (!assetItem) {
-    throw new NotFoundError('Article d\'équipement non trouvé');
-  }
 
   return assetItem;
 }
@@ -135,6 +133,7 @@ export async function getAssetItemById(id) {
  * @param {string} [data.serial] - Unique manufacturer serial number
  * @param {string} [data.status='EN_STOCK'] - Initial status
  * @param {string} [data.notes] - Optional notes
+ * @param {Object} req - Express request object (for audit trail)
  * @returns {Promise<Object>} Created asset item with model details
  * @throws {NotFoundError} If asset model doesn't exist
  * @throws {ConflictError} If asset tag or serial already exists
@@ -145,32 +144,24 @@ export async function getAssetItemById(id) {
  *   assetTag: 'INV-2024-001',
  *   serial: 'SN123456789',
  *   status: 'EN_STOCK'
- * });
+ * }, req);
  */
-export async function createAssetItem(data) {
+export async function createAssetItem(data, req) {
   // Validate asset model exists
-  const assetModel = await prisma.assetModel.findUnique({ where: { id: data.assetModelId } });
-  if (!assetModel) {
-    throw new NotFoundError('Modèle d\'équipement non trouvé');
-  }
+  await findOneOrFail('assetModel', { id: data.assetModelId }, {
+    errorMessage: 'Modèle d\'équipement non trouvé'
+  });
 
-  // Validate unique asset tag if provided
-  // Asset tags are used for internal inventory tracking
-  if (data.assetTag) {
-    const existingTag = await prisma.assetItem.findUnique({ where: { assetTag: data.assetTag } });
-    if (existingTag) {
-      throw new ConflictError('Ce numéro d\'inventaire existe déjà');
+  // Validate unique asset tag and serial number
+  await validateUniqueFields('assetItem', {
+    assetTag: data.assetTag,
+    serial: data.serial
+  }, {
+    errorMessages: {
+      assetTag: 'Ce numéro d\'inventaire existe déjà',
+      serial: 'Ce numéro de série existe déjà'
     }
-  }
-
-  // Validate unique serial number if provided
-  // Serial numbers are manufacturer identifiers
-  if (data.serial) {
-    const existingSerial = await prisma.assetItem.findUnique({ where: { serial: data.serial } });
-    if (existingSerial) {
-      throw new ConflictError('Ce numéro de série existe déjà');
-    }
-  }
+  });
 
   const assetItem = await prisma.assetItem.create({
     data,
@@ -178,6 +169,9 @@ export async function createAssetItem(data) {
       assetModel: true
     }
   });
+
+  // Audit trail
+  await logCreate('AssetItem', assetItem.id, req, assetItem);
 
   return assetItem;
 }
@@ -198,6 +192,7 @@ export async function createAssetItem(data) {
  * @param {string} [data.serial] - New serial number
  * @param {string} [data.status] - New status
  * @param {string} [data.notes] - Updated notes
+ * @param {Object} req - Express request object (for audit trail)
  * @returns {Promise<Object>} Updated asset item with model details
  * @throws {NotFoundError} If item or new asset model doesn't exist
  * @throws {ConflictError} If new asset tag or serial already exists
@@ -206,38 +201,32 @@ export async function createAssetItem(data) {
  * const updated = await updateAssetItem('itemId123', {
  *   status: 'HS',
  *   notes: 'Écran cassé - en attente de réparation'
- * });
+ * }, req);
  */
-export async function updateAssetItem(id, data) {
+export async function updateAssetItem(id, data, req) {
   // Check if asset item exists
-  const existingItem = await prisma.assetItem.findUnique({ where: { id } });
-  if (!existingItem) {
-    throw new NotFoundError('Article d\'équipement non trouvé');
-  }
+  const existingItem = await findOneOrFail('assetItem', { id }, {
+    errorMessage: 'Article d\'équipement non trouvé'
+  });
 
   // If asset model is being changed, validate it exists
   if (data.assetModelId) {
-    const assetModel = await prisma.assetModel.findUnique({ where: { id: data.assetModelId } });
-    if (!assetModel) {
-      throw new NotFoundError('Modèle d\'équipement non trouvé');
-    }
+    await findOneOrFail('assetModel', { id: data.assetModelId }, {
+      errorMessage: 'Modèle d\'équipement non trouvé'
+    });
   }
 
-  // If asset tag is being changed, validate uniqueness
-  if (data.assetTag && data.assetTag !== existingItem.assetTag) {
-    const existingTag = await prisma.assetItem.findUnique({ where: { assetTag: data.assetTag } });
-    if (existingTag) {
-      throw new ConflictError('Ce numéro d\'inventaire existe déjà');
+  // Validate unique asset tag and serial number (if changing)
+  await validateUniqueFields('assetItem', {
+    assetTag: data.assetTag,
+    serial: data.serial
+  }, {
+    excludeId: id,
+    errorMessages: {
+      assetTag: 'Ce numéro d\'inventaire existe déjà',
+      serial: 'Ce numéro de série existe déjà'
     }
-  }
-
-  // If serial number is being changed, validate uniqueness
-  if (data.serial && data.serial !== existingItem.serial) {
-    const existingSerial = await prisma.assetItem.findUnique({ where: { serial: data.serial } });
-    if (existingSerial) {
-      throw new ConflictError('Ce numéro de série existe déjà');
-    }
-  }
+  });
 
   const assetItem = await prisma.assetItem.update({
     where: { id },
@@ -246,6 +235,9 @@ export async function updateAssetItem(id, data) {
       assetModel: true
     }
   });
+
+  // Audit trail
+  await logUpdate('AssetItem', id, req, existingItem, assetItem);
 
   return assetItem;
 }
@@ -262,23 +254,23 @@ export async function updateAssetItem(id, data) {
  *
  * @param {string} id - Asset item ID
  * @param {string} status - New status (EN_STOCK, PRETE, HS, REPARATION)
+ * @param {Object} req - Express request object (for audit trail)
  * @returns {Promise<Object>} Updated asset item with model details
  * @throws {NotFoundError} If item doesn't exist
  *
  * @example
  * // Mark item as broken
- * await updateAssetItemStatus('itemId123', 'HS');
+ * await updateAssetItemStatus('itemId123', 'HS', req);
  *
  * @example
  * // Mark repaired item as back in stock
- * await updateAssetItemStatus('itemId123', 'EN_STOCK');
+ * await updateAssetItemStatus('itemId123', 'EN_STOCK', req);
  */
-export async function updateAssetItemStatus(id, status) {
+export async function updateAssetItemStatus(id, status, req) {
   // Check if asset item exists
-  const existingItem = await prisma.assetItem.findUnique({ where: { id } });
-  if (!existingItem) {
-    throw new NotFoundError('Article d\'équipement non trouvé');
-  }
+  const existingItem = await findOneOrFail('assetItem', { id }, {
+    errorMessage: 'Article d\'équipement non trouvé'
+  });
 
   const assetItem = await prisma.assetItem.update({
     where: { id },
@@ -287,6 +279,12 @@ export async function updateAssetItemStatus(id, status) {
       assetModel: true
     }
   });
+
+  // Audit trail
+  await logUpdate('AssetItem', id, req,
+    { status: existingItem.status },
+    { status }
+  );
 
   return assetItem;
 }
@@ -299,27 +297,27 @@ export async function updateAssetItemStatus(id, status) {
  * the loanLines table which maintains the reference for audit purposes.
  *
  * @param {string} id - Asset item ID to delete
+ * @param {Object} req - Express request object (for audit trail)
  * @returns {Promise<Object>} Success message
  * @throws {NotFoundError} If item doesn't exist
  *
  * @example
- * await deleteAssetItem('itemId123');
+ * await deleteAssetItem('itemId123', req);
  */
-export async function deleteAssetItem(id) {
+export async function deleteAssetItem(id, req) {
   // Check if asset item exists and fetch loan lines for audit
-  const existingItem = await prisma.assetItem.findUnique({
-    where: { id },
+  const existingItem = await findOneOrFail('assetItem', { id }, {
     include: {
       loanLines: true  // Loan history preserved in database
-    }
+    },
+    errorMessage: 'Article d\'équipement non trouvé'
   });
-
-  if (!existingItem) {
-    throw new NotFoundError('Article d\'équipement non trouvé');
-  }
 
   // Delete item (loan history remains in loanLines table)
   await prisma.assetItem.delete({ where: { id } });
+
+  // Audit trail
+  await logDelete('AssetItem', id, req, existingItem);
 
   return { message: 'Article d\'équipement supprimé avec succès' };
 }
@@ -468,12 +466,9 @@ export async function createAssetItemsBulk(data) {
   const { assetModelId, tagPrefix, quantity, status = 'EN_STOCK', notes } = data;
 
   // 1. Validate asset model exists
-  const assetModel = await prisma.assetModel.findUnique({
-    where: { id: assetModelId }
+  await findOneOrFail('assetModel', { id: assetModelId }, {
+    errorMessage: 'Modèle d\'équipement non trouvé'
   });
-  if (!assetModel) {
-    throw new NotFoundError('Modèle d\'équipement non trouvé');
-  }
 
   // 2. Validate quantity range
   if (quantity < 1 || quantity > 100) {

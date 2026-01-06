@@ -13,6 +13,8 @@ import prisma from '../config/database.js';
 import { NotFoundError, ValidationError } from '../utils/errors.js';
 import { deleteSignatureFile, deleteSignatureFiles } from '../utils/fileUtils.js';
 import { saveBase64Image } from '../utils/saveBase64Image.js';
+import { findOneOrFail } from '../utils/prismaHelpers.js';
+import { logCreate, logUpdate, logDelete } from '../utils/auditHelpers.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import logger from '../config/logger.js';
@@ -90,8 +92,7 @@ export async function getAllLoans(filters = {}) {
  * const loan = await getLoanById('clijrn9ht0000...');
  */
 export async function getLoanById(id) {
-  const loan = await prisma.loan.findUnique({
-    where: { id },
+  const loan = await findOneOrFail('loan', { id }, {
     include: {
       employee: true,
       createdBy: {
@@ -111,12 +112,9 @@ export async function getLoanById(id) {
           stockItem: true
         }
       }
-    }
+    },
+    errorMessage: 'Prêt non trouvé'
   });
-
-  if (!loan) {
-    throw new NotFoundError('Prêt non trouvé');
-  }
 
   return loan;
 }
@@ -129,18 +127,18 @@ export async function getLoanById(id) {
  *
  * @param {string} employeeId - The employee ID who is borrowing
  * @param {string} createdById - The user ID creating the loan
+ * @param {Object} req - Express request object (for audit trail)
  * @returns {Promise<Object>} Newly created loan object
  * @throws {NotFoundError} If employee doesn't exist
  *
  * @example
- * const loan = await createLoan('employee_cuid', 'user_cuid');
+ * const loan = await createLoan('employee_cuid', 'user_cuid', req);
  */
-export async function createLoan(employeeId, createdById) {
+export async function createLoan(employeeId, createdById, req) {
   // Validate employee exists before creating loan
-  const employee = await prisma.employee.findUnique({ where: { id: employeeId } });
-  if (!employee) {
-    throw new NotFoundError('Employé non trouvé');
-  }
+  await findOneOrFail('employee', { id: employeeId }, {
+    errorMessage: 'Employé non trouvé'
+  });
 
   const loan = await prisma.loan.create({
     data: {
@@ -161,6 +159,9 @@ export async function createLoan(employeeId, createdById) {
     }
   });
 
+  // Audit trail
+  await logCreate('Loan', loan.id, req, { employeeId, status: 'OPEN' });
+
   return loan;
 }
 
@@ -178,23 +179,24 @@ export async function createLoan(employeeId, createdById) {
  * @param {string} [data.assetItemId] - Asset item ID (for unique equipment)
  * @param {string} [data.stockItemId] - Stock item ID (for consumables)
  * @param {number} [data.quantity] - Quantity (for stock items, default 1)
+ * @param {Object} req - Express request object (for audit trail)
  * @returns {Promise<Object>} Created loan line with item details
  * @throws {NotFoundError} If loan, asset, or stock item not found
  * @throws {ValidationError} If loan is closed, item unavailable, or insufficient stock
  *
  * @example
  * // Add an asset item (laptop)
- * await addLoanLine('loan123', { assetItemId: 'asset456' });
+ * await addLoanLine('loan123', { assetItemId: 'asset456' }, req);
  *
  * // Add stock items (3 HDMI cables)
- * await addLoanLine('loan123', { stockItemId: 'stock789', quantity: 3 });
+ * await addLoanLine('loan123', { stockItemId: 'stock789', quantity: 3 }, req);
  */
-export async function addLoanLine(loanId, data) {
+export async function addLoanLine(loanId, data, req) {
   // Check if loan exists and is open
-  const loan = await prisma.loan.findUnique({ where: { id: loanId } });
-  if (!loan) {
-    throw new NotFoundError('Prêt non trouvé');
-  }
+  const loan = await findOneOrFail('loan', { id: loanId }, {
+    errorMessage: 'Prêt non trouvé'
+  });
+
   if (loan.deletedAt) {
     throw new ValidationError('Impossible de modifier un prêt supprimé');
   }
@@ -209,10 +211,9 @@ export async function addLoanLine(loanId, data) {
 
   // Handle Asset Item (unique equipment like laptops, monitors)
   if (data.assetItemId) {
-    const assetItem = await prisma.assetItem.findUnique({ where: { id: data.assetItemId } });
-    if (!assetItem) {
-      throw new NotFoundError('Article d\'équipement non trouvé');
-    }
+    const assetItem = await findOneOrFail('assetItem', { id: data.assetItemId }, {
+      errorMessage: 'Article d\'équipement non trouvé'
+    });
 
     // Verify asset is available for loan
     if (assetItem.status !== 'EN_STOCK') {
@@ -242,15 +243,17 @@ export async function addLoanLine(loanId, data) {
       })
     ]);
 
+    // Audit trail
+    await logUpdate('Loan', loanId, req, {}, { action: 'ADD_ASSET_LINE', assetItemId: data.assetItemId });
+
     return loanLine;
   }
 
   // Handle Stock Item (consumables like cables, adapters)
   if (data.stockItemId) {
-    const stockItem = await prisma.stockItem.findUnique({ where: { id: data.stockItemId } });
-    if (!stockItem) {
-      throw new NotFoundError('Article de stock non trouvé');
-    }
+    const stockItem = await findOneOrFail('stockItem', { id: data.stockItemId }, {
+      errorMessage: 'Article de stock non trouvé'
+    });
 
     const quantity = data.quantity || 1;
 
@@ -281,6 +284,9 @@ export async function addLoanLine(loanId, data) {
       })
     ]);
 
+    // Audit trail
+    await logUpdate('Loan', loanId, req, {}, { action: 'ADD_STOCK_LINE', stockItemId: data.stockItemId, quantity });
+
     return loanLine;
   }
 }
@@ -303,10 +309,10 @@ export async function addLoanLine(loanId, data) {
  */
 export async function removeLoanLine(loanId, lineId) {
   // Check if loan exists and is open
-  const loan = await prisma.loan.findUnique({ where: { id: loanId } });
-  if (!loan) {
-    throw new NotFoundError('Prêt non trouvé');
-  }
+  const loan = await findOneOrFail('loan', { id: loanId }, {
+    errorMessage: 'Prêt non trouvé'
+  });
+
   if (loan.deletedAt) {
     throw new ValidationError('Impossible de modifier un prêt supprimé');
   }
@@ -364,18 +370,19 @@ export async function removeLoanLine(loanId, lineId) {
  * @param {string} loanId - The loan ID
  * @param {Object} file - Multer file object containing signature image
  * @param {string} file.filename - Generated filename for the signature
+ * @param {Object} req - Express request object (for audit trail)
  * @returns {Promise<Object>} Updated loan with signature URL
  * @throws {NotFoundError} If loan doesn't exist
  *
  * @example
- * const updatedLoan = await uploadPickupSignature('loan123', req.file);
+ * const updatedLoan = await uploadPickupSignature('loan123', req.file, req);
  */
-export async function uploadPickupSignature(loanId, fileOrBase64) {
+export async function uploadPickupSignature(loanId, fileOrBase64, req) {
   // Check if loan exists
-  const loan = await prisma.loan.findUnique({ where: { id: loanId } });
-  if (!loan) {
-    throw new NotFoundError('Prêt non trouvé');
-  }
+  const loan = await findOneOrFail('loan', { id: loanId }, {
+    errorMessage: 'Prêt non trouvé'
+  });
+
   if (loan.deletedAt) {
     throw new ValidationError('Impossible de modifier un prêt supprimé');
   }
@@ -419,6 +426,9 @@ export async function uploadPickupSignature(loanId, fileOrBase64) {
     }
   });
 
+  // Audit trail
+  await logUpdate('Loan', loanId, req, { pickupSignedAt: loan.pickupSignedAt }, { pickupSignedAt: updatedLoan.pickupSignedAt, pickupSignatureUrl: signatureUrl });
+
   return updatedLoan;
 }
 
@@ -431,18 +441,19 @@ export async function uploadPickupSignature(loanId, fileOrBase64) {
  * @param {string} loanId - The loan ID
  * @param {Object} file - Multer file object containing signature image
  * @param {string} file.filename - Generated filename for the signature
+ * @param {Object} req - Express request object (for audit trail)
  * @returns {Promise<Object>} Updated loan with signature URL
  * @throws {NotFoundError} If loan doesn't exist
  *
  * @example
- * const updatedLoan = await uploadReturnSignature('loan123', req.file);
+ * const updatedLoan = await uploadReturnSignature('loan123', req.file, req);
  */
-export async function uploadReturnSignature(loanId, fileOrBase64) {
+export async function uploadReturnSignature(loanId, fileOrBase64, req) {
   // Check if loan exists
-  const loan = await prisma.loan.findUnique({ where: { id: loanId } });
-  if (!loan) {
-    throw new NotFoundError('Prêt non trouvé');
-  }
+  const loan = await findOneOrFail('loan', { id: loanId }, {
+    errorMessage: 'Prêt non trouvé'
+  });
+
   if (loan.deletedAt) {
     throw new ValidationError('Impossible de modifier un prêt supprimé');
   }
@@ -486,6 +497,9 @@ export async function uploadReturnSignature(loanId, fileOrBase64) {
     }
   });
 
+  // Audit trail
+  await logUpdate('Loan', loanId, req, { returnSignedAt: loan.returnSignedAt }, { returnSignedAt: updatedLoan.returnSignedAt, returnSignatureUrl: signatureUrl });
+
   return updatedLoan;
 }
 
@@ -497,17 +511,17 @@ export async function uploadReturnSignature(loanId, fileOrBase64) {
  * This is the final step in the loan workflow.
  *
  * @param {string} loanId - The loan ID to close
+ * @param {Object} req - Express request object (for audit trail)
  * @returns {Promise<Object>} Updated closed loan
  * @throws {NotFoundError} If loan doesn't exist
  * @throws {ValidationError} If loan is already closed
  *
  * @example
- * const closedLoan = await closeLoan('loan123');
+ * const closedLoan = await closeLoan('loan123', req);
  */
-export async function closeLoan(loanId) {
+export async function closeLoan(loanId, req) {
   // Get loan with lines to process asset and stock updates
-  const loan = await prisma.loan.findUnique({
-    where: { id: loanId },
+  const loan = await findOneOrFail('loan', { id: loanId }, {
     include: {
       lines: {
         include: {
@@ -515,12 +529,9 @@ export async function closeLoan(loanId) {
           stockItem: true
         }
       }
-    }
+    },
+    errorMessage: 'Prêt non trouvé'
   });
-
-  if (!loan) {
-    throw new NotFoundError('Prêt non trouvé');
-  }
 
   if (loan.deletedAt) {
     throw new ValidationError('Impossible de modifier un prêt supprimé');
@@ -588,6 +599,9 @@ export async function closeLoan(loanId) {
     ...stockItemUpdates   // Execute all stock updates in same transaction
   ]);
 
+  // Audit trail
+  await logUpdate('Loan', loanId, req, { status: loan.status, closedAt: loan.closedAt }, { status: 'CLOSED', closedAt: updatedLoan.closedAt });
+
   return updatedLoan;
 }
 
@@ -600,14 +614,15 @@ export async function closeLoan(loanId) {
  *
  * @param {string} loanId - The loan ID to soft delete
  * @param {string} userId - The ID of the user performing the deletion
+ * @param {Object} req - Express request object (for audit trail)
  * @returns {Promise<Object>} Success message
  * @throws {NotFoundError} If loan doesn't exist
  * @throws {ValidationError} If loan is already deleted
  *
  * @example
- * await deleteLoan('loan123', 'user456');
+ * await deleteLoan('loan123', 'user456', req);
  */
-export async function deleteLoan(loanId, userId) {
+export async function deleteLoan(loanId, userId, req) {
   // Get loan with lines to process reversions
   const loan = await prisma.loan.findUnique({
     where: { id: loanId },
@@ -670,6 +685,9 @@ export async function deleteLoan(loanId, userId) {
     // Revert all asset/stock statuses
     ...updates
   ]);
+
+  // Audit trail
+  await logDelete('Loan', loanId, req, { status: loan.status, deletedAt: loan.deletedAt });
 
   // NOTE: We keep signatures and loan lines for full traceability
   return { message: 'Prêt supprimé avec succès' };
@@ -781,10 +799,10 @@ export async function batchDeleteLoans(loanIds, userId) {
  * @throws {ValidationError} If loan is deleted
  */
 export async function deletePickupSignature(loanId) {
-  const loan = await prisma.loan.findUnique({ where: { id: loanId } });
-  if (!loan) {
-    throw new NotFoundError('Prêt non trouvé');
-  }
+  const loan = await findOneOrFail('loan', { id: loanId }, {
+    errorMessage: 'Prêt non trouvé'
+  });
+
   if (loan.deletedAt) {
     throw new ValidationError('Impossible de modifier un prêt supprimé');
   }
@@ -834,10 +852,10 @@ export async function deletePickupSignature(loanId) {
  * @throws {ValidationError} If loan is deleted
  */
 export async function deleteReturnSignature(loanId) {
-  const loan = await prisma.loan.findUnique({ where: { id: loanId } });
-  if (!loan) {
-    throw new NotFoundError('Prêt non trouvé');
-  }
+  const loan = await findOneOrFail('loan', { id: loanId }, {
+    errorMessage: 'Prêt non trouvé'
+  });
+
   if (loan.deletedAt) {
     throw new ValidationError('Impossible de modifier un prêt supprimé');
   }

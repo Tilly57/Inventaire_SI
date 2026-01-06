@@ -15,6 +15,8 @@ import bcrypt from 'bcryptjs';
 import prisma from '../config/database.js';
 import { NotFoundError, ConflictError, UnauthorizedError } from '../utils/errors.js';
 import { BCRYPT_SALT_ROUNDS } from '../utils/constants.js';
+import { findOneOrFail, validateUniqueFields } from '../utils/prismaHelpers.js';
+import { logCreate, logUpdate, logDelete } from '../utils/auditHelpers.js';
 
 /**
  * Get all system users
@@ -57,20 +59,16 @@ export async function getAllUsers() {
  * const user = await getUserById('clijrn9ht0000...');
  */
 export async function getUserById(id) {
-  const user = await prisma.user.findUnique({
-    where: { id },
+  const user = await findOneOrFail('user', { id }, {
     select: {
       id: true,
       email: true,
       role: true,
       createdAt: true,
       updatedAt: true
-    }
+    },
+    errorMessage: 'Utilisateur non trouvé'
   });
-
-  if (!user) {
-    throw new NotFoundError('Utilisateur non trouvé');
-  }
 
   return user;
 }
@@ -84,18 +82,18 @@ export async function getUserById(id) {
  * @param {string} email - User email (must be unique)
  * @param {string} password - Plain text password (will be hashed)
  * @param {string} role - User role (ADMIN, GESTIONNAIRE, or LECTURE)
+ * @param {Object} req - Express request object (for audit trail)
  * @returns {Promise<Object>} Created user object (excluding password)
  * @throws {ConflictError} If email already exists
  *
  * @example
- * const user = await createUser('user@example.com', 'SecurePass123!', 'GESTIONNAIRE');
+ * const user = await createUser('user@example.com', 'SecurePass123!', 'GESTIONNAIRE', req);
  */
-export async function createUser(email, password, role) {
+export async function createUser(email, password, role, req) {
   // Check if user already exists
-  const existingUser = await prisma.user.findUnique({ where: { email } });
-  if (existingUser) {
-    throw new ConflictError('Un utilisateur avec cet email existe déjà');
-  }
+  await validateUniqueFields('user', { email }, {
+    errorMessages: { email: 'Un utilisateur avec cet email existe déjà' }
+  });
 
   // Hash password with bcrypt (configured salt rounds from constants)
   const passwordHash = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
@@ -116,6 +114,9 @@ export async function createUser(email, password, role) {
     }
   });
 
+  // Audit trail (NEVER log passwords)
+  await logCreate('User', user.id, req, { email, role });  // Exclude passwordHash
+
   return user;
 }
 
@@ -129,26 +130,26 @@ export async function createUser(email, password, role) {
  * @param {Object} data - Update data
  * @param {string} [data.email] - New email (must be unique)
  * @param {string} [data.role] - New role
+ * @param {Object} req - Express request object (for audit trail)
  * @returns {Promise<Object>} Updated user object
  * @throws {NotFoundError} If user doesn't exist
  * @throws {ConflictError} If new email already exists
  *
  * @example
- * const updated = await updateUser('userId123', { role: 'ADMIN' });
+ * const updated = await updateUser('userId123', { role: 'ADMIN' }, req);
  */
-export async function updateUser(id, data) {
+export async function updateUser(id, data, req) {
   // Check if user exists
-  const existingUser = await prisma.user.findUnique({ where: { id } });
-  if (!existingUser) {
-    throw new NotFoundError('Utilisateur non trouvé');
-  }
+  const existingUser = await findOneOrFail('user', { id }, {
+    errorMessage: 'Utilisateur non trouvé'
+  });
 
   // If email is being changed, validate uniqueness
   if (data.email && data.email !== existingUser.email) {
-    const emailConflict = await prisma.user.findUnique({ where: { email: data.email } });
-    if (emailConflict) {
-      throw new ConflictError('Un utilisateur avec cet email existe déjà');
-    }
+    await validateUniqueFields('user', { email: data.email }, {
+      excludeId: id,
+      errorMessages: { email: 'Un utilisateur avec cet email existe déjà' }
+    });
   }
 
   // Update user
@@ -164,6 +165,9 @@ export async function updateUser(id, data) {
     }
   });
 
+  // Audit trail (exclude passwordHash)
+  await logUpdate('User', id, req, { email: existingUser.email, role: existingUser.role }, { email: user.email, role: user.role });
+
   return user;
 }
 
@@ -174,21 +178,24 @@ export async function updateUser(id, data) {
  * Note: No cascading checks needed as users don't own critical data.
  *
  * @param {string} id - User ID to delete
+ * @param {Object} req - Express request object (for audit trail)
  * @returns {Promise<Object>} Success message
  * @throws {NotFoundError} If user doesn't exist
  *
  * @example
- * await deleteUser('userId123');
+ * await deleteUser('userId123', req);
  */
-export async function deleteUser(id) {
+export async function deleteUser(id, req) {
   // Check if user exists
-  const existingUser = await prisma.user.findUnique({ where: { id } });
-  if (!existingUser) {
-    throw new NotFoundError('Utilisateur non trouvé');
-  }
+  const existingUser = await findOneOrFail('user', { id }, {
+    errorMessage: 'Utilisateur non trouvé'
+  });
 
   // Delete user
   await prisma.user.delete({ where: { id } });
+
+  // Audit trail (exclude passwordHash)
+  await logDelete('User', id, req, { email: existingUser.email, role: existingUser.role });
 
   return { message: 'Utilisateur supprimé avec succès' };
 }
@@ -211,10 +218,9 @@ export async function deleteUser(id) {
  */
 export async function changePassword(userId, currentPassword, newPassword) {
   // Get user with password hash (needed for verification)
-  const user = await prisma.user.findUnique({ where: { id: userId } });
-  if (!user) {
-    throw new NotFoundError('Utilisateur non trouvé');
-  }
+  const user = await findOneOrFail('user', { id: userId }, {
+    errorMessage: 'Utilisateur non trouvé'
+  });
 
   // Verify current password
   const isPasswordValid = await bcrypt.compare(currentPassword, user.passwordHash);
