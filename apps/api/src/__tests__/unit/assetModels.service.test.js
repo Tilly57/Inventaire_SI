@@ -172,6 +172,8 @@ describe('Asset Models Service - updateAssetModel()', () => {
     const model = await createTestAssetModel({ type: 'Ordinateur portable' });
 
     // Create 2 existing items
+
+
     await createTestAssetItem({ assetModelId: model.id, assetTag: 'LAP-001' });
     await createTestAssetItem({ assetModelId: model.id, assetTag: 'LAP-002' });
 
