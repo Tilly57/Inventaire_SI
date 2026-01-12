@@ -33,7 +33,7 @@
  */
 import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { read, utils } from 'xlsx'
+// Dynamic import: xlsx loaded only when import button clicked (saves 333 kB on initial load)
 import {
   Dialog,
   DialogContent,
@@ -171,11 +171,14 @@ export function ImportEmployeesDialog({ open, onClose }: ImportEmployeesDialogPr
     const importResult: ImportResult = { success: 0, skipped: 0, errors: [] }
 
     try {
+      // Dynamically import xlsx library (only loaded when needed, saves 333 kB on initial page load)
+      const XLSX = await import('xlsx')
+
       // Read Excel file
       const data = await file.arrayBuffer()
-      const workbook = read(data)
+      const workbook = XLSX.read(data)
       const worksheet = workbook.Sheets[workbook.SheetNames[0]]
-      const rows: EmployeeRow[] = utils.sheet_to_json(worksheet)
+      const rows: EmployeeRow[] = XLSX.utils.sheet_to_json(worksheet)
 
       // Build set of existing emails for fast lookup
       const existingEmails = new Set(

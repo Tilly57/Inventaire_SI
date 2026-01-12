@@ -37,23 +37,34 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          // Vendor chunks for better caching
+          // Core React libraries
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'ui-vendor': [
+
+          // Radix UI split into smaller chunks for better code splitting
+          'ui-dialog-vendor': [
             '@radix-ui/react-dialog',
-            '@radix-ui/react-tabs',
+            '@radix-ui/react-alert-dialog',
+          ],
+          'ui-dropdown-vendor': [
             '@radix-ui/react-dropdown-menu',
             '@radix-ui/react-select',
+          ],
+          'ui-form-vendor': [
             '@radix-ui/react-label',
             '@radix-ui/react-checkbox',
             '@radix-ui/react-radio-group',
-            '@radix-ui/react-alert-dialog',
+          ],
+          'ui-misc-vendor': [
+            '@radix-ui/react-tabs',
             '@radix-ui/react-toast',
           ],
+
+          // State management and data fetching
           'query-vendor': ['@tanstack/react-query'],
           'form-vendor': ['react-hook-form', '@hookform/resolvers', 'zod'],
           'utils-vendor': ['axios', 'date-fns', 'zustand'],
-          // Heavy libraries in separate chunks
+
+          // Heavy libraries in separate chunks (lazy loaded)
           'charts-vendor': ['recharts'],
           'excel-vendor': ['xlsx'],
           'icons-vendor': ['lucide-react'],
