@@ -14,42 +14,60 @@
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import * as employeesService from '../services/employees.service.js';
 import { sendSuccess, sendCreated } from '../utils/responseHelpers.js';
+import { parsePaginationParams } from '../utils/pagination.js';
 
 /**
- * Get all employees
+ * Get all employees with pagination support
  *
  * Route: GET /api/employees
  * Access: Protected (requires authentication)
  *
- * Returns list of all employees ordered by creation date (newest first).
+ * Returns list of employees with pagination support.
  * Includes loan count for each employee.
  *
- * @returns {Object} 200 - Array of employee objects
+ * @param {Object} req.query - Query parameters
+ * @param {string} [req.query.search] - Search in first name, last name, email, or dept
+ * @param {string} [req.query.dept] - Filter by department
+ * @param {number} [req.query.page] - Page number (enables pagination)
+ * @param {number} [req.query.pageSize] - Items per page
+ * @param {string} [req.query.sortBy] - Field to sort by
+ * @param {string} [req.query.sortOrder] - Sort order (asc/desc)
+ *
+ * @returns {Object} 200 - Array of employee objects (paginated or not)
  *
  * @example
+ * // Unpaginated
  * GET /api/employees
  *
- * Response 200:
- * {
- *   "success": true,
- *   "data": [
- *     {
- *       "id": "ckx...",
- *       "firstName": "John",
- *       "lastName": "Doe",
- *       "email": "john.doe@example.com",
- *       "department": "IT",
- *       "phone": "+33612345678",
- *       "_count": { "loans": 3 },
- *       "createdAt": "2024-01-15T10:00:00Z"
- *     }
- *   ]
- * }
+ * @example
+ * // Paginated with search
+ * GET /api/employees?page=2&pageSize=20&search=john&sortBy=lastName&sortOrder=asc
  */
 export const getAllEmployees = asyncHandler(async (req, res) => {
-  const employees = await employeesService.getAllEmployees();
+  const { search, dept, sortBy, sortOrder } = req.query;
 
-  sendSuccess(res, employees);
+  const isPaginationRequested = req.query.page !== undefined || req.query.pageSize !== undefined;
+
+  if (isPaginationRequested) {
+    const { page, pageSize } = parsePaginationParams(req.query);
+
+    const result = await employeesService.getAllEmployeesPaginated({
+      search,
+      dept,
+      page,
+      pageSize,
+      sortBy,
+      sortOrder
+    });
+
+    res.json({
+      success: true,
+      ...result
+    });
+  } else {
+    const employees = await employeesService.getAllEmployees();
+    sendSuccess(res, employees);
+  }
 });
 
 /**

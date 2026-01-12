@@ -15,6 +15,7 @@ import { deleteSignatureFile, deleteSignatureFiles } from '../utils/fileUtils.js
 import { saveBase64Image } from '../utils/saveBase64Image.js';
 import { findOneOrFail } from '../utils/prismaHelpers.js';
 import { logCreate, logUpdate, logDelete } from '../utils/auditHelpers.js';
+import { executePaginatedQuery, buildOrderBy } from '../utils/pagination.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import logger from '../config/logger.js';
@@ -79,6 +80,89 @@ export async function getAllLoans(filters = {}) {
   });
 
   return loans;
+}
+
+/**
+ * Get all loans with pagination and optional filters
+ *
+ * PERFORMANCE OPTIMIZED: Uses pagination to avoid loading all records at once.
+ * Recommended for production use instead of getAllLoans().
+ *
+ * @param {Object} options - Query options
+ * @param {string} [options.status] - Filter by loan status (OPEN/CLOSED)
+ * @param {string} [options.employeeId] - Filter by employee ID
+ * @param {number} [options.page=1] - Page number (1-indexed)
+ * @param {number} [options.pageSize=20] - Items per page
+ * @param {string} [options.sortBy='openedAt'] - Field to sort by
+ * @param {string} [options.sortOrder='desc'] - Sort order ('asc' or 'desc')
+ * @returns {Promise<Object>} Paginated response with data and pagination metadata
+ *
+ * @example
+ * const result = await getAllLoansPaginated({
+ *   status: 'OPEN',
+ *   page: 2,
+ *   pageSize: 20,
+ *   sortBy: 'openedAt',
+ *   sortOrder: 'desc'
+ * });
+ * // Returns: { data: [...], pagination: { page, pageSize, totalItems, ... } }
+ */
+export async function getAllLoansPaginated(options = {}) {
+  const {
+    status,
+    employeeId,
+    page = 1,
+    pageSize = 20,
+    sortBy = 'openedAt',
+    sortOrder = 'desc'
+  } = options;
+
+  // Build WHERE clause
+  const where = {
+    deletedAt: null
+  };
+
+  if (status) {
+    where.status = status;
+  }
+
+  if (employeeId) {
+    where.employeeId = employeeId;
+  }
+
+  // Build ORDER BY clause
+  const orderBy = buildOrderBy(sortBy, sortOrder);
+
+  // Execute paginated query
+  // NOTE: Include all relations for now, but consider lazy loading in future
+  const result = await executePaginatedQuery(prisma.loan, {
+    where,
+    orderBy,
+    include: {
+      employee: true,
+      createdBy: {
+        select: {
+          id: true,
+          email: true,
+          role: true
+        }
+      },
+      lines: {
+        include: {
+          assetItem: {
+            include: {
+              assetModel: true
+            }
+          },
+          stockItem: true
+        }
+      }
+    },
+    page,
+    pageSize
+  });
+
+  return result;
 }
 
 /**
