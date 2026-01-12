@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo, useCallback, memo } from 'react'
 import type { AssetItem } from '@/lib/types/models.types'
 import { formatDate } from '@/lib/utils/formatters'
 import {
@@ -24,6 +24,161 @@ interface AssetItemsTableProps {
   onSelectionChange?: (selectedIds: string[]) => void
 }
 
+// Memoized Asset Item Row Component for Desktop
+interface AssetItemRowProps {
+  item: AssetItem
+  isSelected: boolean
+  onSelect: (itemId: string, checked: boolean) => void
+  onEdit: (item: AssetItem) => void
+  onDelete: (item: AssetItem) => void
+  showCheckbox: boolean
+}
+
+const AssetItemRow = memo(({
+  item,
+  isSelected,
+  onSelect,
+  onEdit,
+  onDelete,
+  showCheckbox
+}: AssetItemRowProps) => {
+  return (
+    <TableRow>
+      {showCheckbox && (
+        <TableCell>
+          <Checkbox
+            checked={isSelected}
+            onCheckedChange={(checked) => onSelect(item.id, checked as boolean)}
+            aria-label={`Sélectionner ${item.assetTag}`}
+          />
+        </TableCell>
+      )}
+      <TableCell className="font-medium">{item.assetTag}</TableCell>
+      <TableCell>
+        {item.assetModel
+          ? `${item.assetModel.brand} ${item.assetModel.modelName}`
+          : 'Non défini'}
+      </TableCell>
+      <TableCell>{item.serial || '-'}</TableCell>
+      <TableCell>
+        <StatusBadge status={item.status} />
+      </TableCell>
+      <TableCell className="max-w-xs truncate">{item.notes || '-'}</TableCell>
+      <TableCell>{formatDate(item.createdAt)}</TableCell>
+      <TableCell className="text-right">
+        <div className="flex gap-2 justify-end">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onEdit(item)}
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onDelete(item)}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </TableCell>
+    </TableRow>
+  )
+})
+
+AssetItemRow.displayName = 'AssetItemRow'
+
+// Memoized Asset Item Card Component for Mobile
+interface AssetItemCardProps {
+  item: AssetItem
+  isSelected: boolean
+  onSelect: (itemId: string, checked: boolean) => void
+  onEdit: (item: AssetItem) => void
+  onDelete: (item: AssetItem) => void
+  showCheckbox: boolean
+}
+
+const AssetItemCard = memo(({
+  item,
+  isSelected,
+  onSelect,
+  onEdit,
+  onDelete,
+  showCheckbox
+}: AssetItemCardProps) => {
+  return (
+    <Card className="p-4 animate-fadeIn">
+      <div className="space-y-3">
+        {/* En-tête avec checkbox et tag */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start gap-3 flex-1">
+            {showCheckbox && (
+              <Checkbox
+                checked={isSelected}
+                onCheckedChange={(checked) => onSelect(item.id, checked as boolean)}
+                aria-label={`Sélectionner ${item.assetTag}`}
+                className="mt-1"
+              />
+            )}
+            <div className="flex-1">
+              <p className="font-semibold text-base">{item.assetTag}</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                {item.assetModel
+                  ? `${item.assetModel.brand} ${item.assetModel.modelName}`
+                  : 'Non défini'}
+              </p>
+            </div>
+          </div>
+          <StatusBadge status={item.status} />
+        </div>
+
+        {/* Informations */}
+        <div className="grid grid-cols-2 gap-2 text-sm">
+          <div>
+            <span className="text-muted-foreground">N° série</span>
+            <p className="font-medium">{item.serial || '-'}</p>
+          </div>
+          <div>
+            <span className="text-muted-foreground">Créé le</span>
+            <p className="font-medium">{formatDate(item.createdAt)}</p>
+          </div>
+          {item.notes && (
+            <div className="col-span-2">
+              <span className="text-muted-foreground">Notes</span>
+              <p className="font-medium text-sm">{item.notes}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-2 pt-2 border-t">
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1"
+            onClick={() => onEdit(item)}
+          >
+            <Pencil className="h-4 w-4 mr-2" />
+            Modifier
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1"
+            onClick={() => onDelete(item)}
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Supprimer
+          </Button>
+        </div>
+      </div>
+    </Card>
+  )
+})
+
+AssetItemCard.displayName = 'AssetItemCard'
+
 export function AssetItemsTable({
   items,
   selectedItems = [],
@@ -33,23 +188,48 @@ export function AssetItemsTable({
   const [deletingItem, setDeletingItem] = useState<AssetItem | null>(null)
   const { isMobile } = useMediaQuery()
 
-  const isAllSelected = items.length > 0 && selectedItems.length === items.length
-  const isSomeSelected = selectedItems.length > 0 && selectedItems.length < items.length
+  // Memoized calculations
+  const isAllSelected = useMemo(
+    () => items.length > 0 && selectedItems.length === items.length,
+    [items.length, selectedItems.length]
+  )
 
-  const handleSelectAll = (checked: boolean | 'indeterminate') => {
+  const isSomeSelected = useMemo(
+    () => selectedItems.length > 0 && selectedItems.length < items.length,
+    [selectedItems.length, items.length]
+  )
+
+  // Memoized callbacks
+  const handleSelectAll = useCallback((checked: boolean | 'indeterminate') => {
     if (onSelectionChange) {
       onSelectionChange(checked === true ? items.map(item => item.id) : [])
     }
-  }
+  }, [onSelectionChange, items])
 
-  const handleSelectItem = (itemId: string, checked: boolean) => {
+  const handleSelectItem = useCallback((itemId: string, checked: boolean) => {
     if (onSelectionChange) {
       const newSelection = checked
         ? [...selectedItems, itemId]
         : selectedItems.filter(id => id !== itemId)
       onSelectionChange(newSelection)
     }
-  }
+  }, [onSelectionChange, selectedItems])
+
+  const handleEdit = useCallback((item: AssetItem) => {
+    setEditingItem(item)
+  }, [])
+
+  const handleDelete = useCallback((item: AssetItem) => {
+    setDeletingItem(item)
+  }, [])
+
+  const handleCloseEdit = useCallback(() => {
+    setEditingItem(null)
+  }, [])
+
+  const handleCloseDelete = useCallback(() => {
+    setDeletingItem(null)
+  }, [])
 
   // Vue mobile - Cards empilées
   if (isMobile) {
@@ -81,85 +261,28 @@ export function AssetItemsTable({
 
         <div className="space-y-3">
           {items.map((item) => (
-            <Card key={item.id} className="p-4 animate-fadeIn">
-              <div className="space-y-3">
-                {/* En-tête avec checkbox et tag */}
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-3 flex-1">
-                    {onSelectionChange && (
-                      <Checkbox
-                        checked={selectedItems.includes(item.id)}
-                        onCheckedChange={(checked) => handleSelectItem(item.id, checked as boolean)}
-                        aria-label={`Sélectionner ${item.assetTag}`}
-                        className="mt-1"
-                      />
-                    )}
-                    <div className="flex-1">
-                      <p className="font-semibold text-base">{item.assetTag}</p>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {item.assetModel
-                          ? `${item.assetModel.brand} ${item.assetModel.modelName}`
-                          : 'Non défini'}
-                      </p>
-                    </div>
-                  </div>
-                  <StatusBadge status={item.status} />
-                </div>
-
-                {/* Informations */}
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div>
-                    <span className="text-muted-foreground">N° série</span>
-                    <p className="font-medium">{item.serial || '-'}</p>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Créé le</span>
-                    <p className="font-medium">{formatDate(item.createdAt)}</p>
-                  </div>
-                  {item.notes && (
-                    <div className="col-span-2">
-                      <span className="text-muted-foreground">Notes</span>
-                      <p className="font-medium text-sm">{item.notes}</p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Actions */}
-                <div className="flex gap-2 pt-2 border-t">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => setEditingItem(item)}
-                  >
-                    <Pencil className="h-4 w-4 mr-2" />
-                    Modifier
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => setDeletingItem(item)}
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Supprimer
-                  </Button>
-                </div>
-              </div>
-            </Card>
+            <AssetItemCard
+              key={item.id}
+              item={item}
+              isSelected={selectedItems.includes(item.id)}
+              onSelect={handleSelectItem}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              showCheckbox={!!onSelectionChange}
+            />
           ))}
         </div>
 
         <AssetItemFormDialog
           item={editingItem}
           open={!!editingItem}
-          onClose={() => setEditingItem(null)}
+          onClose={handleCloseEdit}
         />
 
         <DeleteAssetItemDialog
           item={deletingItem}
           open={!!deletingItem}
-          onClose={() => setDeletingItem(null)}
+          onClose={handleCloseDelete}
         />
       </>
     )
@@ -199,47 +322,15 @@ export function AssetItemsTable({
             </TableRow>
           ) : (
             items.map((item) => (
-              <TableRow key={item.id}>
-                {onSelectionChange && (
-                  <TableCell>
-                    <Checkbox
-                      checked={selectedItems.includes(item.id)}
-                      onCheckedChange={(checked) => handleSelectItem(item.id, checked as boolean)}
-                      aria-label={`Sélectionner ${item.assetTag}`}
-                    />
-                  </TableCell>
-                )}
-                <TableCell className="font-medium">{item.assetTag}</TableCell>
-                <TableCell>
-                  {item.assetModel
-                    ? `${item.assetModel.brand} ${item.assetModel.modelName}`
-                    : 'Non défini'}
-                </TableCell>
-                <TableCell>{item.serial || '-'}</TableCell>
-                <TableCell>
-                  <StatusBadge status={item.status} />
-                </TableCell>
-                <TableCell className="max-w-xs truncate">{item.notes || '-'}</TableCell>
-                <TableCell>{formatDate(item.createdAt)}</TableCell>
-                <TableCell className="text-right">
-                  <div className="flex gap-2 justify-end">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setEditingItem(item)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setDeletingItem(item)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
+              <AssetItemRow
+                key={item.id}
+                item={item}
+                isSelected={selectedItems.includes(item.id)}
+                onSelect={handleSelectItem}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                showCheckbox={!!onSelectionChange}
+              />
             ))
           )}
         </TableBody>
@@ -249,13 +340,13 @@ export function AssetItemsTable({
       <AssetItemFormDialog
         item={editingItem}
         open={!!editingItem}
-        onClose={() => setEditingItem(null)}
+        onClose={handleCloseEdit}
       />
 
       <DeleteAssetItemDialog
         item={deletingItem}
         open={!!deletingItem}
-        onClose={() => setDeletingItem(null)}
+        onClose={handleCloseDelete}
       />
     </>
   )
