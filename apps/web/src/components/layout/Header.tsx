@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { MobileNav } from './MobileNav'
+import { GlobalSearch } from '@/components/common/GlobalSearch'
 import { User, LogOut, Settings } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
@@ -31,8 +32,8 @@ export function Header() {
         <MobileNav />
       </div>
 
-      {/* Logo and Company Name - Centered */}
-      <div className="flex-1 flex items-center justify-center gap-2 sm:gap-3">
+      {/* Logo and Company Name */}
+      <div className="flex items-center gap-2 sm:gap-3">
         {/* Logo */}
         <div className="flex items-center">
           <img
@@ -51,6 +52,11 @@ export function Header() {
           <h1 className="text-lg sm:text-xl font-bold text-[#EE2722] leading-tight">Groupe Tilly</h1>
           <p className="text-xs text-gray-400 hidden md:block">Inventaire SI</p>
         </div>
+      </div>
+
+      {/* Global Search - Centered */}
+      <div className="flex-1 flex justify-center px-4">
+        <GlobalSearch />
       </div>
 
       {/* User menu */}
