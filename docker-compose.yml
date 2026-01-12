@@ -12,11 +12,27 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+  # Redis Cache - Phase 3.2
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    restart: unless-stopped
+
   api:
     build: ./apps/api
     environment:
       NODE_ENV: ${NODE_ENV:-development}
       DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
       JWT_ACCESS_SECRET_FILE: /run/secrets/jwt_access_secret
       JWT_REFRESH_SECRET_FILE: /run/secrets/jwt_refresh_secret
       CORS_ORIGIN: ${CORS_ORIGIN}
@@ -26,6 +42,7 @@ services:
       - jwt_refresh_secret
     depends_on:
       - db
+      - redis
     ports:
       - "3001:3001"
     volumes:
@@ -104,6 +121,7 @@ services:
 
 volumes:
   pgdata:
+  redis-data:
   signatures:
   loki-data:
   prometheus-data:
