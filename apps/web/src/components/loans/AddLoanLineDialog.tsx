@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo, useCallback, memo } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { addLoanLineSchema } from '@/lib/schemas/loans.schema'
@@ -36,11 +36,14 @@ interface AddLoanLineDialogProps {
   onClose: () => void
 }
 
-export function AddLoanLineDialog({ loanId, open, onClose }: AddLoanLineDialogProps) {
+function AddLoanLineDialogComponent({ loanId, open, onClose }: AddLoanLineDialogProps) {
   const addLine = useAddLoanLine()
   const { data: assets } = useAssetItems()
 
-  const assetsList = Array.isArray(assets) ? assets.filter(a => a.status === AssetStatus.EN_STOCK) : []
+  // Memoized: Filter available assets only when assets data changes
+  const assetsList = useMemo(() => {
+    return Array.isArray(assets) ? assets.filter(a => a.status === AssetStatus.EN_STOCK) : []
+  }, [assets])
 
   const form = useForm<AddLoanLineFormData>({
     resolver: zodResolver(addLoanLineSchema),
@@ -57,14 +60,15 @@ export function AddLoanLineDialog({ loanId, open, onClose }: AddLoanLineDialogPr
     }
   }, [open, form])
 
-  const onSubmit = async (data: AddLoanLineFormData) => {
+  // Memoized: Prevent function recreation on every render
+  const onSubmit = useCallback(async (data: AddLoanLineFormData) => {
     try {
       await addLine.mutateAsync({ loanId, data: { assetItemId: data.assetItemId } })
       onClose()
     } catch (error) {
       // Error handled by mutation hook
     }
-  }
+  }, [addLine, loanId, onClose])
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -123,3 +127,7 @@ export function AddLoanLineDialog({ loanId, open, onClose }: AddLoanLineDialogPr
     </Dialog>
   )
 }
+
+// Memoized: Prevent unnecessary re-renders when parent component re-renders
+// Only re-render if props (loanId, open, onClose) change
+export const AddLoanLineDialog = memo(AddLoanLineDialogComponent)
