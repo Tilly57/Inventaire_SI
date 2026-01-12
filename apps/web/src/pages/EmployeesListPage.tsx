@@ -1,16 +1,19 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useDeferredValue, useMemo, lazy, Suspense } from 'react'
 import { useEmployees, useDeleteEmployee } from '@/lib/hooks/useEmployees'
 import { EmployeesTable } from '@/components/employees/EmployeesTable'
-import { EmployeeFormDialog } from '@/components/employees/EmployeeFormDialog'
-import { ImportEmployeesDialog } from '@/components/employees/ImportEmployeesDialog'
+
+// Lazy load dialogs
+const EmployeeFormDialog = lazy(() => import('@/components/employees/EmployeeFormDialog').then(m => ({ default: m.EmployeeFormDialog })))
+const ImportEmployeesDialog = lazy(() => import('@/components/employees/ImportEmployeesDialog').then(m => ({ default: m.ImportEmployeesDialog })))
 import { Pagination } from '@/components/common/Pagination'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Plus, Search, Upload, Trash2 } from 'lucide-react'
+import { Plus, Search, Upload, Trash2, Download } from 'lucide-react'
 import { formatFullName } from '@/lib/utils/formatters'
 import { DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS } from '@/lib/utils/constants'
 import { useToast } from '@/lib/hooks/use-toast'
+import { exportEmployees } from '@/lib/api/export.api'
 
 export function EmployeesListPage() {
   const { data: employees, isLoading, error } = useEmployees()
@@ -18,6 +21,7 @@ export function EmployeesListPage() {
   const { toast } = useToast()
   const [isCreating, setIsCreating] = useState(false)
   const [isImporting, setIsImporting] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
@@ -25,19 +29,27 @@ export function EmployeesListPage() {
 
   const employeesList = Array.isArray(employees) ? employees : []
 
-  const filteredEmployees = employeesList.filter(
-    (employee) =>
-      formatFullName(employee.firstName, employee.lastName)
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      employee.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee.dept?.toLowerCase().includes(searchTerm.toLowerCase())
+  // Defer search term to avoid blocking UI during typing
+  const deferredSearchTerm = useDeferredValue(searchTerm)
+
+  // Use deferred search term for filtering with useMemo
+  const filteredEmployees = useMemo(
+    () =>
+      employeesList.filter(
+        (employee) =>
+          formatFullName(employee.firstName, employee.lastName)
+            .toLowerCase()
+            .includes(deferredSearchTerm.toLowerCase()) ||
+          employee.email?.toLowerCase().includes(deferredSearchTerm.toLowerCase()) ||
+          employee.dept?.toLowerCase().includes(deferredSearchTerm.toLowerCase())
+      ),
+    [employeesList, deferredSearchTerm]
   )
 
-  // Reset to page 1 when search term changes
+  // Reset to page 1 when deferred search term changes
   useEffect(() => {
     setCurrentPage(1)
-  }, [searchTerm])
+  }, [deferredSearchTerm])
 
   // Calculate pagination
   const totalItems = filteredEmployees.length
@@ -105,6 +117,27 @@ export function EmployeesListPage() {
     setSelectedEmployees([])
   }
 
+  const handleExport = async () => {
+    try {
+      setIsExporting(true)
+      await exportEmployees({
+        search: deferredSearchTerm || undefined,
+      })
+      toast({
+        title: 'Export réussi',
+        description: `${filteredEmployees.length} employé(s) exporté(s) vers Excel`,
+      })
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Erreur d\'export',
+        description: error.message || 'Impossible d\'exporter les employés',
+      })
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -152,6 +185,10 @@ export function EmployeesListPage() {
               Supprimer ({selectedEmployees.length})
             </Button>
           )}
+          <Button variant="outline" onClick={handleExport} disabled={isExporting || filteredEmployees.length === 0} className="w-full sm:w-auto">
+            <Download className="h-4 w-4 mr-2" />
+            {isExporting ? 'Export...' : 'Exporter Excel'}
+          </Button>
           <Button variant="outline" onClick={() => setIsImporting(true)} className="w-full sm:w-auto">
             <Upload className="h-4 w-4 mr-2" />
             Importer Excel
@@ -191,15 +228,19 @@ export function EmployeesListPage() {
         )}
       </div>
 
-      <EmployeeFormDialog
-        open={isCreating}
-        onClose={() => setIsCreating(false)}
-      />
+      <Suspense fallback={null}>
+        <EmployeeFormDialog
+          open={isCreating}
+          onClose={() => setIsCreating(false)}
+        />
+      </Suspense>
 
-      <ImportEmployeesDialog
-        open={isImporting}
-        onClose={() => setIsImporting(false)}
-      />
+      <Suspense fallback={null}>
+        <ImportEmployeesDialog
+          open={isImporting}
+          onClose={() => setIsImporting(false)}
+        />
+      </Suspense>
     </div>
   )
 }

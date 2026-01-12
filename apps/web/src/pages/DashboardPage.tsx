@@ -1,15 +1,42 @@
+import { lazy, Suspense, useState } from 'react'
 import { useDashboardStats } from '@/lib/hooks/useDashboard'
 import { StatsCard } from '@/components/dashboard/StatsCard'
 import { RecentLoans } from '@/components/dashboard/RecentLoans'
 import { LowStockAlert } from '@/components/dashboard/LowStockAlert'
 import { OutOfServiceList } from '@/components/dashboard/OutOfServiceList'
-import { EquipmentByTypeChart } from '@/components/dashboard/EquipmentByTypeChart'
-import { Users, Laptop, FileText, TrendingUp, AlertTriangle } from 'lucide-react'
+
+// Lazy load chart component (heavy dependency on recharts)
+const EquipmentByTypeChart = lazy(() => import('@/components/dashboard/EquipmentByTypeChart').then(m => ({ default: m.EquipmentByTypeChart })))
+import { Users, Laptop, FileText, TrendingUp, AlertTriangle, Download } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertCircle } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { exportDashboard } from '@/lib/api/export.api'
+import { useToast } from '@/lib/hooks/use-toast'
 
 export function DashboardPage() {
   const { data: stats, isLoading, error } = useDashboardStats()
+  const [isExporting, setIsExporting] = useState(false)
+  const { toast } = useToast()
+
+  const handleExport = async () => {
+    try {
+      setIsExporting(true)
+      await exportDashboard()
+      toast({
+        title: 'Export réussi',
+        description: 'Dashboard complet exporté vers Excel (multi-feuilles)',
+      })
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Erreur d\'export',
+        description: error.message || 'Impossible d\'exporter le dashboard',
+      })
+    } finally {
+      setIsExporting(false)
+    }
+  }
 
   if (error) {
     return (
@@ -27,11 +54,17 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-4 md:space-y-6">
-      <div>
-        <h1 className="text-2xl md:text-3xl font-bold">Tableau de bord</h1>
-        <p className="text-muted-foreground mt-2">
-          Vue d'ensemble des statistiques et activités récentes
-        </p>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold">Tableau de bord</h1>
+          <p className="text-muted-foreground mt-2">
+            Vue d'ensemble des statistiques et activités récentes
+          </p>
+        </div>
+        <Button variant="outline" onClick={handleExport} disabled={isExporting} className="w-full sm:w-auto">
+          <Download className="h-4 w-4 mr-2" />
+          {isExporting ? 'Export...' : 'Exporter Dashboard Complet'}
+        </Button>
       </div>
 
       {/* Statistics Cards */}
@@ -100,7 +133,16 @@ export function DashboardPage() {
       {/* Additional Widgets - Hors Service & Equipment Chart */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
         <OutOfServiceList />
-        <EquipmentByTypeChart />
+        <Suspense fallback={
+          <div className="border rounded-lg p-6 bg-card">
+            <h3 className="font-semibold mb-4">Répartition par type</h3>
+            <div className="flex items-center justify-center h-64">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            </div>
+          </div>
+        }>
+          <EquipmentByTypeChart />
+        </Suspense>
       </div>
     </div>
   )

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useDeferredValue, useMemo } from 'react'
 import { useAssetModels } from '@/lib/hooks/useAssetModels'
 import { StockItemsTable } from '@/components/stock/StockItemsTable'
 import { Pagination } from '@/components/common/Pagination'
@@ -15,18 +15,27 @@ export function StockItemsListPage() {
 
   const itemsList = Array.isArray(models) ? models : []
 
-  const filteredItems = itemsList.filter(
-    (model) =>
-      model.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      model.modelName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      model.type?.toLowerCase().includes(searchTerm.toLowerCase())
+  // Defer search term to avoid blocking UI during typing
+  const deferredSearchTerm = useDeferredValue(searchTerm)
+
+  // Use deferred search term for filtering with useMemo
+  const filteredItems = useMemo(
+    () =>
+      itemsList.filter(
+        (model) =>
+          model.brand?.toLowerCase().includes(deferredSearchTerm.toLowerCase()) ||
+          model.modelName?.toLowerCase().includes(deferredSearchTerm.toLowerCase()) ||
+          model.type?.toLowerCase().includes(deferredSearchTerm.toLowerCase())
+      ),
+    [itemsList, deferredSearchTerm]
   )
 
   const lowStockItems = itemsList.filter(item => (item._count?.items || 0) < LOW_STOCK_THRESHOLD)
 
+  // Reset to page 1 when deferred search term changes
   useEffect(() => {
     setCurrentPage(1)
-  }, [searchTerm])
+  }, [deferredSearchTerm])
 
   const totalItems = filteredItems.length
   const totalPages = Math.ceil(totalItems / pageSize)

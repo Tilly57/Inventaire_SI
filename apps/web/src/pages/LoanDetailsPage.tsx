@@ -31,12 +31,15 @@
  *
  * Route: /loans/:id
  */
-import { useState } from 'react'
+import { useState, lazy, Suspense } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useLoan, useRemoveLoanLine, useUploadPickupSignature, useUploadReturnSignature, useCloseLoan, useDeletePickupSignature, useDeleteReturnSignature } from '@/lib/hooks/useLoans'
 import { formatDate, formatFullName } from '@/lib/utils/formatters'
-import { AddLoanLineDialog } from '@/components/loans/AddLoanLineDialog'
+
+// Lazy load dialog
+const AddLoanLineDialog = lazy(() => import('@/components/loans/AddLoanLineDialog').then(m => ({ default: m.AddLoanLineDialog })))
 import { SignatureCanvas } from '@/components/common/SignatureCanvas'
+import { LazyImage } from '@/components/common/LazyImage'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -380,7 +383,7 @@ export function LoanDetailsPage() {
           <CardContent>
             {hasPickupSignature ? (
               <div className="space-y-4">
-                <img
+                <LazyImage
                   src={`${BASE_URL}${loan.pickupSignatureUrl}`}
                   alt="Signature retrait"
                   className="w-full border rounded-lg"
@@ -454,7 +457,7 @@ export function LoanDetailsPage() {
           <CardContent>
             {hasReturnSignature ? (
               <div className="space-y-4">
-                <img
+                <LazyImage
                   src={`${BASE_URL}${loan.returnSignatureUrl}`}
                   alt="Signature retour"
                   className="w-full border rounded-lg"
@@ -549,11 +552,13 @@ export function LoanDetailsPage() {
         </Card>
       )}
 
-      <AddLoanLineDialog
-        loanId={loan.id}
-        open={isAddingLine}
-        onClose={() => setIsAddingLine(false)}
-      />
+      <Suspense fallback={null}>
+        <AddLoanLineDialog
+          loanId={loan.id}
+          open={isAddingLine}
+          onClose={() => setIsAddingLine(false)}
+        />
+      </Suspense>
     </div>
   )
 }

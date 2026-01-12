@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, lazy, Suspense } from 'react'
 import type { AssetModel } from '@/lib/types/models.types'
 import { formatDate } from '@/lib/utils/formatters'
 import {
@@ -13,8 +13,10 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Card } from '@/components/ui/card'
 import { Pencil, Trash2 } from 'lucide-react'
-import { AssetModelFormDialog } from './AssetModelFormDialog'
-import { DeleteAssetModelDialog } from './DeleteAssetModelDialog'
+
+// Lazy load dialogs
+const AssetModelFormDialog = lazy(() => import('./AssetModelFormDialog').then(m => ({ default: m.AssetModelFormDialog })))
+const DeleteAssetModelDialog = lazy(() => import('./DeleteAssetModelDialog').then(m => ({ default: m.DeleteAssetModelDialog })))
 import { useMediaQuery } from '@/lib/hooks/useMediaQuery'
 
 interface AssetModelsTableProps {
@@ -134,17 +136,21 @@ export function AssetModelsTable({ models, selectedModels, onSelectionChange }: 
           ))}
         </div>
 
-        <AssetModelFormDialog
-          model={editingModel}
-          open={!!editingModel}
-          onClose={() => setEditingModel(null)}
-        />
+        <Suspense fallback={null}>
+          <AssetModelFormDialog
+            model={editingModel}
+            open={!!editingModel}
+            onClose={() => setEditingModel(null)}
+          />
+        </Suspense>
 
-        <DeleteAssetModelDialog
-          model={deletingModel}
-          open={!!deletingModel}
-          onClose={() => setDeletingModel(null)}
-        />
+        <Suspense fallback={null}>
+          <DeleteAssetModelDialog
+            model={deletingModel}
+            open={!!deletingModel}
+            onClose={() => setDeletingModel(null)}
+          />
+        </Suspense>
       </>
     )
   }
@@ -222,17 +228,21 @@ export function AssetModelsTable({ models, selectedModels, onSelectionChange }: 
       </Table>
       </div>
 
-      <AssetModelFormDialog
-        model={editingModel}
-        open={!!editingModel}
-        onClose={() => setEditingModel(null)}
-      />
+      <Suspense fallback={null}>
+        <AssetModelFormDialog
+          model={editingModel}
+          open={!!editingModel}
+          onClose={() => setEditingModel(null)}
+        />
+      </Suspense>
 
-      <DeleteAssetModelDialog
-        model={deletingModel}
-        open={!!deletingModel}
-        onClose={() => setDeletingModel(null)}
-      />
+      <Suspense fallback={null}>
+        <DeleteAssetModelDialog
+          model={deletingModel}
+          open={!!deletingModel}
+          onClose={() => setDeletingModel(null)}
+        />
+      </Suspense>
     </>
   )
 }

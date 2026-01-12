@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, lazy, Suspense } from 'react'
 import type { User } from '@/lib/types/models.types'
 import { UserRoleLabels } from '@/lib/types/enums.ts'
 import { formatDate } from '@/lib/utils/formatters'
@@ -14,8 +14,10 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { Pencil, Trash2 } from 'lucide-react'
-import { UserFormDialog } from './UserFormDialog'
-import { DeleteUserDialog } from './DeleteUserDialog'
+
+// Lazy load dialogs
+const UserFormDialog = lazy(() => import('./UserFormDialog').then(m => ({ default: m.UserFormDialog })))
+const DeleteUserDialog = lazy(() => import('./DeleteUserDialog').then(m => ({ default: m.DeleteUserDialog })))
 import { useMediaQuery } from '@/lib/hooks/useMediaQuery'
 
 interface UsersTableProps {
@@ -105,17 +107,21 @@ export function UsersTable({ users, currentUserId }: UsersTableProps) {
           ))}
         </div>
 
-        <UserFormDialog
-          user={editingUser}
-          open={!!editingUser}
-          onClose={() => setEditingUser(null)}
-        />
+        <Suspense fallback={null}>
+          <UserFormDialog
+            user={editingUser}
+            open={!!editingUser}
+            onClose={() => setEditingUser(null)}
+          />
+        </Suspense>
 
-        <DeleteUserDialog
-          user={deletingUser}
-          open={!!deletingUser}
-          onClose={() => setDeletingUser(null)}
-        />
+        <Suspense fallback={null}>
+          <DeleteUserDialog
+            user={deletingUser}
+            open={!!deletingUser}
+            onClose={() => setDeletingUser(null)}
+          />
+        </Suspense>
       </>
     )
   }
@@ -178,17 +184,21 @@ export function UsersTable({ users, currentUserId }: UsersTableProps) {
       </Table>
       </div>
 
-      <UserFormDialog
-        user={editingUser}
-        open={!!editingUser}
-        onClose={() => setEditingUser(null)}
-      />
+      <Suspense fallback={null}>
+        <UserFormDialog
+          user={editingUser}
+          open={!!editingUser}
+          onClose={() => setEditingUser(null)}
+        />
+      </Suspense>
 
-      <DeleteUserDialog
-        user={deletingUser}
-        open={!!deletingUser}
-        onClose={() => setDeletingUser(null)}
-      />
+      <Suspense fallback={null}>
+        <DeleteUserDialog
+          user={deletingUser}
+          open={!!deletingUser}
+          onClose={() => setDeletingUser(null)}
+        />
+      </Suspense>
     </>
   )
 }

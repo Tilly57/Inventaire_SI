@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, memo } from 'react'
+import { useState, useMemo, useCallback, memo, lazy, Suspense } from 'react'
 import type { Employee } from '@/lib/types/models.types'
 import { formatDate, formatFullName } from '@/lib/utils/formatters'
 import {
@@ -13,8 +13,10 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Card } from '@/components/ui/card'
 import { Pencil, Trash2 } from 'lucide-react'
-import { EmployeeFormDialog } from './EmployeeFormDialog'
-import { DeleteEmployeeDialog } from './DeleteEmployeeDialog'
+
+// Lazy load dialogs
+const EmployeeFormDialog = lazy(() => import('./EmployeeFormDialog').then(m => ({ default: m.EmployeeFormDialog })))
+const DeleteEmployeeDialog = lazy(() => import('./DeleteEmployeeDialog').then(m => ({ default: m.DeleteEmployeeDialog })))
 import { useMediaQuery } from '@/lib/hooks/useMediaQuery'
 
 interface EmployeesTableProps {
@@ -257,17 +259,21 @@ export function EmployeesTable({
           ))}
         </div>
 
-        <EmployeeFormDialog
-          employee={editingEmployee}
-          open={!!editingEmployee}
-          onClose={handleCloseEdit}
-        />
+        <Suspense fallback={null}>
+          <EmployeeFormDialog
+            employee={editingEmployee}
+            open={!!editingEmployee}
+            onClose={handleCloseEdit}
+          />
+        </Suspense>
 
-        <DeleteEmployeeDialog
-          employee={deletingEmployee}
-          open={!!deletingEmployee}
-          onClose={handleCloseDelete}
-        />
+        <Suspense fallback={null}>
+          <DeleteEmployeeDialog
+            employee={deletingEmployee}
+            open={!!deletingEmployee}
+            onClose={handleCloseDelete}
+          />
+        </Suspense>
       </>
     )
   }
@@ -319,17 +325,21 @@ export function EmployeesTable({
       </Table>
       </div>
 
-      <EmployeeFormDialog
-        employee={editingEmployee}
-        open={!!editingEmployee}
-        onClose={handleCloseEdit}
-      />
+      <Suspense fallback={null}>
+        <EmployeeFormDialog
+          employee={editingEmployee}
+          open={!!editingEmployee}
+          onClose={handleCloseEdit}
+        />
+      </Suspense>
 
-      <DeleteEmployeeDialog
-        employee={deletingEmployee}
-        open={!!deletingEmployee}
-        onClose={handleCloseDelete}
-      />
+      <Suspense fallback={null}>
+        <DeleteEmployeeDialog
+          employee={deletingEmployee}
+          open={!!deletingEmployee}
+          onClose={handleCloseDelete}
+        />
+      </Suspense>
     </>
   )
 }
