@@ -118,3 +118,5 @@ export function StockItemsListPage() {
     </div>
   )
 }
+
+export default StockItemsListPage

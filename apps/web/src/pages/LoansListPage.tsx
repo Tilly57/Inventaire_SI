@@ -235,3 +235,5 @@ export function LoansListPage() {
     </div>
   )
 }
+
+export default LoansListPage

@@ -557,3 +557,5 @@ export function LoanDetailsPage() {
     </div>
   )
 }
+
+export default LoanDetailsPage

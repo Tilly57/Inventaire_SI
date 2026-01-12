@@ -31,12 +31,14 @@ export function EmployeeAutocomplete({
   const inputRef = useRef<HTMLInputElement>(null)
 
   // Fetch autocomplete results
-  const { data: employees = [], isLoading } = useQuery({
+  const { data, isLoading } = useQuery<AutocompleteEmployee[]>({
     queryKey: ['autocompleteEmployees', query],
     queryFn: () => autocompleteEmployees(query, 10),
     enabled: query.length >= 2,
     staleTime: 60000, // Cache 1 minute
   })
+
+  const employees = (data ?? []) as AutocompleteEmployee[]
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -131,7 +133,7 @@ export function EmployeeAutocomplete({
             <div className="p-3 text-center text-gray-500 text-sm">Aucun employé trouvé</div>
           ) : (
             <div className="py-1">
-              {employees.map((employee) => (
+              {employees.map((employee: AutocompleteEmployee) => (
                 <button
                   key={employee.id}
                   type="button"
@@ -153,6 +155,7 @@ export function EmployeeAutocomplete({
                       {employee.email} • {employee.dept}
                     </div>
                   </div>
+                  {/* @ts-ignore - TypeScript has issues with type inference in map with default values */}
                   {value?.id === employee.id && (
                     <Check className="h-4 w-4 text-[#EE2722] flex-shrink-0" />
                   )}

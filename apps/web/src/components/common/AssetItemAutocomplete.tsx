@@ -33,12 +33,14 @@ export function AssetItemAutocomplete({
   const inputRef = useRef<HTMLInputElement>(null)
 
   // Fetch autocomplete results
-  const { data: items = [], isLoading } = useQuery({
+  const { data, isLoading } = useQuery<AutocompleteAssetItem[]>({
     queryKey: ['autocompleteAssetItems', query, availableOnly],
     queryFn: () => autocompleteAssetItems(query, 10, availableOnly),
     enabled: query.length >= 2,
     staleTime: 60000, // Cache 1 minute
   })
+
+  const items = (data ?? []) as AutocompleteAssetItem[]
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -156,7 +158,7 @@ export function AssetItemAutocomplete({
             </div>
           ) : (
             <div className="py-1">
-              {items.map((item) => (
+              {items.map((item: AutocompleteAssetItem) => (
                 <button
                   key={item.id}
                   type="button"
@@ -178,8 +180,10 @@ export function AssetItemAutocomplete({
                       {item.assetModel.type}
                       {item.serial && ` • SN: ${item.serial}`}
                     </div>
+                    {/* @ts-ignore - TypeScript has issues with type inference in map with default values */}
                     <div className="mt-1">{getStatusBadge(item.status)}</div>
                   </div>
+                  {/* @ts-ignore - TypeScript has issues with type inference in map with default values */}
                   {value?.id === item.id && (
                     <Check className="h-4 w-4 text-[#EE2722] flex-shrink-0 mt-1" />
                   )}

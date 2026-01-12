@@ -172,3 +172,5 @@ export function AssetModelsListPage() {
     </div>
   )
 }
+
+export default AssetModelsListPage
