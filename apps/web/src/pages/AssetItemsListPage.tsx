@@ -234,3 +234,5 @@ export function AssetItemsListPage() {
     </div>
   )
 }
+
+export default AssetItemsListPage

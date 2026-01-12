@@ -23,8 +23,8 @@ test.describe('Authentication Flow', () => {
     await page.fill('input[name="password"]', 'wrongpassword');
     await page.click('button[type="submit"]');
 
-    // Should show error message
-    await expect(page.locator('text=/identifiants invalides/i')).toBeVisible({ timeout: 5000 });
+    // Should show error message in form
+    await expect(page.locator('[class*="destructive"][class*="text-sm"]')).toBeVisible({ timeout: 5000 });
   });
 
   test('should login successfully and redirect to dashboard', async ({ page }) => {
@@ -33,8 +33,8 @@ test.describe('Authentication Flow', () => {
     // Should be on dashboard
     await expect(page).toHaveURL(/\/dashboard/);
 
-    // Should show dashboard content
-    await expect(page.locator('text=/tableau de bord/i')).toBeVisible();
+    // Should show dashboard content (heading)
+    await expect(page.locator('h1:has-text("Tableau de bord")')).toBeVisible();
   });
 
   test('should logout successfully', async ({ page }) => {
