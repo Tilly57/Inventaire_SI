@@ -16,6 +16,7 @@ import type {
   UpdateEmployeeDto,
   ApiResponse,
 } from '@/lib/types/models.types'
+import type { PaginatedResponse, PaginationParams } from '@/lib/types/pagination.types'
 
 /**
  * Fetch all employees
@@ -38,6 +39,28 @@ export async function getAllEmployeesApi(): Promise<Employee[]> {
   // Handle both formats: direct array or {employees, pagination}
   const data = response.data.data
   return Array.isArray(data) ? data : data.employees
+}
+
+/**
+ * Fetch employees with pagination (RECOMMENDED)
+ *
+ * @param params - Pagination and filter parameters
+ * @returns Promise resolving to paginated response
+ */
+export async function getEmployeesApiPaginated(
+  params: PaginationParams & { search?: string; dept?: string } = {}
+): Promise<PaginatedResponse<Employee>> {
+  const queryParams = new URLSearchParams()
+
+  if (params.page) queryParams.append('page', params.page.toString())
+  if (params.pageSize) queryParams.append('pageSize', params.pageSize.toString())
+  if (params.sortBy) queryParams.append('sortBy', params.sortBy)
+  if (params.sortOrder) queryParams.append('sortOrder', params.sortOrder)
+  if (params.search) queryParams.append('search', params.search)
+  if (params.dept) queryParams.append('dept', params.dept)
+
+  const response = await apiClient.get<PaginatedResponse<Employee>>(`/employees?${queryParams.toString()}`)
+  return response.data
 }
 
 /**

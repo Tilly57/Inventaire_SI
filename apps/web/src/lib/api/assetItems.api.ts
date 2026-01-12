@@ -21,6 +21,7 @@ import type {
   BulkCreationPreview,
   ApiResponse,
 } from '@/lib/types/models.types'
+import type { PaginatedResponse, PaginationParams } from '@/lib/types/pagination.types'
 
 /**
  * Fetch all asset items
@@ -45,6 +46,29 @@ export async function getAllAssetItemsApi(): Promise<AssetItem[]> {
   const response = await apiClient.get<any>('/asset-items?limit=1000')
   const data = response.data.data
   return Array.isArray(data) ? data : data.items || []
+}
+
+/**
+ * Fetch asset items with pagination (RECOMMENDED)
+ *
+ * @param params - Pagination and filter parameters
+ * @returns Promise resolving to paginated response
+ */
+export async function getAssetItemsApiPaginated(
+  params: PaginationParams & { status?: string; assetModelId?: string; search?: string } = {}
+): Promise<PaginatedResponse<AssetItem>> {
+  const queryParams = new URLSearchParams()
+
+  if (params.page) queryParams.append('page', params.page.toString())
+  if (params.pageSize) queryParams.append('pageSize', params.pageSize.toString())
+  if (params.sortBy) queryParams.append('sortBy', params.sortBy)
+  if (params.sortOrder) queryParams.append('sortOrder', params.sortOrder)
+  if (params.status) queryParams.append('status', params.status)
+  if (params.assetModelId) queryParams.append('assetModelId', params.assetModelId)
+  if (params.search) queryParams.append('search', params.search)
+
+  const response = await apiClient.get<PaginatedResponse<AssetItem>>(`/asset-items?${queryParams.toString()}`)
+  return response.data
 }
 
 /**

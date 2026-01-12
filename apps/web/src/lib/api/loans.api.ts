@@ -22,6 +22,7 @@ import type {
   AddLoanLineDto,
   ApiResponse,
 } from '@/lib/types/models.types'
+import type { PaginatedResponse, PaginationParams } from '@/lib/types/pagination.types'
 
 /**
  * Fetch all loans
@@ -47,6 +48,58 @@ export async function getAllLoansApi(): Promise<Loan[]> {
   const response = await apiClient.get<any>('/loans?limit=1000')
   const data = response.data.data
   return Array.isArray(data) ? data : data.loans || []
+}
+
+/**
+ * Fetch loans with pagination (RECOMMENDED)
+ *
+ * Returns paginated loans with metadata (page, totalItems, etc.).
+ * More efficient than getAllLoansApi() for large datasets.
+ *
+ * @param params - Pagination and filter parameters
+ * @param params.page - Page number (1-indexed, default: 1)
+ * @param params.pageSize - Items per page (default: 20, max: 100)
+ * @param params.status - Filter by status ('OPEN' or 'CLOSED')
+ * @param params.employeeId - Filter by employee ID
+ * @param params.sortBy - Field to sort by (default: 'openedAt')
+ * @param params.sortOrder - Sort order (default: 'desc')
+ * @returns Promise resolving to paginated response
+ *
+ * @example
+ * const result = await getLoansApiPaginated({
+ *   page: 2,
+ *   pageSize: 20,
+ *   status: 'OPEN',
+ *   sortBy: 'openedAt',
+ *   sortOrder: 'desc'
+ * });
+ * // result = {
+ * //   success: true,
+ * //   data: [...loans...],
+ * //   pagination: {
+ * //     page: 2,
+ * //     pageSize: 20,
+ * //     totalItems: 150,
+ * //     totalPages: 8,
+ * //     hasNextPage: true,
+ * //     hasPreviousPage: true
+ * //   }
+ * // }
+ */
+export async function getLoansApiPaginated(
+  params: PaginationParams & { status?: string; employeeId?: string } = {}
+): Promise<PaginatedResponse<Loan>> {
+  const queryParams = new URLSearchParams()
+
+  if (params.page) queryParams.append('page', params.page.toString())
+  if (params.pageSize) queryParams.append('pageSize', params.pageSize.toString())
+  if (params.sortBy) queryParams.append('sortBy', params.sortBy)
+  if (params.sortOrder) queryParams.append('sortOrder', params.sortOrder)
+  if (params.status) queryParams.append('status', params.status)
+  if (params.employeeId) queryParams.append('employeeId', params.employeeId)
+
+  const response = await apiClient.get<PaginatedResponse<Loan>>(`/loans?${queryParams.toString()}`)
+  return response.data
 }
 
 /**
