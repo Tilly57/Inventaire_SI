@@ -3,6 +3,7 @@
  */
 import multer from 'multer';
 import path from 'path';
+import { randomBytes } from 'crypto';
 import { fileURLToPath } from 'url';
 import { MAX_FILE_SIZE, ALLOWED_FILE_TYPES } from '../utils/constants.js';
 import { ValidationError } from '../utils/errors.js';
@@ -17,9 +18,15 @@ const storage = multer.diskStorage({
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
+    // Génération sécurisée d'un nom de fichier unique avec crypto.randomBytes
+    // 16 bytes = 32 caractères hexadécimaux (collision quasi impossible)
+    const secureRandomName = randomBytes(16).toString('hex');
+    const timestamp = Date.now(); // Ajouté pour faciliter le tri chronologique
     const ext = path.extname(file.originalname);
-    cb(null, `signature-${uniqueSuffix}${ext}`);
+
+    // Format: signature-timestamp-randomhex.ext
+    // Exemple: signature-1704645123456-a3f2c1b9e8d7f6a5b4c3d2e1f0a9b8c7.png
+    cb(null, `signature-${timestamp}-${secureRandomName}${ext}`);
   }
 });
 

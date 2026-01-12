@@ -48,25 +48,93 @@ if (missingSecrets.length > 0) {
   process.exit(1);
 }
 
-// Valider que les JWT secrets ne sont pas les valeurs par défaut (SÉCURITÉ CRITIQUE)
-const defaultSecrets = [
-  'change_me_access',
-  'change_me_refresh',
-  'supersecretkey',
-  'changeme',
-  'default'
-];
+/**
+ * Valider la force d'un secret JWT (SÉCURITÉ CRITIQUE)
+ * @param {string} secret - Secret à valider
+ * @returns {{valid: boolean, errors: string[]}}
+ */
+function validateSecretStrength(secret) {
+  const errors = [];
 
-// Ne valider que les JWT secrets, pas DATABASE_URL (qui peut contenir "postgres")
+  // 1. Longueur minimale de 32 caractères
+  if (secret.length < 32) {
+    errors.push(`Longueur insuffisante (${secret.length} < 32 caractères)`);
+  }
+
+  // 2. Vérifier patterns par défaut dangereux
+  const dangerousPatterns = [
+    /change_?me/i,
+    /default/i,
+    /secret/i,
+    /password/i,
+    /admin/i,
+    /test/i,
+    /example/i,
+    /demo/i,
+    /your_.*_here/i
+  ];
+
+  const foundPatterns = dangerousPatterns.filter(pattern => pattern.test(secret));
+  if (foundPatterns.length > 0) {
+    errors.push('Contient des patterns par défaut dangereux');
+  }
+
+  // 3. Vérifier la complexité (au moins 3 des 4 types de caractères)
+  const hasLowercase = /[a-z]/.test(secret);
+  const hasUppercase = /[A-Z]/.test(secret);
+  const hasDigits = /\d/.test(secret);
+  const hasSpecial = /[^a-zA-Z0-9]/.test(secret);
+
+  const complexityScore = [hasLowercase, hasUppercase, hasDigits, hasSpecial].filter(Boolean).length;
+
+  if (complexityScore < 3) {
+    errors.push(`Complexité insuffisante (score ${complexityScore}/4). Utilisez majuscules, minuscules, chiffres et caractères spéciaux`);
+  }
+
+  // 4. Vérifier patterns répétitifs (ex: "aaaaaaa", "1111111")
+  if (/(.)\1{5,}/.test(secret)) {
+    errors.push('Contient des caractères répétés excessivement');
+  }
+
+  // 5. Vérifier séquences simples (ex: "abcdef", "123456")
+  if (/(?:abc|bcd|cde|def|efg|fgh|ghi|hij|ijk|jkl|klm|lmn|mno|nop|opq|pqr|qrs|rst|stu|tuv|uvw|vwx|wxy|xyz)/i.test(secret)) {
+    errors.push('Contient des séquences alphabétiques simples');
+  }
+
+  if (/(?:012|123|234|345|456|567|678|789)/.test(secret)) {
+    errors.push('Contient des séquences numériques simples');
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors
+  };
+}
+
+// Valider que les JWT secrets sont forts (SÉCURITÉ CRITIQUE)
 const jwtSecrets = requiredSecrets.filter(s => s.name.includes('JWT'));
-const insecureSecrets = jwtSecrets.filter(s =>
-  defaultSecrets.some(def => s.value.toLowerCase().includes(def))
-);
+const weakSecrets = [];
 
-if (insecureSecrets.length > 0) {
-  logger.error('🚨 ERREUR DE SÉCURITÉ: Secrets par défaut détectés!');
-  logger.error(`   Secrets concernés: ${insecureSecrets.map(s => s.name).join(', ')}`);
-  logger.error('   Action requise: Générer des secrets forts avec ./scripts/generate-secrets.sh');
+for (const secret of jwtSecrets) {
+  const validation = validateSecretStrength(secret.value);
+  if (!validation.valid) {
+    weakSecrets.push({
+      name: secret.name,
+      errors: validation.errors
+    });
+  }
+}
+
+if (weakSecrets.length > 0) {
+  logger.error('🚨 ERREUR DE SÉCURITÉ: Secrets JWT faibles détectés!');
+  for (const weak of weakSecrets) {
+    logger.error(`   ${weak.name}:`);
+    weak.errors.forEach(err => logger.error(`     - ${err}`));
+  }
+  logger.error('');
+  logger.error('   💡 Action requise: Générer des secrets forts');
+  logger.error('      Commande: openssl rand -base64 48');
+  logger.error('      ou: node -e "console.log(require(\'crypto\').randomBytes(48).toString(\'base64\'))"');
   process.exit(1);
 }
 

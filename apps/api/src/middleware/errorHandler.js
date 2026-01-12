@@ -78,13 +78,30 @@ export const errorHandler = (err, req, res, next) => {
     // Prisma errors have specific error codes
     statusCode = 400;
 
+    // Log detailed Prisma error for debugging (all environments)
+    logger.error('Prisma error details', {
+      code: err.code,
+      meta: err.meta,
+      message: err.message,
+      clientVersion: err.clientVersion
+    });
+
     switch (err.code) {
       case 'P2002':
         // Unique constraint violation
         // Example: duplicate email, asset tag, serial number
-        message = 'Violation de contrainte d\'unicité';
-        const field = err.meta?.target?.[0] || 'champ';
-        details = [{ field, message: `Ce ${field} existe déjà` }];
+        const targetField = err.meta?.target?.[0];
+
+        if (process.env.NODE_ENV === 'production') {
+          // Production: Message générique sans exposer la structure DB
+          message = 'Cette valeur existe déjà dans le système';
+          // Pas de détails exposés en production pour éviter l'énumération des champs
+        } else {
+          // Development: Message détaillé pour faciliter le débogage
+          message = 'Violation de contrainte d\'unicité';
+          const field = targetField || 'champ';
+          details = [{ field, message: `Ce ${field} existe déjà` }];
+        }
         break;
 
       case 'P2025':
@@ -96,19 +113,67 @@ export const errorHandler = (err, req, res, next) => {
       case 'P2003':
         // Foreign key constraint violation
         // Example: referencing non-existent assetModelId
-        message = 'Violation de contrainte de clé étrangère';
+        if (process.env.NODE_ENV === 'production') {
+          message = 'Référence invalide à une ressource';
+        } else {
+          message = 'Violation de contrainte de clé étrangère';
+          const field = err.meta?.field_name;
+          if (field) {
+            details = [{ field, message: `La référence ${field} est invalide` }];
+          }
+        }
+        break;
+
+      case 'P2014':
+        // Required relation violation
+        if (process.env.NODE_ENV === 'production') {
+          message = 'Relation requise manquante';
+        } else {
+          message = `Relation requise manquante: ${err.meta?.relation_name || 'inconnue'}`;
+        }
+        break;
+
+      case 'P2015':
+      case 'P2018':
+        // Related record not found
+        statusCode = 404;
+        if (process.env.NODE_ENV === 'production') {
+          message = 'Ressource liée non trouvée';
+        } else {
+          message = `Ressource liée non trouvée: ${err.meta?.cause || 'inconnue'}`;
+        }
         break;
 
       default:
-        // Other Prisma errors
-        message = 'Erreur de base de données';
+        // Other Prisma errors - message générique en production
+        message = process.env.NODE_ENV === 'production'
+          ? 'Une erreur est survenue lors du traitement de votre demande'
+          : 'Erreur de base de données';
     }
   }
   // Handle Prisma validation errors
   else if (err instanceof Prisma.PrismaClientValidationError) {
     // Data type validation errors (wrong types, missing required fields)
     statusCode = 400;
-    message = 'Erreur de validation des données';
+
+    // Log detailed error for debugging
+    logger.error('Prisma validation error', {
+      message: err.message
+    });
+
+    if (process.env.NODE_ENV === 'production') {
+      // Production: Message générique sans détails sur la structure
+      message = 'Données invalides fournies';
+    } else {
+      // Development: Message plus détaillé
+      message = 'Erreur de validation des données';
+      // Extraire un message plus spécifique si possible
+      if (err.message.includes('Missing')) {
+        message = 'Champs requis manquants';
+      } else if (err.message.includes('Invalid')) {
+        message = 'Format de données invalide';
+      }
+    }
   }
   // Handle Multer file upload errors
   else if (err.name === 'MulterError') {
