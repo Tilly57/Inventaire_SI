@@ -181,7 +181,7 @@ const AssetItemCard = memo(({
 
 AssetItemCard.displayName = 'AssetItemCard'
 
-export function AssetItemsTable({
+function AssetItemsTableComponent({
   items,
   selectedItems = [],
   onSelectionChange
@@ -361,3 +361,6 @@ export function AssetItemsTable({
     </>
   )
 }
+
+// Memoized: Prevent unnecessary re-renders - Phase 3.3
+export const AssetItemsTable = memo(AssetItemsTableComponent)

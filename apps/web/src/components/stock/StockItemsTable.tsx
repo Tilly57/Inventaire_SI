@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import type { AssetModel } from '@/lib/types/models.types'
 import { formatDate } from '@/lib/utils/formatters'
 import { LOW_STOCK_THRESHOLD } from '@/lib/utils/constants'
@@ -18,7 +19,7 @@ interface StockItemsTableProps {
   items: AssetModel[]
 }
 
-export function StockItemsTable({ items }: StockItemsTableProps) {
+function StockItemsTableComponent({ items }: StockItemsTableProps) {
   const { isMobile } = useMediaQuery()
 
   // Vue mobile - Cards empilées
@@ -133,3 +134,6 @@ export function StockItemsTable({ items }: StockItemsTableProps) {
     </div>
   )
 }
+
+// Memoized: Prevent unnecessary re-renders - Phase 3.3
+export const StockItemsTable = memo(StockItemsTableComponent)

@@ -1,4 +1,4 @@
-import { useState, lazy, Suspense } from 'react'
+import { useState, memo, lazy, Suspense } from 'react'
 import type { User } from '@/lib/types/models.types'
 import { UserRoleLabels } from '@/lib/types/enums.ts'
 import { formatDate } from '@/lib/utils/formatters'
@@ -25,7 +25,7 @@ interface UsersTableProps {
   currentUserId?: string
 }
 
-export function UsersTable({ users, currentUserId }: UsersTableProps) {
+function UsersTableComponent({ users, currentUserId }: UsersTableProps) {
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [deletingUser, setDeletingUser] = useState<User | null>(null)
   const { isMobile } = useMediaQuery()
@@ -202,3 +202,6 @@ export function UsersTable({ users, currentUserId }: UsersTableProps) {
     </>
   )
 }
+
+// Memoized: Prevent unnecessary re-renders - Phase 3.3
+export const UsersTable = memo(UsersTableComponent)

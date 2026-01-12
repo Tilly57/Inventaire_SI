@@ -1,4 +1,4 @@
-import { useState, lazy, Suspense } from 'react'
+import { useState, memo, lazy, Suspense } from 'react'
 import type { AssetModel } from '@/lib/types/models.types'
 import { formatDate } from '@/lib/utils/formatters'
 import {
@@ -25,7 +25,7 @@ interface AssetModelsTableProps {
   onSelectionChange?: (selectedIds: string[]) => void
 }
 
-export function AssetModelsTable({ models, selectedModels, onSelectionChange }: AssetModelsTableProps) {
+function AssetModelsTableComponent({ models, selectedModels, onSelectionChange }: AssetModelsTableProps) {
   const [editingModel, setEditingModel] = useState<AssetModel | null>(null)
   const [deletingModel, setDeletingModel] = useState<AssetModel | null>(null)
   const { isMobile } = useMediaQuery()
@@ -246,3 +246,6 @@ export function AssetModelsTable({ models, selectedModels, onSelectionChange }: 
     </>
   )
 }
+
+// Memoized: Prevent unnecessary re-renders - Phase 3.3
+export const AssetModelsTable = memo(AssetModelsTableComponent)

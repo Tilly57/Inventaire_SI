@@ -165,7 +165,7 @@ const EmployeeCard = memo(({
 
 EmployeeCard.displayName = 'EmployeeCard'
 
-export function EmployeesTable({
+function EmployeesTableComponent({
   employees,
   selectedEmployees = [],
   onSelectionChange
@@ -343,3 +343,7 @@ export function EmployeesTable({
     </>
   )
 }
+
+// Memoized: Prevent unnecessary re-renders when parent re-renders
+// Only re-render if employees, selectedEmployees, or onSelectionChange change
+export const EmployeesTable = memo(EmployeesTableComponent)
