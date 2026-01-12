@@ -16,12 +16,14 @@ import prisma from '../config/database.js';
 import { NotFoundError, ValidationError } from '../utils/errors.js';
 import { findOneOrFail } from '../utils/prismaHelpers.js';
 import { logCreate, logUpdate, logDelete } from '../utils/auditHelpers.js';
+import { getCached, invalidateEntity, generateKey, TTL } from './cache.service.js';
 
 /**
  * Get all stock items
  *
  * Returns all consumable items ordered by creation date (newest first).
  * Each item includes current quantity available.
+ * Cached for 5 minutes (TTL.STOCK_ITEMS) - Phase 3.2
  *
  * @returns {Promise<Array>} Array of stock item objects
  *
@@ -30,14 +32,22 @@ import { logCreate, logUpdate, logDelete } from '../utils/auditHelpers.js';
  * // stockItems = [{ id, name, quantity, unit, createdAt, ... }, ...]
  */
 export async function getAllStockItems() {
-  const stockItems = await prisma.stockItem.findMany({
-    orderBy: { createdAt: 'desc' },
-    include: {
-      assetModel: true  // Include model details (type, brand, modelName)
-    }
-  });
+  const cacheKey = generateKey('stock_items', 'all');
 
-  return stockItems;
+  return getCached(
+    cacheKey,
+    async () => {
+      const stockItems = await prisma.stockItem.findMany({
+        orderBy: { createdAt: 'desc' },
+        include: {
+          assetModel: true  // Include model details (type, brand, modelName)
+        }
+      });
+
+      return stockItems;
+    },
+    TTL.STOCK_ITEMS
+  );
 }
 
 /**
@@ -117,6 +127,9 @@ export async function createStockItem(data, req) {
   // Audit trail
   await logCreate('StockItem', stockItem.id, req, stockItem);
 
+  // Invalidate cache - Phase 3.2
+  await invalidateEntity('stock_items');
+
   return stockItem;
 }
 
@@ -163,6 +176,9 @@ export async function updateStockItem(id, data, req) {
 
   // Audit trail
   await logUpdate('StockItem', id, req, existingItem, stockItem);
+
+  // Invalidate cache - Phase 3.2
+  await invalidateEntity('stock_items');
 
   return stockItem;
 }
@@ -223,6 +239,9 @@ export async function adjustStockQuantity(id, adjustment, req) {
   // Audit trail
   await logUpdate('StockItem', id, req, { quantity: existingItem.quantity }, { quantity: newQuantity, adjustment });
 
+  // Invalidate cache - Phase 3.2
+  await invalidateEntity('stock_items');
+
   return stockItem;
 }
 
@@ -258,6 +277,9 @@ export async function deleteStockItem(id, req) {
 
   // Audit trail
   await logDelete('StockItem', id, req, existingItem);
+
+  // Invalidate cache - Phase 3.2
+  await invalidateEntity('stock_items');
 
   return { message: 'Article de stock supprimé avec succès' };
 }

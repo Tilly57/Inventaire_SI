@@ -13,12 +13,14 @@ import { NotFoundError, ConflictError, ValidationError } from '../utils/errors.j
 import { findOneOrFail, validateUniqueFields } from '../utils/prismaHelpers.js';
 import { logCreate, logUpdate, logDelete } from '../utils/auditHelpers.js';
 import { executePaginatedQuery, buildOrderBy } from '../utils/pagination.js';
+import { getCached, invalidateEntity, generateKey, TTL } from './cache.service.js';
 
 /**
  * Get all employees with loan count
  *
  * Employees are returned in reverse chronological order (newest first).
  * Includes a count of all loans (active and closed) for each employee.
+ * Cached for 10 minutes (TTL.EMPLOYEES) - Phase 3.2
  *
  * @returns {Promise<Array>} Array of employee objects with loan counts
  *
@@ -27,22 +29,31 @@ import { executePaginatedQuery, buildOrderBy } from '../utils/pagination.js';
  * // employees[0]._count.loans = 5
  */
 export async function getAllEmployees() {
-  const employees = await prisma.employee.findMany({
-    orderBy: { createdAt: 'desc' },
-    include: {
-      _count: {
-        select: { loans: true }  // Count of all loans for this employee
-      }
-    }
-  });
+  const cacheKey = generateKey('employees', 'all');
 
-  return employees;
+  return getCached(
+    cacheKey,
+    async () => {
+      const employees = await prisma.employee.findMany({
+        orderBy: { createdAt: 'desc' },
+        include: {
+          _count: {
+            select: { loans: true }  // Count of all loans for this employee
+          }
+        }
+      });
+
+      return employees;
+    },
+    TTL.EMPLOYEES
+  );
 }
 
 /**
  * Get all employees with pagination and optional filters
  *
  * PERFORMANCE OPTIMIZED: Uses pagination to avoid loading all records at once.
+ * Cached with filters in key - Phase 3.2
  *
  * @param {Object} options - Query options
  * @param {string} [options.search] - Search in first name, last name, email, or dept
@@ -63,36 +74,45 @@ export async function getAllEmployeesPaginated(options = {}) {
     sortOrder = 'desc'
   } = options;
 
-  const where = {};
+  // Generate cache key with filters
+  const cacheKey = generateKey('employees', `list:p${page}:s${pageSize}:${search || ''}:${dept || ''}:${sortBy}:${sortOrder}`);
 
-  if (search) {
-    where.OR = [
-      { firstName: { contains: search, mode: 'insensitive' } },
-      { lastName: { contains: search, mode: 'insensitive' } },
-      { email: { contains: search, mode: 'insensitive' } },
-      { dept: { contains: search, mode: 'insensitive' } }
-    ];
-  }
+  return getCached(
+    cacheKey,
+    async () => {
+      const where = {};
 
-  if (dept) {
-    where.dept = { contains: dept, mode: 'insensitive' };
-  }
-
-  const orderBy = buildOrderBy(sortBy, sortOrder);
-
-  const result = await executePaginatedQuery(prisma.employee, {
-    where,
-    orderBy,
-    include: {
-      _count: {
-        select: { loans: true }
+      if (search) {
+        where.OR = [
+          { firstName: { contains: search, mode: 'insensitive' } },
+          { lastName: { contains: search, mode: 'insensitive' } },
+          { email: { contains: search, mode: 'insensitive' } },
+          { dept: { contains: search, mode: 'insensitive' } }
+        ];
       }
-    },
-    page,
-    pageSize
-  });
 
-  return result;
+      if (dept) {
+        where.dept = { contains: dept, mode: 'insensitive' };
+      }
+
+      const orderBy = buildOrderBy(sortBy, sortOrder);
+
+      const result = await executePaginatedQuery(prisma.employee, {
+        where,
+        orderBy,
+        include: {
+          _count: {
+            select: { loans: true }
+          }
+        },
+        page,
+        pageSize
+      });
+
+      return result;
+    },
+    TTL.EMPLOYEES
+  );
 }
 
 /**
@@ -162,6 +182,9 @@ export async function createEmployee(data, req) {
   // Audit trail
   await logCreate('Employee', employee.id, req, employee);
 
+  // Invalidate cache - Phase 3.2
+  await invalidateEntity('employees');
+
   return employee;
 }
 
@@ -228,6 +251,11 @@ export async function bulkCreateEmployees(employees) {
     }
   }
 
+  // Invalidate cache if any employees were created - Phase 3.2
+  if (result.created > 0) {
+    await invalidateEntity('employees');
+  }
+
   return result;
 }
 
@@ -271,6 +299,9 @@ export async function updateEmployee(id, data, req) {
 
   // Audit trail
   await logUpdate('Employee', id, req, existingEmployee, employee);
+
+  // Invalidate cache - Phase 3.2
+  await invalidateEntity('employees');
 
   return employee;
 }
@@ -363,6 +394,9 @@ export async function deleteEmployee(id, req) {
 
   // Audit trail
   await logDelete('Employee', id, req, existingEmployee);
+
+  // Invalidate cache - Phase 3.2
+  await invalidateEntity('employees');
 
   return { message: 'Employé supprimé avec succès' };
 }

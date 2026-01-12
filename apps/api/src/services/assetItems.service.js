@@ -17,12 +17,14 @@ import { NotFoundError, ConflictError, ValidationError } from '../utils/errors.j
 import { findOneOrFail, validateUniqueFields } from '../utils/prismaHelpers.js';
 import { logCreate, logUpdate, logDelete } from '../utils/auditHelpers.js';
 import { executePaginatedQuery, buildOrderBy } from '../utils/pagination.js';
+import { getCached, invalidateEntity, generateKey, TTL } from './cache.service.js';
 
 /**
  * Get all asset items with optional filters
  *
  * Supports filtering by status, model, and text search (asset tag or serial).
  * Returns items ordered by creation date (newest first) with model details.
+ * Cached for 5 minutes (TTL.ASSET_ITEMS) - Phase 3.2
  *
  * @param {Object} [filters={}] - Optional filters
  * @param {string} [filters.status] - Filter by status (EN_STOCK, PRETE, HS, REPARATION)
@@ -48,41 +50,51 @@ import { executePaginatedQuery, buildOrderBy } from '../utils/pagination.js';
 export async function getAllAssetItems(filters = {}) {
   const { status, assetModelId, search } = filters;
 
-  const where = {};
+  // Generate cache key with filters
+  const cacheKey = generateKey('asset_items', `all:${status || ''}:${assetModelId || ''}:${search || ''}`);
 
-  // Filter by status if provided
-  if (status) {
-    where.status = status;
-  }
+  return getCached(
+    cacheKey,
+    async () => {
+      const where = {};
 
-  // Filter by asset model if provided
-  if (assetModelId) {
-    where.assetModelId = assetModelId;
-  }
+      // Filter by status if provided
+      if (status) {
+        where.status = status;
+      }
 
-  // Search in asset tag OR serial number (case-insensitive)
-  if (search) {
-    where.OR = [
-      { assetTag: { contains: search, mode: 'insensitive' } },
-      { serial: { contains: search, mode: 'insensitive' } }
-    ];
-  }
+      // Filter by asset model if provided
+      if (assetModelId) {
+        where.assetModelId = assetModelId;
+      }
 
-  const assetItems = await prisma.assetItem.findMany({
-    where,
-    orderBy: { createdAt: 'desc' },
-    include: {
-      assetModel: true  // Include model details (type, brand, modelName)
-    }
-  });
+      // Search in asset tag OR serial number (case-insensitive)
+      if (search) {
+        where.OR = [
+          { assetTag: { contains: search, mode: 'insensitive' } },
+          { serial: { contains: search, mode: 'insensitive' } }
+        ];
+      }
 
-  return assetItems;
+      const assetItems = await prisma.assetItem.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          assetModel: true  // Include model details (type, brand, modelName)
+        }
+      });
+
+      return assetItems;
+    },
+    TTL.ASSET_ITEMS
+  );
 }
 
 /**
  * Get all asset items with pagination and optional filters
  *
  * PERFORMANCE OPTIMIZED: Uses pagination to avoid loading all records at once.
+ * Cached with filters in key - Phase 3.2
  *
  * @param {Object} options - Query options
  * @param {string} [options.status] - Filter by status (EN_STOCK, PRETE, HS, REPARATION)
@@ -105,36 +117,45 @@ export async function getAllAssetItemsPaginated(options = {}) {
     sortOrder = 'desc'
   } = options;
 
-  const where = {};
+  // Generate cache key with filters
+  const cacheKey = generateKey('asset_items', `list:p${page}:s${pageSize}:${status || ''}:${assetModelId || ''}:${search || ''}:${sortBy}:${sortOrder}`);
 
-  if (status) {
-    where.status = status;
-  }
+  return getCached(
+    cacheKey,
+    async () => {
+      const where = {};
 
-  if (assetModelId) {
-    where.assetModelId = assetModelId;
-  }
+      if (status) {
+        where.status = status;
+      }
 
-  if (search) {
-    where.OR = [
-      { assetTag: { contains: search, mode: 'insensitive' } },
-      { serial: { contains: search, mode: 'insensitive' } }
-    ];
-  }
+      if (assetModelId) {
+        where.assetModelId = assetModelId;
+      }
 
-  const orderBy = buildOrderBy(sortBy, sortOrder);
+      if (search) {
+        where.OR = [
+          { assetTag: { contains: search, mode: 'insensitive' } },
+          { serial: { contains: search, mode: 'insensitive' } }
+        ];
+      }
 
-  const result = await executePaginatedQuery(prisma.assetItem, {
-    where,
-    orderBy,
-    include: {
-      assetModel: true
+      const orderBy = buildOrderBy(sortBy, sortOrder);
+
+      const result = await executePaginatedQuery(prisma.assetItem, {
+        where,
+        orderBy,
+        include: {
+          assetModel: true
+        },
+        page,
+        pageSize
+      });
+
+      return result;
     },
-    page,
-    pageSize
-  });
-
-  return result;
+    TTL.ASSET_ITEMS
+  );
 }
 
 /**
@@ -232,6 +253,9 @@ export async function createAssetItem(data, req) {
   // Audit trail
   await logCreate('AssetItem', assetItem.id, req, assetItem);
 
+  // Invalidate cache - Phase 3.2
+  await invalidateEntity('asset_items');
+
   return assetItem;
 }
 
@@ -298,6 +322,9 @@ export async function updateAssetItem(id, data, req) {
   // Audit trail
   await logUpdate('AssetItem', id, req, existingItem, assetItem);
 
+  // Invalidate cache - Phase 3.2
+  await invalidateEntity('asset_items');
+
   return assetItem;
 }
 
@@ -345,6 +372,9 @@ export async function updateAssetItemStatus(id, status, req) {
     { status }
   );
 
+  // Invalidate cache - Phase 3.2
+  await invalidateEntity('asset_items');
+
   return assetItem;
 }
 
@@ -377,6 +407,9 @@ export async function deleteAssetItem(id, req) {
 
   // Audit trail
   await logDelete('AssetItem', id, req, existingItem);
+
+  // Invalidate cache - Phase 3.2
+  await invalidateEntity('asset_items');
 
   return { message: 'Article d\'équipement supprimé avec succès' };
 }
@@ -570,6 +603,9 @@ export async function createAssetItemsBulk(data) {
     }
     return items;
   });
+
+  // Invalidate cache - Phase 3.2
+  await invalidateEntity('asset_items');
 
   return createdItems;
 }
