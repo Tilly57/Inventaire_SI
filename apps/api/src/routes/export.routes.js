@@ -22,14 +22,13 @@ import {
   exportDashboardController,
 } from '../controllers/export.controller.js'
 import { requireAuth } from '../middleware/auth.js'
-import { requireRole } from '../middleware/rbac.js'
-import { UserRole } from '@prisma/client'
+import { requireManager } from '../middleware/rbac.js'
 
 const router = express.Router()
 
 // Tous les exports nécessitent authentification et rôle ADMIN ou GESTIONNAIRE
 router.use(requireAuth)
-router.use(requireRole([UserRole.ADMIN, UserRole.GESTIONNAIRE]))
+router.use(requireManager)
 
 /**
  * GET /api/export/employees

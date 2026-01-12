@@ -23,6 +23,7 @@ const AssetItemsListPage = lazy(() => import('@/pages/AssetItemsListPage'))
 const StockItemsListPage = lazy(() => import('@/pages/StockItemsListPage'))
 const LoansListPage = lazy(() => import('@/pages/LoansListPage'))
 const LoanDetailsPage = lazy(() => import('@/pages/LoanDetailsPage'))
+const AuditLogsPage = lazy(() => import('@/pages/AuditLogsPage'))
 
 // Create React Query client
 const queryClient = new QueryClient({
@@ -76,6 +77,7 @@ function App() {
                   <Route path="/stock" element={<StockItemsListPage />} />
                   <Route path="/loans" element={<LoansListPage />} />
                   <Route path="/loans/:id" element={<LoanDetailsPage />} />
+                  <Route path="/audit-logs" element={<AuditLogsPage />} />
                 </Route>
               </Route>
             </Route>

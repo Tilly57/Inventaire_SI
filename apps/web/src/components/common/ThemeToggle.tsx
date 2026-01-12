@@ -23,7 +23,7 @@ export function ThemeToggle() {
         <Button
           variant="ghost"
           size="icon"
-          className="relative"
+          className="relative text-white hover:bg-[#EE2722]/10"
           aria-label="Toggle theme"
         >
           {actualTheme === 'light' ? (
