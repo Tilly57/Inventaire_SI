@@ -1,13 +1,15 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useDeferredValue, useMemo, lazy, Suspense } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLoans } from '@/lib/hooks/useLoans'
 import { useAuth } from '@/lib/hooks/useAuth'
 import { useEmployees } from '@/lib/hooks/useEmployees'
 import { LoansTable } from '@/components/loans/LoansTable'
-import { LoanFormDialog } from '@/components/loans/LoanFormDialog'
-import { BulkDeleteLoansDialog } from '@/components/loans/BulkDeleteLoansDialog'
-import { PrintLoansHistoryDialog } from '@/components/loans/PrintLoansHistoryDialog'
-import { LoansPrintView } from '@/components/loans/LoansPrintView'
+
+// Lazy load dialogs and print view
+const LoanFormDialog = lazy(() => import('@/components/loans/LoanFormDialog').then(m => ({ default: m.LoanFormDialog })))
+const BulkDeleteLoansDialog = lazy(() => import('@/components/loans/BulkDeleteLoansDialog').then(m => ({ default: m.BulkDeleteLoansDialog })))
+const PrintLoansHistoryDialog = lazy(() => import('@/components/loans/PrintLoansHistoryDialog').then(m => ({ default: m.PrintLoansHistoryDialog })))
+const LoansPrintView = lazy(() => import('@/components/loans/LoansPrintView').then(m => ({ default: m.LoansPrintView })))
 import { Pagination } from '@/components/common/Pagination'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -42,21 +44,30 @@ export function LoansListPage() {
 
   const loansList = Array.isArray(loans) ? loans : []
 
-  const filteredLoans = loansList.filter((loan) => {
-    const matchesSearch =
-      loan.employee?.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      loan.employee?.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      loan.employee?.email?.toLowerCase().includes(searchTerm.toLowerCase())
+  // Defer search term to avoid blocking UI during typing
+  const deferredSearchTerm = useDeferredValue(searchTerm)
 
-    const matchesStatus = statusFilter === 'all' || loan.status === statusFilter
+  // Use deferred search term for filtering with useMemo
+  const filteredLoans = useMemo(
+    () =>
+      loansList.filter((loan) => {
+        const matchesSearch =
+          loan.employee?.firstName?.toLowerCase().includes(deferredSearchTerm.toLowerCase()) ||
+          loan.employee?.lastName?.toLowerCase().includes(deferredSearchTerm.toLowerCase()) ||
+          loan.employee?.email?.toLowerCase().includes(deferredSearchTerm.toLowerCase())
 
-    return matchesSearch && matchesStatus
-  })
+        const matchesStatus = statusFilter === 'all' || loan.status === statusFilter
 
+        return matchesSearch && matchesStatus
+      }),
+    [loansList, deferredSearchTerm, statusFilter]
+  )
+
+  // Reset to page 1 and clear selection when filters change
   useEffect(() => {
     setCurrentPage(1)
     setSelectedLoanIds([])
-  }, [searchTerm, statusFilter])
+  }, [deferredSearchTerm, statusFilter])
 
   const totalItems = filteredLoans.length
   const totalPages = Math.ceil(totalItems / pageSize)
@@ -199,38 +210,46 @@ export function LoansListPage() {
         )}
       </div>
 
-      <LoanFormDialog
-        open={isCreating}
-        onClose={() => setIsCreating(false)}
-        onSuccess={handleLoanCreated}
-      />
+      <Suspense fallback={null}>
+        <LoanFormDialog
+          open={isCreating}
+          onClose={() => setIsCreating(false)}
+          onSuccess={handleLoanCreated}
+        />
+      </Suspense>
 
       {isAdmin && (
-        <BulkDeleteLoansDialog
-          loans={loansList.filter(loan => selectedLoanIds.includes(loan.id))}
-          open={isBulkDeleting}
-          onClose={() => {
-            setIsBulkDeleting(false)
-            setSelectedLoanIds([])
-          }}
-        />
+        <Suspense fallback={null}>
+          <BulkDeleteLoansDialog
+            loans={loansList.filter(loan => selectedLoanIds.includes(loan.id))}
+            open={isBulkDeleting}
+            onClose={() => {
+              setIsBulkDeleting(false)
+              setSelectedLoanIds([])
+            }}
+          />
+        </Suspense>
       )}
 
       {isAdmin && (
-        <PrintLoansHistoryDialog
-          open={isPrintDialogOpen}
-          onClose={() => setIsPrintDialogOpen(false)}
-          employees={employees}
-          onPrint={handlePrint}
-        />
+        <Suspense fallback={null}>
+          <PrintLoansHistoryDialog
+            open={isPrintDialogOpen}
+            onClose={() => setIsPrintDialogOpen(false)}
+            employees={employees}
+            onPrint={handlePrint}
+          />
+        </Suspense>
       )}
 
       {showPrintView && (
-        <LoansPrintView
-          loans={loansToPrint}
-          employeeName={printEmployeeName}
-          onPrintComplete={handlePrintComplete}
-        />
+        <Suspense fallback={null}>
+          <LoansPrintView
+            loans={loansToPrint}
+            employeeName={printEmployeeName}
+            onPrintComplete={handlePrintComplete}
+          />
+        </Suspense>
       )}
     </div>
   )

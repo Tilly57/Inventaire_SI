@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo, useCallback, memo } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { createLoanSchema } from '@/lib/schemas/loans.schema'
@@ -37,15 +37,17 @@ interface LoanFormDialogProps {
   onSuccess?: (loanId: string) => void
 }
 
-export function LoanFormDialog({ open, onClose, onSuccess }: LoanFormDialogProps) {
+function LoanFormDialogComponent({ open, onClose, onSuccess }: LoanFormDialogProps) {
   const createLoan = useCreateLoan()
   const { data: employees } = useEmployees()
   const queryClient = useQueryClient()
 
-  // Sort employees alphabetically by last name
-  const employeesList = Array.isArray(employees)
-    ? [...employees].sort((a, b) => a.lastName.localeCompare(b.lastName, 'fr'))
-    : []
+  // Memoized: Sort employees alphabetically by last name (only recompute when employees change)
+  const employeesList = useMemo(() => {
+    return Array.isArray(employees)
+      ? [...employees].sort((a, b) => a.lastName.localeCompare(b.lastName, 'fr'))
+      : []
+  }, [employees])
 
   const form = useForm<CreateLoanFormData>({
     resolver: zodResolver(createLoanSchema),
@@ -60,7 +62,8 @@ export function LoanFormDialog({ open, onClose, onSuccess }: LoanFormDialogProps
     }
   }, [open, form])
 
-  const onSubmit = async (data: CreateLoanFormData) => {
+  // Memoized: Prevent function recreation on every render
+  const onSubmit = useCallback(async (data: CreateLoanFormData) => {
     try {
       const loan = await createLoan.mutateAsync(data)
 
@@ -74,7 +77,7 @@ export function LoanFormDialog({ open, onClose, onSuccess }: LoanFormDialogProps
     } catch (error) {
       // Error handled by mutation hook
     }
-  }
+  }, [createLoan, queryClient, onClose, onSuccess])
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -128,3 +131,7 @@ export function LoanFormDialog({ open, onClose, onSuccess }: LoanFormDialogProps
     </Dialog>
   )
 }
+
+// Memoized: Prevent unnecessary re-renders when parent component re-renders
+// Only re-render if props (open, onClose, onSuccess) change
+export const LoanFormDialog = memo(LoanFormDialogComponent)

@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { MobileNav } from './MobileNav'
 import { GlobalSearch } from '@/components/common/GlobalSearch'
+import { ThemeToggle } from '@/components/common/ThemeToggle'
 import { User, LogOut, Settings } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
@@ -61,6 +62,7 @@ export function Header() {
 
       {/* User menu */}
       <div className="flex items-center gap-4">
+        <ThemeToggle />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="gap-2 hover:bg-[#EE2722]/10">

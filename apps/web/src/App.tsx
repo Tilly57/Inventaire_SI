@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { QUERY_STALE_TIME } from '@/lib/utils/constants'
 import { Toaster } from '@/components/ui/toaster'
+import { ThemeProvider } from '@/lib/contexts/ThemeContext'
 
 // Layout (not lazy-loaded - needed immediately)
 import { AppLayout } from '@/components/layout/AppLayout'
@@ -22,6 +23,7 @@ const AssetItemsListPage = lazy(() => import('@/pages/AssetItemsListPage'))
 const StockItemsListPage = lazy(() => import('@/pages/StockItemsListPage'))
 const LoansListPage = lazy(() => import('@/pages/LoansListPage'))
 const LoanDetailsPage = lazy(() => import('@/pages/LoanDetailsPage'))
+const AuditLogsPage = lazy(() => import('@/pages/AuditLogsPage'))
 
 // Create React Query client
 const queryClient = new QueryClient({
@@ -36,9 +38,10 @@ const queryClient = new QueryClient({
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <Toaster />
-      <BrowserRouter>
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <Toaster />
+        <BrowserRouter>
         <Suspense fallback={<PageSkeleton />}>
           <Routes>
             {/* Public routes */}
@@ -74,6 +77,7 @@ function App() {
                   <Route path="/stock" element={<StockItemsListPage />} />
                   <Route path="/loans" element={<LoansListPage />} />
                   <Route path="/loans/:id" element={<LoanDetailsPage />} />
+                  <Route path="/audit-logs" element={<AuditLogsPage />} />
                 </Route>
               </Route>
             </Route>
@@ -83,7 +87,8 @@ function App() {
           </Routes>
         </Suspense>
       </BrowserRouter>
-    </QueryClientProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
   )
 }
 

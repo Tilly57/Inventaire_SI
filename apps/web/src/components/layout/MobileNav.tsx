@@ -22,6 +22,7 @@ import {
   UserCog,
   Menu,
   LogOut,
+  History,
 } from 'lucide-react'
 
 const iconMap = {
@@ -32,6 +33,7 @@ const iconMap = {
   Boxes,
   FileText,
   UserCog,
+  History,
 }
 
 export function MobileNav() {

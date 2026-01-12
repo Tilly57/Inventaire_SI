@@ -12,6 +12,7 @@ import prisma from '../config/database.js';
 import { NotFoundError, ConflictError, ValidationError } from '../utils/errors.js';
 import { findOneOrFail, validateUniqueFields } from '../utils/prismaHelpers.js';
 import { logCreate, logUpdate, logDelete } from '../utils/auditHelpers.js';
+import { executePaginatedQuery, buildOrderBy } from '../utils/pagination.js';
 
 /**
  * Get all employees with loan count
@@ -36,6 +37,62 @@ export async function getAllEmployees() {
   });
 
   return employees;
+}
+
+/**
+ * Get all employees with pagination and optional filters
+ *
+ * PERFORMANCE OPTIMIZED: Uses pagination to avoid loading all records at once.
+ *
+ * @param {Object} options - Query options
+ * @param {string} [options.search] - Search in first name, last name, email, or dept
+ * @param {string} [options.dept] - Filter by department
+ * @param {number} [options.page=1] - Page number
+ * @param {number} [options.pageSize=20] - Items per page
+ * @param {string} [options.sortBy='createdAt'] - Field to sort by
+ * @param {string} [options.sortOrder='desc'] - Sort order
+ * @returns {Promise<Object>} Paginated response with data and metadata
+ */
+export async function getAllEmployeesPaginated(options = {}) {
+  const {
+    search,
+    dept,
+    page = 1,
+    pageSize = 20,
+    sortBy = 'createdAt',
+    sortOrder = 'desc'
+  } = options;
+
+  const where = {};
+
+  if (search) {
+    where.OR = [
+      { firstName: { contains: search, mode: 'insensitive' } },
+      { lastName: { contains: search, mode: 'insensitive' } },
+      { email: { contains: search, mode: 'insensitive' } },
+      { dept: { contains: search, mode: 'insensitive' } }
+    ];
+  }
+
+  if (dept) {
+    where.dept = { contains: dept, mode: 'insensitive' };
+  }
+
+  const orderBy = buildOrderBy(sortBy, sortOrder);
+
+  const result = await executePaginatedQuery(prisma.employee, {
+    where,
+    orderBy,
+    include: {
+      _count: {
+        select: { loans: true }
+      }
+    },
+    page,
+    pageSize
+  });
+
+  return result;
 }
 
 /**

@@ -22,9 +22,10 @@
  * and signature uploads must occur while loan status is OPEN.
  */
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import {
   getAllLoansApi,
+  getLoansApiPaginated,
   getLoanApi,
   createLoanApi,
   addLoanLineApi,
@@ -42,6 +43,7 @@ import type {
   CreateLoanDto,
   AddLoanLineDto,
 } from '@/lib/types/models.types'
+import type { PaginationParams } from '@/lib/types/pagination.types'
 import { useToast } from '@/lib/hooks/use-toast'
 
 /**
@@ -76,6 +78,63 @@ export function useLoans() {
   return useQuery({
     queryKey: ['loans'],
     queryFn: getAllLoansApi,
+  })
+}
+
+/**
+ * Hook to fetch loans with pagination (RECOMMENDED)
+ *
+ * Returns paginated loans with metadata.
+ * Uses keepPreviousData to show old data while new page is loading.
+ * More efficient than useLoans() for large datasets.
+ *
+ * Query key includes all params for proper caching per page/filter combination.
+ *
+ * @param params - Pagination and filter parameters
+ * @param params.page - Page number (default: 1)
+ * @param params.pageSize - Items per page (default: 20)
+ * @param params.status - Filter by status ('OPEN' or 'CLOSED')
+ * @param params.employeeId - Filter by employee ID
+ * @param params.sortBy - Field to sort by (default: 'openedAt')
+ * @param params.sortOrder - Sort order (default: 'desc')
+ * @returns React Query result with paginated data
+ *
+ * @example
+ * function LoansListPage() {
+ *   const [page, setPage] = useState(1);
+ *   const [pageSize, setPageSize] = useState(20);
+ *   const [status, setStatus] = useState<'OPEN' | 'CLOSED' | ''>('');
+ *
+ *   const { data, isLoading, isPlaceholderData } = useLoansPaginated({
+ *     page,
+ *     pageSize,
+ *     status: status || undefined,
+ *     sortBy: 'openedAt',
+ *     sortOrder: 'desc'
+ *   });
+ *
+ *   if (isLoading) return <Spinner />;
+ *
+ *   return (
+ *     <>
+ *       <Table data={data.data} />
+ *       <Pagination
+ *         page={data.pagination.page}
+ *         totalPages={data.pagination.totalPages}
+ *         onPageChange={setPage}
+ *         disabled={isPlaceholderData}
+ *       />
+ *     </>
+ *   );
+ * }
+ */
+export function useLoansPaginated(
+  params: PaginationParams & { status?: string; employeeId?: string } = {}
+) {
+  return useQuery({
+    queryKey: ['loans', 'paginated', params],
+    queryFn: () => getLoansApiPaginated(params),
+    placeholderData: keepPreviousData, // Keep old data while fetching new page
   })
 }
 

@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useDeferredValue, useMemo, lazy, Suspense } from 'react'
 import { useUsers } from '@/lib/hooks/useUsers'
 import { useAuth } from '@/lib/hooks/useAuth'
 import { UsersTable } from '@/components/users/UsersTable'
-import { UserFormDialog } from '@/components/users/UserFormDialog'
+
+// Lazy load dialog
+const UserFormDialog = lazy(() => import('@/components/users/UserFormDialog').then(m => ({ default: m.UserFormDialog })))
 import { Pagination } from '@/components/common/Pagination'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -17,18 +19,26 @@ export function UsersListPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
 
+  // Defer search term to avoid blocking UI during typing
+  const deferredSearchTerm = useDeferredValue(searchTerm)
+
   const usersList = Array.isArray(users) ? users : []
 
-  const filteredUsers = usersList.filter(
-    (user) =>
-      user.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email?.toLowerCase().includes(searchTerm.toLowerCase())
+  // Use deferred search term for filtering with useMemo
+  const filteredUsers = useMemo(
+    () =>
+      usersList.filter(
+        (user) =>
+          user.username?.toLowerCase().includes(deferredSearchTerm.toLowerCase()) ||
+          user.email?.toLowerCase().includes(deferredSearchTerm.toLowerCase())
+      ),
+    [usersList, deferredSearchTerm]
   )
 
-  // Reset to page 1 when search term changes
+  // Reset to page 1 when deferred search term changes
   useEffect(() => {
     setCurrentPage(1)
-  }, [searchTerm])
+  }, [deferredSearchTerm])
 
   // Calculate pagination
   const totalItems = filteredUsers.length
@@ -108,10 +118,12 @@ export function UsersListPage() {
         )}
       </div>
 
-      <UserFormDialog
-        open={isCreating}
-        onClose={() => setIsCreating(false)}
-      />
+      <Suspense fallback={null}>
+        <UserFormDialog
+          open={isCreating}
+          onClose={() => setIsCreating(false)}
+        />
+      </Suspense>
     </div>
   )
 }

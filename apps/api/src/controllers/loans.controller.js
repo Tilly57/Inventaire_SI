@@ -24,50 +24,77 @@
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import * as loansService from '../services/loans.service.js';
 import { sendSuccess, sendCreated } from '../utils/responseHelpers.js';
+import { parsePaginationParams } from '../utils/pagination.js';
 
 /**
- * Get all loans with optional filters
+ * Get all loans with optional filters and pagination
  *
  * Route: GET /api/loans
  * Access: Protected (requires authentication)
  *
- * Returns list of loans with related data (employee, lines, assets).
- * Supports filtering by status and employee.
+ * PERFORMANCE: Automatically uses pagination if page/pageSize params provided.
+ * For backward compatibility, returns unpaginated data if no pagination params.
  *
  * @param {Object} req.query - Query parameters
  * @param {string} [req.query.status] - Filter by loan status (OPEN, CLOSED)
  * @param {string} [req.query.employeeId] - Filter by employee ID
+ * @param {number} [req.query.page] - Page number (1-indexed, enables pagination)
+ * @param {number} [req.query.pageSize] - Items per page (default: 20, max: 100)
+ * @param {string} [req.query.sortBy] - Field to sort by (default: 'openedAt')
+ * @param {string} [req.query.sortOrder] - Sort order 'asc' or 'desc' (default: 'desc')
  *
- * @returns {Object} 200 - Array of loan objects
+ * @returns {Object} 200 - Loans data (paginated or not)
  *
  * @example
+ * // Unpaginated (legacy behavior)
  * GET /api/loans?status=OPEN
- * GET /api/loans?employeeId=ckx123
+ * Response: { success: true, data: [...] }
  *
- * Response 200:
- * {
- *   "success": true,
- *   "data": [
- *     {
- *       "id": "ckx...",
- *       "status": "OPEN",
- *       "employee": { "id": "...", "firstName": "John", "lastName": "Doe" },
- *       "lines": [
- *         { "id": "...", "assetItem": { "assetTag": "LAP-001", ... } }
- *       ],
- *       "pickupSignatureUrl": "/uploads/signatures/...",
- *       "returnSignatureUrl": null,
- *       "createdAt": "2024-01-15T10:00:00Z"
- *     }
- *   ]
+ * @example
+ * // Paginated (recommended for performance)
+ * GET /api/loans?page=2&pageSize=20&status=OPEN&sortBy=openedAt&sortOrder=desc
+ * Response: {
+ *   success: true,
+ *   data: [...],
+ *   pagination: {
+ *     page: 2,
+ *     pageSize: 20,
+ *     totalItems: 150,
+ *     totalPages: 8,
+ *     hasNextPage: true,
+ *     hasPreviousPage: true
+ *   }
  * }
  */
 export const getAllLoans = asyncHandler(async (req, res) => {
-  const { status, employeeId } = req.query;
+  const { status, employeeId, sortBy, sortOrder } = req.query;
 
-  const loans = await loansService.getAllLoans({ status, employeeId });
+  // Check if pagination is requested
+  const isPaginationRequested = req.query.page !== undefined || req.query.pageSize !== undefined;
 
-  sendSuccess(res, loans);
+  if (isPaginationRequested) {
+    // Use paginated query (RECOMMENDED for production)
+    const { page, pageSize } = parsePaginationParams(req.query);
+
+    const result = await loansService.getAllLoansPaginated({
+      status,
+      employeeId,
+      page,
+      pageSize,
+      sortBy,
+      sortOrder
+    });
+
+    // Send paginated response with metadata
+    res.json({
+      success: true,
+      ...result  // Contains: { data: [...], pagination: {...} }
+    });
+  } else {
+    // Legacy unpaginated query (backward compatibility)
+    const loans = await loansService.getAllLoans({ status, employeeId });
+    sendSuccess(res, loans);
+  }
 });
 
 /**

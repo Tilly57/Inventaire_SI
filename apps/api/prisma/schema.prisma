@@ -54,6 +54,7 @@ model Employee {
 
   @@index([lastName, firstName])
   @@index([email])
+  @@index([dept])
 }
 
 model EquipmentType {
@@ -73,6 +74,10 @@ model AssetModel {
 
   items      AssetItem[]
   stockItems StockItem[]
+
+  @@index([type])
+  @@index([brand])
+  @@index([type, brand])
 }
 
 model AssetItem {
@@ -136,7 +141,9 @@ model Loan {
   @@index([status])
   @@index([deletedAt])
   @@index([openedAt])
+  @@index([closedAt])
   @@index([employeeId, status])
+  @@index([openedAt, status])
   @@index([createdById])
 }
 
@@ -174,4 +181,6 @@ model AuditLog {
   @@index([tableName, recordId])
   @@index([userId])
   @@index([createdAt])
+  @@index([action])
+  @@index([tableName, action])
 }

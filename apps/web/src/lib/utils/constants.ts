@@ -61,6 +61,12 @@ export const NAVIGATION_ITEMS = [
     allowedRoles: [UserRole.ADMIN, UserRole.GESTIONNAIRE],
   },
   {
+    label: 'Audit Trail',
+    path: '/audit-logs',
+    icon: 'History',
+    allowedRoles: [UserRole.ADMIN, UserRole.GESTIONNAIRE],
+  },
+  {
     label: 'Utilisateurs',
     path: '/users',
     icon: 'UserCog',

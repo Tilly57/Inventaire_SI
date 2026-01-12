@@ -16,6 +16,7 @@ import prisma from '../config/database.js';
 import { NotFoundError, ConflictError, ValidationError } from '../utils/errors.js';
 import { findOneOrFail, validateUniqueFields } from '../utils/prismaHelpers.js';
 import { logCreate, logUpdate, logDelete } from '../utils/auditHelpers.js';
+import { executePaginatedQuery, buildOrderBy } from '../utils/pagination.js';
 
 /**
  * Get all asset items with optional filters
@@ -76,6 +77,64 @@ export async function getAllAssetItems(filters = {}) {
   });
 
   return assetItems;
+}
+
+/**
+ * Get all asset items with pagination and optional filters
+ *
+ * PERFORMANCE OPTIMIZED: Uses pagination to avoid loading all records at once.
+ *
+ * @param {Object} options - Query options
+ * @param {string} [options.status] - Filter by status (EN_STOCK, PRETE, HS, REPARATION)
+ * @param {string} [options.assetModelId] - Filter by asset model ID
+ * @param {string} [options.search] - Search in asset tag or serial number
+ * @param {number} [options.page=1] - Page number
+ * @param {number} [options.pageSize=20] - Items per page
+ * @param {string} [options.sortBy='createdAt'] - Field to sort by
+ * @param {string} [options.sortOrder='desc'] - Sort order
+ * @returns {Promise<Object>} Paginated response with data and metadata
+ */
+export async function getAllAssetItemsPaginated(options = {}) {
+  const {
+    status,
+    assetModelId,
+    search,
+    page = 1,
+    pageSize = 20,
+    sortBy = 'createdAt',
+    sortOrder = 'desc'
+  } = options;
+
+  const where = {};
+
+  if (status) {
+    where.status = status;
+  }
+
+  if (assetModelId) {
+    where.assetModelId = assetModelId;
+  }
+
+  if (search) {
+    where.OR = [
+      { assetTag: { contains: search, mode: 'insensitive' } },
+      { serial: { contains: search, mode: 'insensitive' } }
+    ];
+  }
+
+  const orderBy = buildOrderBy(sortBy, sortOrder);
+
+  const result = await executePaginatedQuery(prisma.assetItem, {
+    where,
+    orderBy,
+    include: {
+      assetModel: true
+    },
+    page,
+    pageSize
+  });
+
+  return result;
 }
 
 /**

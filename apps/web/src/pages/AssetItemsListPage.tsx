@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useDeferredValue, useMemo, lazy, Suspense } from 'react'
 import { useAssetItems, useDeleteAssetItem } from '@/lib/hooks/useAssetItems'
 import { useAssetModels } from '@/lib/hooks/useAssetModels'
 import { AssetItemsTable } from '@/components/assets/AssetItemsTable'
-import { AssetItemFormDialog } from '@/components/assets/AssetItemFormDialog'
+
+// Lazy load dialog
+const AssetItemFormDialog = lazy(() => import('@/components/assets/AssetItemFormDialog').then(m => ({ default: m.AssetItemFormDialog })))
 import { Pagination } from '@/components/common/Pagination'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -35,22 +37,31 @@ export function AssetItemsListPage() {
   const itemsList = Array.isArray(items) ? items : []
   const modelsList = Array.isArray(models) ? models : []
 
-  const filteredItems = itemsList.filter((item) => {
-    const matchesSearch =
-      item.assetTag?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.serial?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.assetModel?.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.assetModel?.modelName?.toLowerCase().includes(searchTerm.toLowerCase())
+  // Defer search term to avoid blocking UI during typing
+  const deferredSearchTerm = useDeferredValue(searchTerm)
 
-    const matchesStatus = statusFilter === 'all' || item.status === statusFilter
-    const matchesModel = modelFilter === 'all' || item.assetModelId === modelFilter
+  // Use deferred search term for filtering with useMemo
+  const filteredItems = useMemo(
+    () =>
+      itemsList.filter((item) => {
+        const matchesSearch =
+          item.assetTag?.toLowerCase().includes(deferredSearchTerm.toLowerCase()) ||
+          item.serial?.toLowerCase().includes(deferredSearchTerm.toLowerCase()) ||
+          item.assetModel?.brand?.toLowerCase().includes(deferredSearchTerm.toLowerCase()) ||
+          item.assetModel?.modelName?.toLowerCase().includes(deferredSearchTerm.toLowerCase())
 
-    return matchesSearch && matchesStatus && matchesModel
-  })
+        const matchesStatus = statusFilter === 'all' || item.status === statusFilter
+        const matchesModel = modelFilter === 'all' || item.assetModelId === modelFilter
 
+        return matchesSearch && matchesStatus && matchesModel
+      }),
+    [itemsList, deferredSearchTerm, statusFilter, modelFilter]
+  )
+
+  // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1)
-  }, [searchTerm, statusFilter, modelFilter])
+  }, [deferredSearchTerm, statusFilter, modelFilter])
 
   const totalItems = filteredItems.length
   const totalPages = Math.ceil(totalItems / pageSize)
@@ -227,10 +238,12 @@ export function AssetItemsListPage() {
         )}
       </div>
 
-      <AssetItemFormDialog
-        open={isCreating}
-        onClose={() => setIsCreating(false)}
-      />
+      <Suspense fallback={null}>
+        <AssetItemFormDialog
+          open={isCreating}
+          onClose={() => setIsCreating(false)}
+        />
+      </Suspense>
     </div>
   )
 }

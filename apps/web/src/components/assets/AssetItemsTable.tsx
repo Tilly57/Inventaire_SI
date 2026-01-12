@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, memo } from 'react'
+import { useState, useMemo, useCallback, memo, lazy, Suspense } from 'react'
 import type { AssetItem } from '@/lib/types/models.types'
 import { formatDate } from '@/lib/utils/formatters'
 import {
@@ -14,8 +14,10 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Card } from '@/components/ui/card'
 import { Pencil, Trash2 } from 'lucide-react'
 import { StatusBadge } from './StatusBadge'
-import { AssetItemFormDialog } from './AssetItemFormDialog'
-import { DeleteAssetItemDialog } from './DeleteAssetItemDialog'
+
+// Lazy load dialogs
+const AssetItemFormDialog = lazy(() => import('./AssetItemFormDialog').then(m => ({ default: m.AssetItemFormDialog })))
+const DeleteAssetItemDialog = lazy(() => import('./DeleteAssetItemDialog').then(m => ({ default: m.DeleteAssetItemDialog })))
 import { useMediaQuery } from '@/lib/hooks/useMediaQuery'
 
 interface AssetItemsTableProps {
@@ -273,17 +275,21 @@ export function AssetItemsTable({
           ))}
         </div>
 
-        <AssetItemFormDialog
-          item={editingItem}
-          open={!!editingItem}
-          onClose={handleCloseEdit}
-        />
+        <Suspense fallback={null}>
+          <AssetItemFormDialog
+            item={editingItem}
+            open={!!editingItem}
+            onClose={handleCloseEdit}
+          />
+        </Suspense>
 
-        <DeleteAssetItemDialog
-          item={deletingItem}
-          open={!!deletingItem}
-          onClose={handleCloseDelete}
-        />
+        <Suspense fallback={null}>
+          <DeleteAssetItemDialog
+            item={deletingItem}
+            open={!!deletingItem}
+            onClose={handleCloseDelete}
+          />
+        </Suspense>
       </>
     )
   }
@@ -337,17 +343,21 @@ export function AssetItemsTable({
       </Table>
       </div>
 
-      <AssetItemFormDialog
-        item={editingItem}
-        open={!!editingItem}
-        onClose={handleCloseEdit}
-      />
+      <Suspense fallback={null}>
+        <AssetItemFormDialog
+          item={editingItem}
+          open={!!editingItem}
+          onClose={handleCloseEdit}
+        />
+      </Suspense>
 
-      <DeleteAssetItemDialog
-        item={deletingItem}
-        open={!!deletingItem}
-        onClose={handleCloseDelete}
-      />
+      <Suspense fallback={null}>
+        <DeleteAssetItemDialog
+          item={deletingItem}
+          open={!!deletingItem}
+          onClose={handleCloseDelete}
+        />
+      </Suspense>
     </>
   )
 }

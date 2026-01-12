@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useDeferredValue, useMemo, lazy, Suspense } from 'react'
 import { useAssetModels } from '@/lib/hooks/useAssetModels'
 import { useAuth } from '@/lib/hooks/useAuth'
 import { AssetModelsTable } from '@/components/assets/AssetModelsTable'
-import { AssetModelFormDialog } from '@/components/assets/AssetModelFormDialog'
-import { BulkDeleteAssetModelsDialog } from '@/components/assets/BulkDeleteAssetModelsDialog'
+
+// Lazy load dialogs
+const AssetModelFormDialog = lazy(() => import('@/components/assets/AssetModelFormDialog').then(m => ({ default: m.AssetModelFormDialog })))
+const BulkDeleteAssetModelsDialog = lazy(() => import('@/components/assets/BulkDeleteAssetModelsDialog').then(m => ({ default: m.BulkDeleteAssetModelsDialog })))
 import { EquipmentTypesTable } from '@/components/equipmentTypes/EquipmentTypesTable'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Pagination } from '@/components/common/Pagination'
@@ -26,17 +28,26 @@ export function AssetModelsListPage() {
 
   const modelsList = Array.isArray(models) ? models : []
 
-  const filteredModels = modelsList.filter(
-    (model) =>
-      model.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      model.modelName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      model.type?.toLowerCase().includes(searchTerm.toLowerCase())
+  // Defer search term to avoid blocking UI during typing
+  const deferredSearchTerm = useDeferredValue(searchTerm)
+
+  // Use deferred search term for filtering with useMemo
+  const filteredModels = useMemo(
+    () =>
+      modelsList.filter(
+        (model) =>
+          model.brand?.toLowerCase().includes(deferredSearchTerm.toLowerCase()) ||
+          model.modelName?.toLowerCase().includes(deferredSearchTerm.toLowerCase()) ||
+          model.type?.toLowerCase().includes(deferredSearchTerm.toLowerCase())
+      ),
+    [modelsList, deferredSearchTerm]
   )
 
+  // Reset to page 1 and clear selection when deferred search term changes
   useEffect(() => {
     setCurrentPage(1)
     setSelectedModelIds([])
-  }, [searchTerm])
+  }, [deferredSearchTerm])
 
   const totalItems = filteredModels.length
   const totalPages = Math.ceil(totalItems / pageSize)
@@ -146,20 +157,24 @@ export function AssetModelsListPage() {
         )}
       </div>
 
-      <AssetModelFormDialog
-        open={isCreating}
-        onClose={() => setIsCreating(false)}
-      />
+      <Suspense fallback={null}>
+        <AssetModelFormDialog
+          open={isCreating}
+          onClose={() => setIsCreating(false)}
+        />
+      </Suspense>
 
       {isAdmin && (
-        <BulkDeleteAssetModelsDialog
-          models={modelsList.filter(model => selectedModelIds.includes(model.id))}
-          open={isBulkDeleting}
-          onClose={() => {
-            setIsBulkDeleting(false)
-            setSelectedModelIds([])
-          }}
-        />
+        <Suspense fallback={null}>
+          <BulkDeleteAssetModelsDialog
+            models={modelsList.filter(model => selectedModelIds.includes(model.id))}
+            open={isBulkDeleting}
+            onClose={() => {
+              setIsBulkDeleting(false)
+              setSelectedModelIds([])
+            }}
+          />
+        </Suspense>
       )}
         </TabsContent>
 

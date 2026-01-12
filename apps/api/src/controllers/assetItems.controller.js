@@ -4,16 +4,38 @@
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import * as assetItemsService from '../services/assetItems.service.js';
 import { sendSuccess, sendCreated, sendSuccessWithMeta } from '../utils/responseHelpers.js';
+import { parsePaginationParams } from '../utils/pagination.js';
 
 /**
  * GET /api/asset-items
+ * Supports pagination when page/pageSize params provided
  */
 export const getAllAssetItems = asyncHandler(async (req, res) => {
-  const { status, assetModelId, search } = req.query;
+  const { status, assetModelId, search, sortBy, sortOrder } = req.query;
 
-  const assetItems = await assetItemsService.getAllAssetItems({ status, assetModelId, search });
+  const isPaginationRequested = req.query.page !== undefined || req.query.pageSize !== undefined;
 
-  sendSuccess(res, assetItems);
+  if (isPaginationRequested) {
+    const { page, pageSize } = parsePaginationParams(req.query);
+
+    const result = await assetItemsService.getAllAssetItemsPaginated({
+      status,
+      assetModelId,
+      search,
+      page,
+      pageSize,
+      sortBy,
+      sortOrder
+    });
+
+    res.json({
+      success: true,
+      ...result
+    });
+  } else {
+    const assetItems = await assetItemsService.getAllAssetItems({ status, assetModelId, search });
+    sendSuccess(res, assetItems);
+  }
 });
 
 /**

@@ -13,6 +13,7 @@ import loansRoutes from './loans.routes.js';
 import dashboardRoutes from './dashboard.routes.js';
 import auditLogsRoutes from './auditLogs.routes.js';
 import searchRoutes from './search.routes.js';
+import exportRoutes from './export.routes.js';
 import healthRoutes from './health.routes.js';
 
 const router = express.Router();
@@ -32,5 +33,6 @@ router.use('/loans', loansRoutes);
 router.use('/dashboard', dashboardRoutes);
 router.use('/audit-logs', auditLogsRoutes);
 router.use('/search', searchRoutes);
+router.use('/export', exportRoutes);
 
 export default router;
