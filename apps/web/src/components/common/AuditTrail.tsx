@@ -2,29 +2,12 @@ import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { History, User, Calendar, FileText } from 'lucide-react';
-import { api } from '@/lib/api';
+import { getAuditLogs } from '@/lib/api/auditLogs.api';
 
 interface AuditTrailProps {
   tableName: string;
   recordId: string;
   limit?: number;
-}
-
-interface AuditLog {
-  id: string;
-  action: string;
-  tableName: string;
-  recordId: string;
-  oldValues: Record<string, any> | null;
-  newValues: Record<string, any> | null;
-  ipAddress: string | null;
-  userAgent: string | null;
-  createdAt: string;
-  user: {
-    id: string;
-    email: string;
-    role: string;
-  };
 }
 
 /**
@@ -34,12 +17,7 @@ interface AuditLog {
 export function AuditTrail({ tableName, recordId, limit = 20 }: AuditTrailProps) {
   const { data, isLoading, error } = useQuery({
     queryKey: ['auditLogs', tableName, recordId],
-    queryFn: async () => {
-      const response = await api.get(`/audit-logs/${tableName}/${recordId}`, {
-        params: { limit },
-      });
-      return response.data.data as AuditLog[];
-    },
+    queryFn: () => getAuditLogs(tableName, recordId, limit),
   });
 
   if (isLoading) {

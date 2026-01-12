@@ -9,7 +9,7 @@ import { Page, expect } from '@playwright/test';
  */
 export async function loginAsAdmin(page: Page) {
   await page.goto('/');
-  await page.fill('input[name="email"]', 'admin@example.com');
+  await page.fill('input[name="email"]', 'admin@inventaire.local');
   await page.fill('input[name="password"]', 'Admin123!');
   await page.click('button[type="submit"]');
 
@@ -23,8 +23,8 @@ export async function loginAsAdmin(page: Page) {
  */
 export async function loginAsGestionnaire(page: Page) {
   await page.goto('/');
-  await page.fill('input[name="email"]', 'gestionnaire@example.com');
-  await page.fill('input[name="password"]', 'Gestionnaire123!');
+  await page.fill('input[name="email"]', 'gestionnaire1@inventaire.local');
+  await page.fill('input[name="password"]', 'Gest123!');
   await page.click('button[type="submit"]');
 
   await expect(page).toHaveURL(/\/dashboard/);
@@ -36,8 +36,8 @@ export async function loginAsGestionnaire(page: Page) {
  */
 export async function loginAsLecteur(page: Page) {
   await page.goto('/');
-  await page.fill('input[name="email"]', 'lecteur@example.com');
-  await page.fill('input[name="password"]', 'Lecteur123!');
+  await page.fill('input[name="email"]', 'lecture@inventaire.local');
+  await page.fill('input[name="password"]', 'Lect123!');
   await page.click('button[type="submit"]');
 
   await expect(page).toHaveURL(/\/dashboard/);
@@ -48,13 +48,21 @@ export async function loginAsLecteur(page: Page) {
  * Logout current user
  */
 export async function logout(page: Page) {
-  // Click on user menu
-  await page.click('[data-testid="user-menu"]', { timeout: 5000 }).catch(() => {
-    // Fallback: try to find logout button directly
-  });
+  // Click on user menu button to open dropdown (shadcn/ui DropdownMenu)
+  // Look for button in the header that contains user info (email or username)
+  // The button should be in the rightmost part of the header
+  const userMenuButton = page.locator('header button').filter({ hasText: /@/ }).or(
+    page.locator('header button').last()
+  );
 
-  // Click logout
-  await page.click('button:has-text("Déconnexion")', { timeout: 5000 });
+  await userMenuButton.first().click();
+
+  // Wait a bit for dropdown animation
+  await page.waitForTimeout(300);
+
+  // Click on "Déconnexion" in the dropdown menu
+  // It's a DropdownMenuItem (rendered as div with role="menuitem")
+  await page.locator('[role="menuitem"]:has-text("Déconnexion")').click();
 
   // Wait for redirect to login
   await expect(page).toHaveURL(/\/$|\/login/);
@@ -84,7 +92,13 @@ export async function waitForToast(page: Page, message?: string) {
  * Click button with text (case insensitive)
  */
 export async function clickButton(page: Page, text: string) {
-  await page.click(`button:has-text("${text}")`, { timeout: 5000 });
+  // Try getByRole first (more robust)
+  try {
+    await page.getByRole('button', { name: new RegExp(text, 'i') }).first().click({ timeout: 10000 });
+  } catch {
+    // Fallback to has-text selector
+    await page.locator(`button:has-text("${text}")`).first().click({ timeout: 10000 });
+  }
 }
 
 /**
