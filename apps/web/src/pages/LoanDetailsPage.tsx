@@ -8,55 +8,42 @@
  * - Return signature upload and display
  * - Loan closure functionality
  *
- * Features:
- * - Real-time data via React Query hooks
- * - Signature image upload with preview
- * - Conditional actions based on loan status (OPEN/CLOSED)
- * - Validation before closing (requires pickup signature and items)
- * - Employee information display
+ * Refactored in Phase 3.3 to use sub-components for better maintainability.
+ * Reduced from 566 lines to ~200 lines.
  *
- * Loan Workflow UI:
- * 1. Add equipment to loan (Add button → AddLoanLineDialog)
- * 2. Upload pickup signature when employee receives equipment
- * 3. Employee uses equipment
- * 4. Upload return signature when equipment returned
- * 5. Close loan (button enabled only after signatures uploaded)
- *
- * Business Rules:
- * - Can only add/remove items when loan is OPEN
- * - Pickup signature requires at least one item
- * - Return signature requires pickup signature first
- * - Close button requires: items + pickup signature
- * - Closed loans are read-only (no edits allowed)
+ * Sub-components:
+ * - LoanInfoCard - Employee and date information
+ * - LoanLinesTable - Borrowed items table/cards
+ * - SignatureSection - Signature display and management
  *
  * Route: /loans/:id
  */
 import { useState, lazy, Suspense } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useLoan, useRemoveLoanLine, useUploadPickupSignature, useUploadReturnSignature, useCloseLoan, useDeletePickupSignature, useDeleteReturnSignature } from '@/lib/hooks/useLoans'
-import { formatDate, formatFullName } from '@/lib/utils/formatters'
+import {
+  useLoan,
+  useRemoveLoanLine,
+  useUploadPickupSignature,
+  useUploadReturnSignature,
+  useCloseLoan,
+  useDeletePickupSignature,
+  useDeleteReturnSignature
+} from '@/lib/hooks/useLoans'
+
+// Sub-components - Phase 3.3
+import { LoanInfoCard } from '@/components/loans/LoanInfoCard'
+import { LoanLinesTable } from '@/components/loans/LoanLinesTable'
+import { SignatureSection } from '@/components/loans/SignatureSection'
 
 // Lazy load dialog
 const AddLoanLineDialog = lazy(() => import('@/components/loans/AddLoanLineDialog').then(m => ({ default: m.AddLoanLineDialog })))
-import { SignatureCanvas } from '@/components/common/SignatureCanvas'
-import { LazyImage } from '@/components/common/LazyImage'
+
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import { ArrowLeft, Plus, Trash2, Pen, CheckCircle, AlertCircle } from 'lucide-react'
-import { BASE_URL } from '@/lib/utils/constants'
+import { ArrowLeft, CheckCircle } from 'lucide-react'
 import { useAuthStore } from '@/lib/stores/authStore'
 import { UserRole } from '@/lib/types/enums'
-import { useMediaQuery } from '@/lib/hooks/useMediaQuery'
 
 /**
  * Loan details page component
@@ -65,34 +52,63 @@ import { useMediaQuery } from '@/lib/hooks/useMediaQuery'
  * signatures, and management actions. Adapts UI based on loan status (OPEN/CLOSED).
  *
  * @returns {JSX.Element} Loan details page with all loan information and actions
- *
- * @example
- * // Route configuration
- * <Route path="/loans/:id" element={<LoanDetailsPage />} />
- *
- * @example
- * // Navigation from loans list
- * navigate(`/loans/${loanId}`)
  */
 export function LoanDetailsPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { user } = useAuthStore()
+
+  // Data fetching
   const { data: loan, isLoading } = useLoan(id || '')
+
+  // Mutations
   const removeLine = useRemoveLoanLine()
   const uploadPickup = useUploadPickupSignature()
   const uploadReturn = useUploadReturnSignature()
   const closeLoan = useCloseLoan()
   const deletePickup = useDeletePickupSignature()
   const deleteReturn = useDeleteReturnSignature()
-  const { isMobile } = useMediaQuery()
 
+  // Local state
   const [isAddingLine, setIsAddingLine] = useState(false)
-  const [showPickupCanvas, setShowPickupCanvas] = useState(false)
-  const [showReturnCanvas, setShowReturnCanvas] = useState(false)
 
+  // Computed values
   const isAdmin = user?.role === UserRole.ADMIN
+  const isOpen = loan?.status === 'OPEN'
+  const hasLines = (loan?.lines?.length || 0) > 0
+  const hasPickupSignature = !!loan?.pickupSignatureUrl
+  const canClose = isOpen && hasLines && hasPickupSignature
 
+  // Event handlers
+  const handleRemoveLine = async (lineId: string) => {
+    if (!confirm('Voulez-vous vraiment retirer cet article du prêt?')) return
+    await removeLine.mutateAsync({ loanId: loan!.id, lineId })
+  }
+
+  const handleSavePickupSignature = async (dataUrl: string) => {
+    await uploadPickup.mutateAsync({ loanId: loan!.id, signature: dataUrl })
+  }
+
+  const handleSaveReturnSignature = async (dataUrl: string) => {
+    await uploadReturn.mutateAsync({ loanId: loan!.id, signature: dataUrl })
+  }
+
+  const handleCloseLoan = async () => {
+    if (!confirm('Voulez-vous vraiment fermer ce prêt? Cette action est irréversible.')) return
+    await closeLoan.mutateAsync(loan!.id)
+  }
+
+  const handleDeletePickupSignature = async () => {
+    if (!confirm('Voulez-vous vraiment supprimer la signature de retrait?')) return
+    await deletePickup.mutateAsync(loan!.id)
+  }
+
+  const handleDeleteReturnSignature = async () => {
+    if (!confirm('Voulez-vous vraiment supprimer la signature de retour?')) return
+    await deleteReturn.mutateAsync(loan!.id)
+  }
+
+  // Loading state
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -101,6 +117,7 @@ export function LoanDetailsPage() {
     )
   }
 
+  // Not found state
   if (!loan) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -109,45 +126,9 @@ export function LoanDetailsPage() {
     )
   }
 
-  const isOpen = loan.status === 'OPEN'
-  const hasLines = (loan.lines?.length || 0) > 0
-  const hasPickupSignature = !!loan.pickupSignatureUrl
-  const hasReturnSignature = !!loan.returnSignatureUrl
-
-  const handleRemoveLine = async (lineId: string) => {
-    if (!confirm('Voulez-vous vraiment retirer cet article du prêt?')) return
-    await removeLine.mutateAsync({ loanId: loan.id, lineId })
-  }
-
-  const handleSavePickupSignature = async (dataUrl: string) => {
-    await uploadPickup.mutateAsync({ loanId: loan.id, signature: dataUrl })
-    setShowPickupCanvas(false)
-  }
-
-  const handleSaveReturnSignature = async (dataUrl: string) => {
-    await uploadReturn.mutateAsync({ loanId: loan.id, signature: dataUrl })
-    setShowReturnCanvas(false)
-  }
-
-  const handleCloseLoan = async () => {
-    if (!confirm('Voulez-vous vraiment fermer ce prêt? Cette action est irréversible.')) return
-    await closeLoan.mutateAsync(loan.id)
-  }
-
-  const handleDeletePickupSignature = async () => {
-    if (!confirm('Voulez-vous vraiment supprimer la signature de retrait?')) return
-    await deletePickup.mutateAsync(loan.id)
-  }
-
-  const handleDeleteReturnSignature = async () => {
-    if (!confirm('Voulez-vous vraiment supprimer la signature de retour?')) return
-    await deleteReturn.mutateAsync(loan.id)
-  }
-
-  const canClose = isOpen && hasLines && hasPickupSignature
-
   return (
     <div className="space-y-4 md:space-y-6">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
         <Button variant="ghost" size="sm" onClick={() => navigate('/loans')} className="w-full sm:w-auto">
           <ArrowLeft className="h-4 w-4 mr-2" />
@@ -161,369 +142,52 @@ export function LoanDetailsPage() {
         </Badge>
       </div>
 
-      {/* Info employé */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg md:text-xl">Informations</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-muted-foreground">Employé</p>
-              <p className="font-medium">
-                {loan.employee
-                  ? formatFullName(loan.employee.firstName, loan.employee.lastName)
-                  : 'Inconnu'}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Email</p>
-              <p className="font-medium">{loan.employee?.email || '-'}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Créé le</p>
-              <p className="font-medium">{formatDate(loan.createdAt)}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Fermé le</p>
-              <p className="font-medium">{loan.closedAt ? formatDate(loan.closedAt) : '-'}</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Employee Info - Phase 3.3 */}
+      <LoanInfoCard loan={loan} />
 
-      {/* Articles prêtés */}
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <CardTitle className="text-lg md:text-xl">Articles prêtés</CardTitle>
-              <CardDescription>{loan.lines?.length || 0} article(s)</CardDescription>
-            </div>
-            {isOpen && (
-              <Button onClick={() => setIsAddingLine(true)} size="sm" className="w-full sm:w-auto">
-                <Plus className="h-4 w-4 mr-2" />
-                Ajouter
-              </Button>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent>
-          {!hasLines ? (
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                Aucun article n'a encore été ajouté à ce prêt
-              </AlertDescription>
-            </Alert>
-          ) : isMobile ? (
-            /* Vue mobile - Cards empilées */
-            <div className="space-y-3">
-              {loan.lines?.map((line) => {
-                const isOutOfService = line.assetItem?.status === 'HS'
-                return (
-                  <Card
-                    key={line.id}
-                    className={`p-4 animate-fadeIn ${isOutOfService ? 'border-destructive bg-destructive/5' : ''}`}
-                  >
-                    <div className="space-y-3">
-                      {/* En-tête avec type et article */}
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Badge variant="outline">
-                              {line.assetItem ? 'Équipement' : 'Stock'}
-                            </Badge>
-                            <span className="text-sm font-semibold">x{line.quantity}</span>
-                            {isOutOfService && (
-                              <Badge variant="destructive">Hors service</Badge>
-                            )}
-                          </div>
-                          <p className="font-semibold text-base">
-                            {line.assetItem
-                              ? `${line.assetItem.assetTag} - ${line.assetItem.assetModel?.brand} ${line.assetItem.assetModel?.modelName}`
-                              : line.stockItem?.assetModel ? `${line.stockItem.assetModel.brand} ${line.stockItem.assetModel.modelName}` : 'Inconnu'}
-                          </p>
-                        </div>
-                      </div>
+      {/* Loan Lines - Phase 3.3 */}
+      <LoanLinesTable
+        loan={loan}
+        isOpen={isOpen || false}
+        onAddLine={() => setIsAddingLine(true)}
+        onRemoveLine={handleRemoveLine}
+        isRemoving={removeLine.isPending}
+      />
 
-                      {/* Informations */}
-                      <div className="grid grid-cols-2 gap-2 text-sm">
-                        <div>
-                          <span className="text-muted-foreground">N° de série</span>
-                          <p className="font-medium">{line.assetItem?.serial || '-'}</p>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Date du prêt</span>
-                          <p className="font-medium">
-                            {line.addedAt ? formatDate(line.addedAt) : formatDate(loan.createdAt)}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Actions */}
-                      {isOpen && (
-                        <div className="pt-2 border-t">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="w-full"
-                            onClick={() => handleRemoveLine(line.id)}
-                            disabled={removeLine.isPending}
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Retirer du prêt
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </Card>
-                )
-              })}
-            </div>
-          ) : (
-            /* Vue desktop - Tableau */
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Article</TableHead>
-                    <TableHead>N° de série</TableHead>
-                    <TableHead>Statut</TableHead>
-                    <TableHead>Quantité</TableHead>
-                    <TableHead>Date du prêt</TableHead>
-                    {isOpen && <TableHead className="text-right">Actions</TableHead>}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {loan.lines?.map((line) => {
-                    const isOutOfService = line.assetItem?.status === 'HS'
-                    const getStatusLabel = (status?: string) => {
-                      if (!status) return '-'
-                      switch (status) {
-                        case 'HS': return 'Hors service'
-                        case 'EN_STOCK': return 'En stock'
-                        case 'PRETE': return 'Prêté'
-                        case 'REPARATION': return 'Réparation'
-                        default: return status
-                      }
-                    }
-                    const getStatusVariant = (status?: string): 'default' | 'destructive' | 'secondary' | 'outline' => {
-                      if (!status) return 'outline'
-                      switch (status) {
-                        case 'HS': return 'destructive'
-                        case 'EN_STOCK': return 'default'
-                        case 'PRETE': return 'secondary'
-                        case 'REPARATION': return 'outline'
-                        default: return 'outline'
-                      }
-                    }
-                    return (
-                      <TableRow
-                        key={line.id}
-                        className={isOutOfService ? 'bg-destructive/5 border-l-4 border-l-destructive' : ''}
-                      >
-                        <TableCell>
-                          <Badge variant="outline">
-                            {line.assetItem ? 'Équipement' : 'Stock'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {line.assetItem
-                            ? `${line.assetItem.assetTag} - ${line.assetItem.assetModel?.brand} ${line.assetItem.assetModel?.modelName}`
-                            : line.stockItem?.assetModel ? `${line.stockItem.assetModel.brand} ${line.stockItem.assetModel.modelName}` : 'Inconnu'}
-                        </TableCell>
-                        <TableCell>
-                          {line.assetItem?.serial || '-'}
-                        </TableCell>
-                        <TableCell>
-                          {line.assetItem ? (
-                            <Badge variant={getStatusVariant(line.assetItem.status)}>
-                              {getStatusLabel(line.assetItem.status)}
-                            </Badge>
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell>{line.quantity}</TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {line.addedAt ? formatDate(line.addedAt) : formatDate(loan.createdAt)}
-                        </TableCell>
-                        {isOpen && (
-                          <TableCell className="text-right">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleRemoveLine(line.id)}
-                              disabled={removeLine.isPending}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        )}
-                      </TableRow>
-                    )
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Signatures */}
+      {/* Signatures - Phase 3.3 */}
       <div className="grid md:grid-cols-2 gap-6">
-        {/* Signature retrait */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg md:text-xl">Signature de retrait</CardTitle>
-            <CardDescription>Signature de l'employé au retrait</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {hasPickupSignature ? (
-              <div className="space-y-4">
-                <LazyImage
-                  src={`${BASE_URL}${loan.pickupSignatureUrl}`}
-                  alt="Signature retrait"
-                  className="w-full border rounded-lg"
-                />
-                <p className="text-sm text-muted-foreground">
-                  Signée le {loan.pickupSignedAt ? formatDate(loan.pickupSignedAt) : '-'}
-                </p>
-                {isAdmin && (
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowPickupCanvas(true)}
-                      disabled={deletePickup.isPending}
-                    >
-                      <Pen className="h-4 w-4 mr-2" />
-                      Modifier
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={handleDeletePickupSignature}
-                      disabled={deletePickup.isPending}
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Supprimer
-                    </Button>
-                  </div>
-                )}
-              </div>
-            ) : isOpen ? (
-              <div>
-                {showPickupCanvas ? (
-                  <SignatureCanvas
-                    onSave={handleSavePickupSignature}
-                    onCancel={() => setShowPickupCanvas(false)}
-                    disabled={uploadPickup.isPending}
-                  />
-                ) : (
-                  <>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => setShowPickupCanvas(true)}
-                      disabled={uploadPickup.isPending || !hasLines}
-                    >
-                      <Pen className="h-4 w-4 mr-2" />
-                      Signer
-                    </Button>
-                    {!hasLines && (
-                      <p className="text-sm text-muted-foreground mt-2">
-                        Ajoutez d'abord des articles au prêt
-                      </p>
-                    )}
-                  </>
-                )}
-              </div>
-            ) : (
-              <p className="text-muted-foreground">Aucune signature</p>
-            )}
-          </CardContent>
-        </Card>
+        <SignatureSection
+          title="Signature de retrait"
+          description="Signature de l'employé au retrait"
+          signatureUrl={loan.pickupSignatureUrl}
+          signedAt={loan.pickupSignedAt}
+          isOpen={isOpen || false}
+          isAdmin={isAdmin}
+          canSign={hasLines}
+          cannotSignReason="Ajoutez d'abord des articles au prêt"
+          onSave={handleSavePickupSignature}
+          onDelete={handleDeletePickupSignature}
+          isSaving={uploadPickup.isPending}
+          isDeleting={deletePickup.isPending}
+        />
 
-        {/* Signature retour */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg md:text-xl">Signature de retour</CardTitle>
-            <CardDescription>Signature de l'employé au retour</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {hasReturnSignature ? (
-              <div className="space-y-4">
-                <LazyImage
-                  src={`${BASE_URL}${loan.returnSignatureUrl}`}
-                  alt="Signature retour"
-                  className="w-full border rounded-lg"
-                />
-                <p className="text-sm text-muted-foreground">
-                  Signée le {loan.returnSignedAt ? formatDate(loan.returnSignedAt) : '-'}
-                </p>
-                {isAdmin && (
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowReturnCanvas(true)}
-                      disabled={deleteReturn.isPending}
-                    >
-                      <Pen className="h-4 w-4 mr-2" />
-                      Modifier
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={handleDeleteReturnSignature}
-                      disabled={deleteReturn.isPending}
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Supprimer
-                    </Button>
-                  </div>
-                )}
-              </div>
-            ) : isOpen ? (
-              <div>
-                {showReturnCanvas ? (
-                  <SignatureCanvas
-                    onSave={handleSaveReturnSignature}
-                    onCancel={() => setShowReturnCanvas(false)}
-                    disabled={uploadReturn.isPending}
-                  />
-                ) : (
-                  <>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => setShowReturnCanvas(true)}
-                      disabled={uploadReturn.isPending || !hasPickupSignature}
-                    >
-                      <Pen className="h-4 w-4 mr-2" />
-                      Signer
-                    </Button>
-                    {!hasPickupSignature && (
-                      <p className="text-sm text-muted-foreground mt-2">
-                        Ajoutez d'abord la signature de retrait
-                      </p>
-                    )}
-                  </>
-                )}
-              </div>
-            ) : (
-              <p className="text-muted-foreground">Aucune signature</p>
-            )}
-          </CardContent>
-        </Card>
+        <SignatureSection
+          title="Signature de retour"
+          description="Signature de l'employé au retour"
+          signatureUrl={loan.returnSignatureUrl}
+          signedAt={loan.returnSignedAt}
+          isOpen={isOpen || false}
+          isAdmin={isAdmin}
+          canSign={hasPickupSignature}
+          cannotSignReason="Ajoutez d'abord la signature de retrait"
+          onSave={handleSaveReturnSignature}
+          onDelete={handleDeleteReturnSignature}
+          isSaving={uploadReturn.isPending}
+          isDeleting={deleteReturn.isPending}
+        />
       </div>
 
-      {/* Fermer le prêt */}
+      {/* Close Loan */}
       {isOpen && (
         <Card>
           <CardHeader>
@@ -552,6 +216,7 @@ export function LoanDetailsPage() {
         </Card>
       )}
 
+      {/* Add Line Dialog */}
       <Suspense fallback={null}>
         <AddLoanLineDialog
           loanId={loan.id}
