@@ -64,10 +64,19 @@ app.use('/api', setCacheHeaders);
 
 // Swagger API Documentation - Phase 3.7
 // Accessible at http://localhost:3001/api-docs
+// Swagger JSON spec available at http://localhost:3001/api-docs.json
+app.get('/api-docs.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
+});
+
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
   customCss: '.swagger-ui .topbar { display: none }',
   customSiteTitle: 'Inventaire SI - API Docs',
   customfavIcon: '/favicon.ico',
+  swaggerOptions: {
+    url: '/api-docs.json'
+  }
 }));
 
 // API routes
