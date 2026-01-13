@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import type { LucideProps } from 'lucide-react'
 import type { ForwardRefExoticComponent, RefAttributes } from 'react'
@@ -21,7 +22,7 @@ const colorClasses = {
   info: 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400',
 }
 
-export function StatsCard({ title, value, icon: Icon, description, color = 'primary' }: StatsCardProps) {
+export const StatsCard = memo(function StatsCard({ title, value, icon: Icon, description, color = 'primary' }: StatsCardProps) {
   return (
     <Card className="border-accent-top stat-card group">
       <CardContent className="p-6">
@@ -40,4 +41,4 @@ export function StatsCard({ title, value, icon: Icon, description, color = 'prim
       </CardContent>
     </Card>
   )
-}
+})

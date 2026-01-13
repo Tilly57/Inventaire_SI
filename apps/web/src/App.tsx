@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { QUERY_STALE_TIME } from '@/lib/utils/constants'
 import { Toaster } from '@/components/ui/toaster'
 import { ThemeProvider } from '@/lib/contexts/ThemeContext'
+import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 
 // Layout (not lazy-loaded - needed immediately)
 import { AppLayout } from '@/components/layout/AppLayout'
@@ -38,10 +39,11 @@ const queryClient = new QueryClient({
 
 function App() {
   return (
-    <ThemeProvider>
-      <QueryClientProvider client={queryClient}>
-        <Toaster />
-        <BrowserRouter>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <QueryClientProvider client={queryClient}>
+          <Toaster />
+          <BrowserRouter>
         <Suspense fallback={<PageSkeleton />}>
           <Routes>
             {/* Public routes */}
@@ -86,9 +88,10 @@ function App() {
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </Suspense>
-      </BrowserRouter>
-      </QueryClientProvider>
-    </ThemeProvider>
+        </BrowserRouter>
+        </QueryClientProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   )
 }
 

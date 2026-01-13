@@ -14,6 +14,7 @@
  * - Accessible with aria labels and titles
  * - Supports French translations
  */
+import { memo } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   Select,
@@ -90,7 +91,7 @@ interface PaginationProps {
  *   pageSizeOptions={[25, 50, 75, 100]}
  * />
  */
-export function Pagination({
+export const Pagination = memo(function Pagination({
   currentPage,
   totalPages,
   pageSize,
@@ -189,4 +190,4 @@ export function Pagination({
       </div>
     </div>
   )
-}
+})
