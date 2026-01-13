@@ -8,9 +8,31 @@ import logger from '../config/logger.js';
 const router = express.Router();
 
 /**
- * GET /api/health/liveness
- * Vérifie si le serveur est vivant (processus en cours d'exécution)
- * Utilisé par Kubernetes pour redémarrer les pods non responsifs
+ * @swagger
+ * /api/health/liveness:
+ *   get:
+ *     summary: Vérifie si le serveur est vivant
+ *     tags: [Health]
+ *     security: []
+ *     description: |
+ *       Endpoint de liveness check (Kubernetes-compatible).
+ *       Vérifie si le processus est en cours d'exécution.
+ *       Utilisé pour redémarrer les pods non responsifs.
+ *     responses:
+ *       200:
+ *         description: Serveur vivant
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: ok
+ *                 timestamp:
+ *                   type: string
+ *                   format: date-time
+ *                   example: 2024-01-15T10:30:00.000Z
  */
 router.get('/health/liveness', (req, res) => {
   res.json({
@@ -20,10 +42,57 @@ router.get('/health/liveness', (req, res) => {
 });
 
 /**
- * GET /api/health/readiness
- * Vérifie si le serveur est prêt à recevoir du trafic
- * Vérifie la connexion base de données
- * Utilisé par Kubernetes pour router le trafic
+ * @swagger
+ * /api/health/readiness:
+ *   get:
+ *     summary: Vérifie si le serveur est prêt à recevoir du trafic
+ *     tags: [Health]
+ *     security: []
+ *     description: |
+ *       Endpoint de readiness check (Kubernetes-compatible).
+ *       Vérifie la connexion à la base de données.
+ *       Utilisé pour router le trafic vers les pods prêts.
+ *     responses:
+ *       200:
+ *         description: Serveur prêt
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: ready
+ *                 timestamp:
+ *                   type: string
+ *                   format: date-time
+ *                 checks:
+ *                   type: object
+ *                   properties:
+ *                     database:
+ *                       type: string
+ *                       example: connected
+ *       503:
+ *         description: Serveur non prêt (problème base de données)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: not ready
+ *                 timestamp:
+ *                   type: string
+ *                   format: date-time
+ *                 checks:
+ *                   type: object
+ *                   properties:
+ *                     database:
+ *                       type: string
+ *                       example: disconnected
+ *                 error:
+ *                   type: string
  */
 router.get('/health/readiness', async (req, res) => {
   try {
@@ -85,8 +154,38 @@ router.get('/health/startup', async (req, res) => {
 });
 
 /**
- * GET /api/health (alias pour readiness)
- * Endpoint de health check simple
+ * @swagger
+ * /api/health:
+ *   get:
+ *     summary: Health check simple
+ *     tags: [Health]
+ *     security: []
+ *     description: |
+ *       Endpoint de health check général.
+ *       Retourne le statut du serveur et la connexion DB.
+ *     responses:
+ *       200:
+ *         description: Serveur en bonne santé
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: healthy
+ *                 timestamp:
+ *                   type: string
+ *                   format: date-time
+ *                 uptime:
+ *                   type: number
+ *                   description: Durée de fonctionnement en secondes
+ *                   example: 3600.5
+ *                 database:
+ *                   type: string
+ *                   example: connected
+ *       503:
+ *         description: Serveur en mauvaise santé
  */
 router.get('/health', async (req, res) => {
   try {
