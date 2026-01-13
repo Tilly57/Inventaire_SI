@@ -371,26 +371,30 @@ export async function deleteEmployee(id, req) {
     select: { id: true }
   });
 
-  if (softDeletedLoans.length > 0) {
-    const loanIds = softDeletedLoans.map(loan => loan.id);
+  // Use transaction to ensure atomicity - Phase 3.1
+  // All deletions must succeed together (LoanLines -> Loans -> Employee)
+  await prisma.$transaction(async (tx) => {
+    if (softDeletedLoans.length > 0) {
+      const loanIds = softDeletedLoans.map(loan => loan.id);
 
-    // First, delete all LoanLines for these soft-deleted loans
-    await prisma.loanLine.deleteMany({
-      where: {
-        loanId: { in: loanIds }
-      }
-    });
+      // First, delete all LoanLines for these soft-deleted loans
+      await tx.loanLine.deleteMany({
+        where: {
+          loanId: { in: loanIds }
+        }
+      });
 
-    // Then, delete the soft-deleted loans themselves
-    await prisma.loan.deleteMany({
-      where: {
-        id: { in: loanIds }
-      }
-    });
-  }
+      // Then, delete the soft-deleted loans themselves
+      await tx.loan.deleteMany({
+        where: {
+          id: { in: loanIds }
+        }
+      });
+    }
 
-  // Finally, delete the employee
-  await prisma.employee.delete({ where: { id } });
+    // Finally, delete the employee
+    await tx.employee.delete({ where: { id } });
+  });
 
   // Audit trail
   await logDelete('Employee', id, req, existingEmployee);
