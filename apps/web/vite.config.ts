@@ -2,11 +2,26 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 import { visualizer } from 'rollup-plugin-visualizer'
+import viteCompression from 'vite-plugin-compression'
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
     react(),
+    // Gzip compression - Phase 4.3
+    viteCompression({
+      algorithm: 'gzip',
+      ext: '.gz',
+      threshold: 10240, // Only compress files > 10KB
+      deleteOriginFile: false,
+    }),
+    // Brotli compression - Phase 4.3 (better than gzip)
+    viteCompression({
+      algorithm: 'brotliCompress',
+      ext: '.br',
+      threshold: 10240,
+      deleteOriginFile: false,
+    }),
     // Bundle analyzer - generates stats.html after build
     visualizer({
       open: false,
@@ -32,8 +47,12 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false,
+    // Phase 4.3: Keep esbuild for faster builds (terser would require additional config)
     minify: 'esbuild',
-    target: 'es2015',
+    // Phase 4.3: ES2020 target (modern browsers) - better tree-shaking
+    target: 'es2020',
+    // Phase 4.3: Enable CSS code splitting
+    cssCodeSplit: true,
     rollupOptions: {
       output: {
         manualChunks: {
@@ -64,10 +83,10 @@ export default defineConfig({
           'form-vendor': ['react-hook-form', '@hookform/resolvers', 'zod'],
           'utils-vendor': ['axios', 'date-fns', 'zustand'],
 
-          // Heavy libraries in separate chunks (lazy loaded)
-          'charts-vendor': ['recharts'],
-          'excel-vendor': ['xlsx'],
-          'icons-vendor': ['lucide-react'],
+          // Phase 4.3: Heavy libraries lazy loaded (not in initial bundle)
+          // recharts: Lazy loaded in dashboard only
+          // xlsx: Moved to server-side (API endpoint)
+          // lucide-react: Tree-shaken automatically by Vite
         },
         // Consistent file naming for caching
         chunkFileNames: 'assets/js/[name]-[hash].js',
