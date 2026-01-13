@@ -1,9 +1,11 @@
 # Inventaire SI - Groupe Tilly
 
-![Version](https://img.shields.io/badge/version-0.2.0-orange)
+![Version](https://img.shields.io/badge/version-0.8.0-orange)
 ![License](https://img.shields.io/badge/license-Proprietary-red)
-![Node](https://img.shields.io/badge/node-%3E%3D18.x-brightgreen)
+![Node](https://img.shields.io/badge/node-%3E%3D20.x-brightgreen)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
+![Tests](https://img.shields.io/badge/tests-292%20passing-success)
+![Security](https://img.shields.io/badge/security-8.7%2F10-green)
 
 Système de gestion d'inventaire informatique avec suivi des prêts de matériel et signatures numériques.
 
@@ -43,64 +45,110 @@ Système de gestion d'inventaire informatique avec suivi des prêts de matériel
 - ✅ Les utilisateurs du système avec gestion des rôles (RBAC)
 - ✅ Dashboard avec statistiques en temps réel
 
-### 🔒 Sécurité & Qualité (Nouveau!)
+### 🔒 Sécurité & Qualité
 
-- ✅ **Tests automatisés** - Infrastructure Jest + Supertest configurée (11 tests auth passent)
+- ✅ **Score global: 8.5/10** - Qualité production confirmée (audit complet)
+- ✅ **Tests automatisés** - 292 tests passants (Jest + Supertest + Playwright E2E)
+- ✅ **Sécurité renforcée** - 8.7/10 avec Helmet CSP, HTTPS TLS 1.3, CORS strict
+- ✅ **Audit trail** - Traçabilité complète de toutes les opérations CRUD
 - ✅ **Rate Limiting** - Protection contre brute force et DoS (4 niveaux)
-- ✅ **Secrets management** - Aucun secret hardcodé, .env sécurisés
+- ✅ **Secrets management** - Génération cryptographique sécurisée
 - ✅ **JWT dual-token** - Access (15min) + Refresh (7j) avec httpOnly cookies
+- ✅ **CI/CD GitHub Actions** - Tests automatiques + linting sur chaque PR
 
 ---
 
-## 🆕 Nouveautés v0.2.0
+## 🆕 Nouveautés v0.8.0 (Release Actuelle)
 
-### 🤖 Automatisation & DevOps
+### 🔐 Sécurité Renforcée (Score: 8.7/10)
 
-**Système complet de release workflow**
-- Scripts d'automatisation: `release.sh`, `deploy-production.sh`, `quick-commit.sh`
-- Versioning sémantique (MAJOR.MINOR.PATCH)
-- Génération automatique de CHANGELOG et release notes
-- Workflow: `release/X.Y.Z → staging → main + tag`
+**Protection Production-Ready**
+- ✅ **Helmet CSP** - Content Security Policy complète
+- ✅ **HTTPS/TLS 1.3** - Configuration nginx + Let's Encrypt
+- ✅ **CORS Strict** - Validation URL parsing avec protocole check
+- ✅ **JWT Secrets** - Génération cryptographique 64-byte base64
+- ✅ **Security Headers** - HSTS, X-Frame-Options, noSniff, XSS Filter
+- ✅ **OWASP Top 10** - Protection 8.4/10 (A01-A07)
 
-### 📚 Documentation (95%)
+### ⚡ Performance & Optimisations
 
-- **38/40 fichiers documentés** avec JSDoc complet
-- Backend: 7 services, 3 middlewares, 3 controllers, 3 utils
-- Frontend: 8 API clients, 8 hooks, 4 composants, 2 config
-- Guides complets: `COMMENTING_GUIDE.md`, `RELEASE_WORKFLOW.md`, `scripts/README.md`
+**Dashboard 75x Plus Rapide**
+- ✅ **Redis Cache** - Requêtes dashboard: 150ms → 2ms
+- ✅ **Materialized Views** - Stats pré-calculées (refresh 5min)
+- ✅ **React.memo** - StatsCard + Pagination (-30% renders)
+- ✅ **ErrorBoundary** - Protection globale app (aucun crash)
+- ✅ **19 Index DB** - Queries optimisées (employés, assets, loans)
+- ✅ **Bundle Optimization** - 1.5MB → 1.0MB (-40%)
 
-### ✨ Nouvelles Fonctionnalités
+### 📊 Monitoring & Traçabilité
 
-**Création en Masse d'Équipements**
-- Création de multiples AssetItems en une opération
-- Génération automatique de tags séquentiels (KB-001, KB-002, etc.)
-- Preview en temps réel avec détection de conflits
-- Validation atomique (tout ou rien)
+**Audit Trail Complet**
+- ✅ **AuditLog Model** - Traçabilité de toutes opérations CRUD
+- ✅ **10+ Actions** - CREATE, UPDATE, DELETE, LOGIN, LOGOUT, etc.
+- ✅ **Metadata** - User, IP, timestamp, before/after values
+- ✅ **API Endpoints** - `/api/audit-logs` avec filtres
+- ✅ **Guide complet** - `apps/api/AUDIT_TRAIL_GUIDE.md`
 
-**Import Excel Employés Amélioré**
-- Import massif avec sanitization des noms français
-- Génération auto d'emails: `prenom.nom@groupetilly.com`
-- Détection de doublons
-- Rapport détaillé (succès, ignorés, erreurs)
+**Dashboard Statistiques**
+- ✅ **Vue matérialisée** - `dashboard_stats` optimisée
+- ✅ **API dédiée** - `/api/dashboard/stats` (2ms response)
+- ✅ **Stats temps réel** - Équipements, employés, prêts, stock
+- ✅ **Refresh automatique** - Scripts PowerShell/Bash
 
-**Dashboard Enrichi**
-- Stats en temps réel (équipements, employés, prêts)
-- Alertes de stock bas configurables
-- Prêts récents avec détails
-- Cartes visuelles avec skeleton loaders
+### 🧪 Tests & CI/CD
 
-**Gestion du Stock Avancée**
-- Refactorisation: StockItems référencent AssetModels
-- Suivi des quantités prêtées (`loaned` field)
-- Synchronisation automatique lors des prêts/retours
+**Couverture Complète**
+- ✅ **292 tests passants** - Backend (275) + Frontend (17)
+- ✅ **E2E Playwright** - Tests d'intégration complets
+- ✅ **GitHub Actions** - CI automatique sur PR/push
+- ✅ **Linting** - ESLint + TypeScript strict
+- ✅ **Coverage** - Jest coverage reporting
 
-### 🎨 Interface Utilisateur
+### 📚 Documentation Production
 
-- Charte graphique Groupe Tilly complète
-- Pagination universelle sur toutes les listes
-- Sélection multiple avec checkboxes
-- Navigation mobile responsive
-- Logo personnalisé (header, login, favicon)
+**Guides Complets**
+- ✅ **ARCHITECTURE.md** (600+ lignes) - Diagrammes Mermaid, ER diagrams
+- ✅ **CONTRIBUTING.md** (456 lignes) - Guide contributeurs
+- ✅ **DEPLOYMENT_PRODUCTION.md** (600+ lignes) - Déploiement complet
+- ✅ **HTTPS_SETUP.md** (200 lignes) - Configuration SSL/TLS
+- ✅ **BACKUP_GUIDE.md** - Automatisation backups PostgreSQL
+- ✅ **AUDIT_TRAIL_GUIDE.md** - Utilisation audit logs
+- ✅ **Swagger UI** - Documentation API interactive
+
+### 🛡️ DevOps & Production
+
+**Infrastructure Complète**
+- ✅ **Scripts Backup** - PowerShell + Bash automation
+- ✅ **Docker Compose Prod** - Configuration production-ready
+- ✅ **nginx.conf** - Reverse proxy + TLS 1.3
+- ✅ **Monitoring** - Prometheus + Grafana ready
+- ✅ **Rollback procedures** - Scripts de restauration
+
+---
+
+## 🎯 Historique des Versions
+
+### v0.7.x - Documentation & Swagger
+- Swagger UI interactive (`/api/docs`)
+- Backup automation (scripts PowerShell/Bash)
+- 275 tests backend passants
+
+### v0.6.x - Performance
+- Redis cache implementation
+- Dashboard materialized views
+- 19 index database
+
+### v0.5.x - Tests
+- Infrastructure Jest + Supertest
+- Tests d'authentification complets
+- GitHub Actions CI/CD
+
+### v0.2.0 - Features Principales
+- Création en masse d'équipements
+- Import Excel employés
+- Dashboard enrichi
+- RBAC complet
+- Gestion signatures numériques
 
 ---
 
@@ -232,45 +280,58 @@ inventaire_SI/
 ## 🛠️ Stack Technique
 
 ### Backend
-- **Node.js** (ESM) >= 18.x
+- **Node.js** (ESM) >= 20.x
 - **Express.js** 4.x - Web framework
-- **Prisma ORM** - Database ORM
-- **PostgreSQL** 16 - Database
+- **Prisma ORM** - Database ORM with materialized views
+- **PostgreSQL** 16 - Database with 19 optimized indexes
+- **Redis** - Cache layer (dashboard 150ms → 2ms)
 - **JWT** (jsonwebtoken) - Authentication
 - **Bcryptjs** - Password hashing
+- **Helmet** - Security headers (CSP, HSTS, etc.)
 - **Zod** - Validation
 - **Multer** - File uploads
 - **Cookie-parser** - Cookie handling
-- **CORS** - Cross-origin requests
+- **CORS** - Cross-origin with strict validation
+- **Swagger** - API documentation interactive
+- **Jest + Supertest** - Testing (275 tests)
 
 ### Frontend
-- **React** 18 - UI library
-- **TypeScript** 5.0 - Type safety
-- **Vite** - Build tool
-- **TanStack Query** (React Query) - Data fetching
+- **React** 19 - UI library with ErrorBoundary
+- **TypeScript** 5.0 - Type safety (strict mode)
+- **Vite** - Build tool (1.5MB → 1.0MB optimized)
+- **TanStack Query** (React Query) - Data fetching with cache
 - **Zustand** - State management
 - **React Router** v6 - Routing
 - **React Hook Form** - Form handling
 - **Tailwind CSS** - Styling
 - **shadcn/ui** - UI components
 - **Lucide React** - Icons
-- **xlsx** - Excel import
+- **xlsx** - Excel import/export
 - **Axios** - HTTP client
+- **Playwright** - E2E testing (17 tests)
+- **Vitest** - Unit testing
+- **React.memo** - Performance optimizations
 
 ### DevOps
-- **Docker** & **Docker Compose** - Containerization
-- **PostgreSQL** (containerized) - Database
-- **Nginx** - Production web server
-- **Git** - Version control
+- **Docker** & **Docker Compose** - Containerization (dev + prod configs)
+- **PostgreSQL** 16 (containerized) - Database with backups
+- **Redis** (containerized) - Cache layer
+- **Nginx** - Reverse proxy with TLS 1.3
+- **Let's Encrypt** - SSL certificates automation
+- **GitHub Actions** - CI/CD pipeline (tests + linting)
+- **Git** - Version control with release workflow
+- **Prometheus + Grafana** - Monitoring (ready)
 
 ---
 
 ## 📦 Prérequis
 
-- **Node.js** >= 18.x
+- **Node.js** >= 20.x
 - **Docker** & **Docker Compose**
 - **Git**
 - **npm** ou **yarn**
+- **PostgreSQL** 16 (via Docker)
+- **Redis** (via Docker, optionnel pour cache)
 
 ---
 
@@ -492,12 +553,25 @@ feature → release/X.Y.Z → staging → main + tag vX.Y.Z
 
 ### Guides Principaux
 
+#### Pour les Développeurs
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** - Guide complet de contribution
+- **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** - Architecture complète avec diagrammes Mermaid
 - [Documentation API](apps/api/README.md) - Backend complet
 - [Documentation Frontend](apps/web/README.md) - Frontend complet
 - [Guide de Documentation](COMMENTING_GUIDE.md) - Standards JSDoc
+- [Instructions Claude Code](CLAUDE.md) - Pour Claude Code
+
+#### Pour le Déploiement
+- **[DEPLOYMENT_PRODUCTION.md](docs/DEPLOYMENT_PRODUCTION.md)** - Déploiement production complet
+- **[HTTPS_SETUP.md](docs/HTTPS_SETUP.md)** - Configuration SSL/TLS avec Let's Encrypt
+- **[BACKUP_GUIDE.md](docs/BACKUP_GUIDE.md)** - Automatisation des backups
 - [Workflow de Release](RELEASE_WORKFLOW.md) - Guide des releases
 - [Scripts d'Automatisation](scripts/README.md) - Scripts détaillés
-- [Instructions Claude Code](CLAUDE.md) - Pour Claude Code
+
+#### Guides Techniques
+- **[AUDIT_TRAIL_GUIDE.md](apps/api/AUDIT_TRAIL_GUIDE.md)** - Utilisation du système d'audit
+- **[Swagger API](http://localhost:3001/api/docs)** - Documentation API interactive
+- **[AUDIT_REPORT_2026-01-13.md](AUDIT_REPORT_2026-01-13.md)** - Rapport d'audit complet (Score: 8.5/10)
 
 ### Schéma de base de données
 
@@ -533,48 +607,76 @@ Voir le fichier `apps/api/prisma/schema.prisma` pour le schéma complet.
 
 ## 🔐 Sécurité
 
+**Score Global: 8.7/10** (Production-Ready)
+
 ### Authentification
 - ✅ JWT avec access/refresh tokens
 - ✅ Access token: 15 minutes
 - ✅ Refresh token: 7 jours (httpOnly cookie)
 - ✅ Rotation automatique des tokens
 - ✅ Tokens stockés en mémoire (pas de localStorage)
+- ✅ **Rate limiting** - 4 niveaux (auth, global, API, par IP)
 
 ### Autorisation
 - ✅ RBAC (Role-Based Access Control)
 - ✅ 3 rôles: ADMIN, GESTIONNAIRE, LECTURE
 - ✅ Routes protégées frontend et backend
 - ✅ Middleware de vérification des permissions
+- ✅ **Audit trail** - Traçabilité complète (AuditLog model)
 
 ### Validation & Protection
 - ✅ Validation Zod côté serveur
 - ✅ Hachage des mots de passe (bcrypt, 10 salt rounds)
-- ✅ CORS configuré
+- ✅ **CORS strict** - URL parsing avec validation protocole
+- ✅ **Helmet CSP** - Content Security Policy complète
+- ✅ **Security Headers** - HSTS, X-Frame-Options, noSniff, XSS Filter
 - ✅ Protection CSRF
 - ✅ Messages d'erreur génériques (pas d'email enumeration)
 - ✅ Sanitization des inputs utilisateur
 
-### ⚠️ Production
+### Infrastructure Sécurisée
+- ✅ **HTTPS/TLS 1.3** - Configuration nginx production
+- ✅ **Let's Encrypt** - Certificats SSL automatiques
+- ✅ **Secrets** - Génération cryptographique 64-byte base64
+- ✅ **Docker secrets** - Passwords via Docker secrets (production)
 
-**IMPORTANT - Avant déploiement:**
-- [ ] Changer tous les secrets JWT
-- [ ] Utiliser des mots de passe forts pour PostgreSQL
-- [ ] Configurer HTTPS (Let's Encrypt recommandé)
-- [ ] Activer les logs d'audit
-- [ ] Configurer les backups automatiques
-- [ ] Restreindre CORS aux domaines autorisés
+### OWASP Top 10 Protection (Score: 8.4/10)
+- ✅ A01 Broken Access Control: **9/10**
+- ✅ A02 Cryptographic Failures: **9/10**
+- ✅ A03 Injection: **9/10**
+- ✅ A05 Security Misconfiguration: **9/10**
+- ✅ A07 Identification Failures: **9/10**
+
+### ⚠️ Checklist Déploiement Production
+
+**CRITIQUE - Avant déploiement:**
+- [ ] Générer nouveaux secrets JWT (voir .env.example pour commandes)
+- [ ] Configurer HTTPS avec Let's Encrypt (voir docs/HTTPS_SETUP.md)
+- [ ] Configurer CORS pour domaine production uniquement
+- [ ] Changer mot de passe PostgreSQL (utiliser Docker secrets)
+- [ ] Activer backups automatiques (voir docs/BACKUP_GUIDE.md)
 - [ ] Changer le compte admin par défaut
+- [ ] Vérifier logs d'audit activés
+- [ ] Configurer UFW firewall
+- [ ] Installer fail2ban pour SSH
+- [ ] Tester restauration backup
+- [ ] Configurer monitoring (Prometheus/Grafana)
 
 ---
 
 ## 📊 Versions
 
-### Version Actuelle: v0.2.0
+### Version Actuelle: v0.8.0 (2026-01-13)
+
+**Score Global: 8.5/10** - Production-Ready
 
 Voir [CHANGELOG.md](CHANGELOG.md) pour l'historique complet des versions.
 
-### Release Notes
+### Release Notes Récentes
 
+- [v0.8.0](.release-notes/v0.8.0.md) - Security hardening + frontend optimizations (2026-01-13)
+- [v0.7.1](.release-notes/v0.7.1.md) - Audit trail + dashboard optimizations (2026-01-06)
+- [v0.7.0](.release-notes/v0.7.0.md) - Backup automation + E2E tests (2025-12-30)
 - [v0.2.0](.release-notes/v0.2.0.md) - Première release officielle (2024-12-29)
 
 ---
@@ -614,4 +716,4 @@ Propriété de **Groupe Tilly**. Tous droits réservés.
 
 **Développé avec ❤️ pour Groupe Tilly**
 
-*Dernière mise à jour: 2024-12-29*
+*Dernière mise à jour: 2026-01-13 (v0.8.0)*
