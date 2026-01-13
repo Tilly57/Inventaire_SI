@@ -71,6 +71,7 @@ export async function getStockItemById(id) {
     include: {
       assetModel: true,  // Include model details
       loanLines: {
+        take: 50,  // Phase 3.5: Limit to 50 most recent loan lines to avoid N+1
         include: {
           loan: {
             include: {

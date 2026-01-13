@@ -296,7 +296,11 @@ export async function exportLoans(filters = {}) {
   const loans = await prisma.loan.findMany({
     where,
     orderBy: { openedAt: 'desc' },
-    include: {
+    select: {
+      id: true,
+      status: true,
+      openedAt: true,
+      closedAt: true,
       employee: {
         select: {
           firstName: true,
@@ -305,24 +309,22 @@ export async function exportLoans(filters = {}) {
         },
       },
       lines: {
-        include: {
+        select: {
+          quantity: true,
           assetItem: {
-            include: {
+            select: {
+              assetTag: true,
               assetModel: {
                 select: {
                   type: true,
-                  brand: true,
-                  modelName: true,
                 },
               },
             },
           },
           stockItem: {
-            include: {
+            select: {
               assetModel: {
                 select: {
-                  type: true,
-                  brand: true,
                   modelName: true,
                 },
               },
@@ -516,13 +518,15 @@ export async function exportDashboard() {
           lastName: true,
         },
       },
-      lines: true,
+      _count: {
+        select: { lines: true }  // Phase 3.5: Count instead of fetching all lines
+      }
     },
   })
   const loansData = loans.map((l) => ({
     'ID Prêt': l.id.slice(0, 8),
     Employé: `${l.employee.firstName} ${l.employee.lastName}`,
-    'Nb Articles': l.lines.length,
+    'Nb Articles': l._count.lines,
     'Date Ouverture': formatDate(l.openedAt),
   }))
   const loansSheet = XLSX.utils.json_to_sheet(loansData)
