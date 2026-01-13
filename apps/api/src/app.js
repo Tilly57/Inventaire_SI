@@ -5,6 +5,7 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import compression from 'compression';
+import swaggerUi from 'swagger-ui-express';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import { generalLimiter } from './middleware/rateLimiter.js';
 import { metricsMiddleware } from './middleware/metricsMiddleware.js';
@@ -12,6 +13,7 @@ import { serveProtectedFile } from './middleware/serveProtectedFiles.js';
 import { setCacheHeaders } from './middleware/cacheHeaders.js';
 import routes from './routes/index.js';
 import metricsRoutes from './routes/metrics.routes.js';
+import swaggerSpec from './config/swagger.js';
 
 const app = express();
 
@@ -59,6 +61,23 @@ app.use('/api', metricsRoutes);
 // Cache headers for improved performance - Phase 3.4
 // Must be before routes to set headers on all API responses
 app.use('/api', setCacheHeaders);
+
+// Swagger API Documentation - Phase 3.7
+// Accessible at http://localhost:3001/api-docs
+// Swagger JSON spec available at http://localhost:3001/api-docs.json
+app.get('/api-docs.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
+});
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'Inventaire SI - API Docs',
+  customfavIcon: '/favicon.ico',
+  swaggerOptions: {
+    url: '/api-docs.json'
+  }
+}));
 
 // API routes
 app.use('/api', routes);
