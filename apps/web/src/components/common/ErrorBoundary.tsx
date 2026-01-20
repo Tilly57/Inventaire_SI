@@ -3,7 +3,8 @@
  * Catches React errors and prevents entire app crash
  * Shows user-friendly error UI with option to retry or go home
  */
-import { Component, ReactNode, ErrorInfo } from 'react';
+import { Component } from 'react';
+import type { ReactNode, ErrorInfo } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -152,7 +153,7 @@ interface FallbackProps {
   resetErrorBoundary: () => void;
 }
 
-export function ErrorFallback({ error, resetErrorBoundary }: FallbackProps): JSX.Element {
+export function ErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
   return (
     <div className="min-h-[400px] flex items-center justify-center p-4">
       <Card className="max-w-md w-full">

@@ -274,8 +274,9 @@ export function useDeleteAssetItem() {
   return useMutation({
     mutationFn: (id: string) => deleteAssetItemApi(id),
     onSuccess: async () => {
-      // Invalidate all related queries (no refetch needed - invalidate triggers automatic refetch)
-      await queryClient.invalidateQueries({ queryKey: ['assetItems'] })
+      // Invalidate and refetch all related queries immediately
+      await queryClient.invalidateQueries({ queryKey: ['assetItems'], refetchType: 'active' })
+      await queryClient.refetchQueries({ queryKey: ['assetItems'] })
       await queryClient.invalidateQueries({ queryKey: ['assetModels'] })
       await queryClient.invalidateQueries({ queryKey: ['dashboard'] })
       toast({
