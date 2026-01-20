@@ -12,8 +12,8 @@ export const PAGE_SIZE_OPTIONS = [10, 20, 50, 100]
 // Toast notifications duration (ms)
 export const TOAST_DURATION = 4000
 
-// Query stale time (5 minutes)
-export const QUERY_STALE_TIME = 5 * 60 * 1000
+// Query stale time (30 seconds)
+export const QUERY_STALE_TIME = 30 * 1000
 
 // File upload limits
 export const MAX_SIGNATURE_SIZE = 5 * 1024 * 1024 // 5MB
