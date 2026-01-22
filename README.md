@@ -1,11 +1,13 @@
 # Inventaire SI - Groupe Tilly
 
-![Version](https://img.shields.io/badge/version-0.8.0-orange)
+![Version](https://img.shields.io/badge/version-0.8.1-orange)
 ![License](https://img.shields.io/badge/license-Proprietary-red)
 ![Node](https://img.shields.io/badge/node-%3E%3D20.x-brightgreen)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
-![Tests](https://img.shields.io/badge/tests-292%20passing-success)
+![Tests](https://img.shields.io/badge/tests-300+%20passing-success)
 ![Security](https://img.shields.io/badge/security-8.7%2F10-green)
+![Monitoring](https://img.shields.io/badge/monitoring-Sentry-purple)
+![Backups](https://img.shields.io/badge/backups-automated-blue)
 
 Système de gestion d'inventaire informatique avec suivi des prêts de matériel et signatures numériques.
 
@@ -58,7 +60,42 @@ Système de gestion d'inventaire informatique avec suivi des prêts de matériel
 
 ---
 
-## 🆕 Nouveautés v0.8.0 (Release Actuelle)
+## 🆕 Nouveautés v0.8.1 (Release Actuelle)
+
+### 🔍 Monitoring & Observabilité
+
+**Sentry Error Tracking**
+- ✅ **Backend Integration** - Capture automatique erreurs + performance monitoring
+- ✅ **Frontend Integration** - Error boundaries + session replay
+- ✅ **Profiling** - CPU/memory insights pour production
+- ✅ **User Context** - Tracking utilisateur automatique après login
+- ✅ **Data Filtering** - Suppression données sensibles (tokens, headers)
+- ✅ **Guide complet** - `docs/SENTRY_INTEGRATION.md` + `docs/SENTRY_QUICKSTART.md`
+
+### 🔄 Backups Automatisés
+
+**Système Complet Multi-Plateforme**
+- ✅ **Scheduling Automatique** - Backups quotidiens à 2h00 AM (configurable)
+- ✅ **Multi-Platform** - Windows (Task Scheduler), Linux/Mac (cron), Docker (crond)
+- ✅ **Rétention Intelligente** - Suppression automatique après 30 jours
+- ✅ **Monitoring HTTP** - Endpoints `/health`, `/metrics`, `/status`
+- ✅ **Alertes** - Notifications email sur échec (configurable)
+- ✅ **Script Node.js** - `scripts/backup-automation.js` cross-platform
+- ✅ **Documentation** - `docs/BACKUP_AUTOMATION.md` (12,000+ mots)
+
+### 🧪 Tests E2E Améliorés
+
+**Couverture Critique Complète**
+- ✅ **Smoke Tests** - 10 tests critiques (~2 min)
+- ✅ **Loan Workflow** - Test complet du cycle de vie des prêts
+- ✅ **Test Fixtures** - Factories de données réutilisables
+- ✅ **CI/CD GitHub Actions** - Tests automatiques sur PRs
+- ✅ **Helper Scripts** - `scripts/run-e2e-tests.{bat,sh}`
+- ✅ **Documentation** - `docs/E2E_TESTING.md` (11,000+ mots)
+
+---
+
+## 🆕 Nouveautés v0.8.0
 
 ### 🔐 Sécurité Renforcée (Score: 8.7/10)
 
@@ -573,6 +610,13 @@ feature → release/X.Y.Z → staging → main + tag vX.Y.Z
 - **[Swagger API](http://localhost:3001/api/docs)** - Documentation API interactive
 - **[AUDIT_REPORT_2026-01-13.md](AUDIT_REPORT_2026-01-13.md)** - Rapport d'audit complet (Score: 8.5/10)
 
+#### Monitoring & Qualité (Nouveau v0.8.1)
+- **[SENTRY_INTEGRATION.md](docs/SENTRY_INTEGRATION.md)** - Guide complet intégration Sentry
+- **[SENTRY_QUICKSTART.md](docs/SENTRY_QUICKSTART.md)** - Démarrage rapide Sentry (<10 min)
+- **[BACKUP_AUTOMATION.md](docs/BACKUP_AUTOMATION.md)** - Automatisation backups complète
+- **[E2E_TESTING.md](docs/E2E_TESTING.md)** - Guide tests E2E Playwright
+- **[COURT_TERME_COMPLETE.md](COURT_TERME_COMPLETE.md)** - Résumé améliorations v0.8.1
+
 ### Schéma de base de données
 
 Voir le fichier `apps/api/prisma/schema.prisma` pour le schéma complet.
@@ -666,14 +710,21 @@ Voir le fichier `apps/api/prisma/schema.prisma` pour le schéma complet.
 
 ## 📊 Versions
 
-### Version Actuelle: v0.8.0 (2026-01-13)
+### Version Actuelle: v0.8.1 (2026-01-22)
 
-**Score Global: 8.5/10** - Production-Ready
+**Score Global: 8.5/10** - Production-Ready avec Monitoring Professionnel
+
+**Nouveautés v0.8.1:**
+- 🔍 Intégration Sentry complète (backend + frontend)
+- 🔄 Backups automatisés multi-plateforme avec monitoring
+- 🧪 Tests E2E critiques avec CI/CD GitHub Actions
+- 📚 35,000+ mots de nouvelle documentation
 
 Voir [CHANGELOG.md](CHANGELOG.md) pour l'historique complet des versions.
 
 ### Release Notes Récentes
 
+- [v0.8.1 (en cours)](.release-notes/v0.8.1.md) - Sentry + Backups automatiques + E2E tests (2026-01-22)
 - [v0.8.0](.release-notes/v0.8.0.md) - Security hardening + frontend optimizations (2026-01-13)
 - [v0.7.1](.release-notes/v0.7.1.md) - Audit trail + dashboard optimizations (2026-01-06)
 - [v0.7.0](.release-notes/v0.7.0.md) - Backup automation + E2E tests (2025-12-30)
@@ -716,4 +767,4 @@ Propriété de **Groupe Tilly**. Tous droits réservés.
 
 **Développé avec ❤️ pour Groupe Tilly**
 
-*Dernière mise à jour: 2026-01-13 (v0.8.0)*
+*Dernière mise à jour: 2026-01-22 (v0.8.1)*

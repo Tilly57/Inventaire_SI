@@ -1,0 +1,85 @@
+# Docker Compose configuration for automated database backups
+# This file adds a backup service to the main docker-compose.yml
+#
+# Usage:
+#   docker-compose -f docker-compose.yml -f docker-compose.backup.yml up -d
+#
+# The backup service will:
+#   - Run daily at 2:00 AM (configurable via BACKUP_SCHEDULE)
+#   - Keep backups for 30 days (configurable via BACKUP_RETENTION_DAYS)
+#   - Store backups in ./backups/database (mounted volume)
+#   - Send notifications on failure (if configured)
+
+services:
+  # Automated backup service
+  backup:
+    image: node:20-alpine
+    container_name: inventaire_si-backup
+    environment:
+      - NODE_ENV=production
+      - DB_CONTAINER=inventaire_si-db-1
+      - DB_NAME=${POSTGRES_DB}
+      - DB_USER=${POSTGRES_USER}
+      - BACKUP_RETENTION_DAYS=${BACKUP_RETENTION_DAYS:-30}
+      - BACKUP_NOTIFICATION_EMAIL=${BACKUP_NOTIFICATION_EMAIL:-}
+      - TZ=${TZ:-Europe/Paris}
+    volumes:
+      # Mount backup script
+      - ./scripts/backup-automation.js:/app/backup-automation.js:ro
+      # Mount backup directory (shared with host)
+      - ./backups:/backups
+      # Mount Docker socket to execute docker commands
+      - /var/run/docker.sock:/var/run/docker.sock
+    working_dir: /app
+    depends_on:
+      - db
+    restart: unless-stopped
+    # Use crond for scheduling (Alpine Linux)
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        # Install Docker CLI in Alpine
+        apk add --no-cache docker-cli
+
+        # Create cron job
+        echo "0 2 * * * cd /app && node backup-automation.js >> /backups/logs/backup-cron.log 2>&1" > /etc/crontabs/root
+
+        # Run initial backup
+        echo "Running initial backup..."
+        node backup-automation.js || true
+
+        # Start cron daemon
+        echo "Starting cron daemon..."
+        echo "Backups will run daily at 2:00 AM (${TZ})"
+        crond -f -l 2
+
+  # Optional: Backup monitoring service (Healthcheck)
+  backup-monitor:
+    image: node:20-alpine
+    container_name: inventaire_si-backup-monitor
+    environment:
+      - BACKUP_DIR=/backups/database
+      - BACKUP_MAX_AGE_HOURS=${BACKUP_MAX_AGE_HOURS:-26}
+      - HEALTHCHECK_PORT=8080
+    volumes:
+      - ./backups:/backups:ro
+      - ./scripts/backup-monitor.js:/app/monitor.js:ro
+    working_dir: /app
+    ports:
+      - "8081:8080"
+    restart: unless-stopped
+    command: node monitor.js
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 1h
+      timeout: 10s
+      retries: 3
+
+# Volumes shared with main compose file
+volumes:
+  backups:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${PWD}/backups
+      o: bind

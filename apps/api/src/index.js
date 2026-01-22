@@ -1,11 +1,17 @@
 /**
  * Application entry point
+ *
+ * IMPORTANT: Sentry must be imported first to catch all errors
  */
 import 'dotenv/config';
+import { initializeSentry } from './config/sentry.js';
 import { readFileSync } from 'fs';
 import app from './app.js';
 import prisma from './config/database.js';
 import logger from './config/logger.js';
+
+// Initialize Sentry as early as possible
+initializeSentry();
 
 const PORT = process.env.PORT || 3001;
 
@@ -34,15 +40,20 @@ process.env.JWT_REFRESH_SECRET = JWT_REFRESH_SECRET;
 async function startServer() {
   try {
     await prisma.$connect();
-    console.log('✅ Database connected');
+    logger.info('Database connected successfully');
 
     app.listen(PORT, '0.0.0.0', () => {
-      console.log(`✅ API server running on port ${PORT}`);
-      console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`🌐 CORS origin: ${process.env.CORS_ORIGIN || 'http://localhost:8080'}`);
+      logger.info(`API server running on port ${PORT}`, {
+        environment: process.env.NODE_ENV || 'development',
+        corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:8080',
+        port: PORT
+      });
     });
   } catch (error) {
-    console.error('❌ Failed to start:', error);
+    logger.error('Failed to start server', {
+      error: error.message,
+      stack: error.stack
+    });
     process.exit(1);
   }
 }

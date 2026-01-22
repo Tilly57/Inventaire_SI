@@ -17,6 +17,7 @@
 import { useAuthStore } from '@/lib/stores/authStore'
 import { loginApi, logoutApi } from '@/lib/api/auth.api'
 import type { LoginDto } from '@/lib/types/models.types'
+import { setUserContext } from '@/lib/sentry'
 
 /**
  * Authentication hook
@@ -92,6 +93,13 @@ export function useAuth() {
       // Update Zustand store with user data and token
       loginStore(user, accessToken)
 
+      // Set user context in Sentry for error tracking
+      setUserContext({
+        id: user.id,
+        email: user.email,
+        username: user.username || user.email,
+      })
+
       return { success: true }
     } catch (error: any) {
       // Extract error message from API response
@@ -121,6 +129,9 @@ export function useAuth() {
     } finally {
       // Clear local auth state (user data and access token)
       logoutStore()
+
+      // Clear user context in Sentry
+      setUserContext(null)
     }
   }
 

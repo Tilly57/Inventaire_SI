@@ -22,6 +22,7 @@
 import { AppError, ValidationError } from '../utils/errors.js';
 import { Prisma } from '@prisma/client';
 import logger from '../config/logger.js';
+import * as Sentry from '@sentry/node';
 
 /**
  * Global error handler middleware
@@ -186,6 +187,22 @@ export const errorHandler = (err, req, res, next) => {
       // Other Multer errors (invalid field name, etc.)
       message = `Erreur d'upload: ${err.message}`;
     }
+  }
+
+  // Send to Sentry for errors >= 500 (server errors)
+  // These are unexpected errors that need investigation
+  if (statusCode >= 500) {
+    Sentry.captureException(err, {
+      level: 'error',
+      extra: {
+        statusCode,
+        message,
+        url: req.url,
+        method: req.method,
+        userId: req.user?.id,
+        body: req.body
+      }
+    });
   }
 
   // Logging strategy:

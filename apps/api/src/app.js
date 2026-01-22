@@ -1,5 +1,5 @@
 /**
- * Simplified Express application for debugging
+ * Express application with production-ready security configuration
  */
 import express from 'express';
 import cors from 'cors';
@@ -7,24 +7,68 @@ import cookieParser from 'cookie-parser';
 import compression from 'compression';
 import helmet from 'helmet';
 import swaggerUi from 'swagger-ui-express';
+import * as Sentry from '@sentry/node';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import { generalLimiter } from './middleware/rateLimiter.js';
 import { setCacheHeaders } from './middleware/cacheHeaders.js';
 import routes from './routes/index.js';
 import metricsRoutes from './routes/metrics.routes.js';
 import swaggerSpec from './config/swagger.js';
+import logger from './config/logger.js';
+import { csrfTokenGenerator, csrfProtection, getCsrfToken } from './middleware/csrf.js';
 
 const app = express();
 
-// CORS - simplified
+// CORS - Production-ready configuration with restricted origins
+const allowedOrigins = [
+  process.env.CORS_ORIGIN || 'http://localhost:5173', // Frontend dev
+  'http://localhost:8080', // Frontend production (Docker)
+  'http://localhost:3000', // Alternative dev port
+  // Add production domains here when deployed
+].filter(Boolean);
+
 app.use(cors({
-  origin: true, // Allow all origins
-  credentials: true
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, Postman, server-to-server)
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      logger.warn(`CORS blocked request from origin: ${origin}`);
+      callback(new Error(`Origin ${origin} not allowed by CORS policy`));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  maxAge: 86400 // 24 hours
 }));
 
-// Security headers with Helmet
+// Security headers with Helmet - Production-ready CSP
 app.use(helmet({
-  contentSecurityPolicy: false, // Simplified for now
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"], // unsafe-inline needed for Swagger UI
+      styleSrc: ["'self'", "'unsafe-inline'"], // unsafe-inline needed for Swagger UI
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'"],
+      fontSrc: ["'self'", "data:"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'"],
+      frameSrc: ["'none'"],
+      upgradeInsecureRequests: process.env.NODE_ENV === 'production' ? [] : null
+    }
+  },
+  crossOriginEmbedderPolicy: false, // Allow embedding for Swagger UI
+  hsts: {
+    maxAge: 31536000, // 1 year
+    includeSubDomains: true,
+    preload: true
+  }
 }));
 
 // Compression
@@ -37,11 +81,31 @@ app.use(express.urlencoded({ extended: true }));
 // Cookie parser
 app.use(cookieParser());
 
-// Debug middleware
+// Sentry request handler - MUST be before all other middleware/routes
+// Adds request data to Sentry events (user, request, breadcrumbs)
+app.use(Sentry.Handlers.requestHandler());
+
+// Sentry tracing handler - MUST be after requestHandler
+// Enables performance monitoring for all requests
+app.use(Sentry.Handlers.tracingHandler());
+
+// HTTP request logging middleware
 app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+  logger.http(`${req.method} ${req.path}`, {
+    ip: req.ip,
+    userAgent: req.get('user-agent')
+  });
   next();
 });
+
+// CSRF token generation (must be before csrfProtection)
+app.use(csrfTokenGenerator);
+
+// CSRF token endpoint (before csrfProtection to allow getting token)
+app.get('/api/csrf-token', getCsrfToken);
+
+// CSRF protection for state-changing operations
+app.use('/api', csrfProtection);
 
 // Rate limiting
 app.use('/api', generalLimiter);
@@ -68,6 +132,16 @@ app.use('/api', routes);
 
 // 404 handler
 app.use(notFoundHandler);
+
+// Sentry error handler - MUST be before other error handlers
+// Automatically captures all errors and sends to Sentry
+app.use(Sentry.Handlers.errorHandler({
+  shouldHandleError(error) {
+    // Capture all errors with status code >= 500
+    // Or any error without a status code
+    return !error.statusCode || error.statusCode >= 500;
+  }
+}));
 
 // Global error handler
 app.use(errorHandler);

@@ -4,6 +4,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from '@/components/ui/toaster'
 import { ThemeProvider } from '@/lib/contexts/ThemeContext'
 import { ErrorBoundary } from '@/components/common/ErrorBoundary'
+import { AppInitializer } from '@/components/common/AppInitializer'
+import * as Sentry from '@sentry/react'
 
 // Layout (not lazy-loaded - needed immediately)
 import { AppLayout } from '@/components/layout/AppLayout'
@@ -37,15 +39,19 @@ const queryClient = new QueryClient({
   },
 })
 
+// Wrap BrowserRouter with Sentry for automatic navigation tracking
+const SentryRoutes = Sentry.withSentryRouting(Routes)
+
 function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider>
         <QueryClientProvider client={queryClient}>
-          <Toaster />
-          <BrowserRouter>
+          <AppInitializer>
+            <Toaster />
+            <BrowserRouter>
         <Suspense fallback={<PageSkeleton />}>
-          <Routes>
+          <SentryRoutes>
             {/* Public routes */}
             <Route path="/login" element={<LoginPage />} />
 
@@ -86,9 +92,10 @@ function App() {
 
             {/* 404 - Catch all */}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </Routes>
+          </SentryRoutes>
         </Suspense>
         </BrowserRouter>
+          </AppInitializer>
         </QueryClientProvider>
       </ThemeProvider>
     </ErrorBoundary>

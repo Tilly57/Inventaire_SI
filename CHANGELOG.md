@@ -7,6 +7,164 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-01-22
+
+### Added
+
+**Monitoring & Error Tracking (Sentry Integration)**
+- Sentry backend integration (`@sentry/node@10.36.0`, `@sentry/profiling-node@8.41.0`)
+  - Automatic error capture for unhandled exceptions
+  - Performance monitoring with configurable sampling
+  - CPU/Memory profiling for production insights
+  - Request context tracking (URL, method, user agent, user ID)
+  - Automatic filtering of sensitive data (Authorization, Cookie headers)
+  - Only server errors (500+) sent to Sentry
+  - Configuration via environment variables (`SENTRY_DSN`, `SENTRY_ENVIRONMENT`)
+- Sentry frontend integration (`@sentry/react@10.36.0`)
+  - Automatic React error boundaries
+  - Performance monitoring with Web Vitals (LCP, FID, CLS)
+  - Session replay for debugging (text masked for privacy)
+  - User action breadcrumbs (clicks, navigation, API calls)
+  - React Router integration for navigation tracking
+  - Automatic user context after login/logout
+  - Sensitive data filtering (tokens, localStorage)
+- Configuration files: `apps/api/src/config/sentry.js`, `apps/web/src/lib/sentry.ts`
+- Documentation: `docs/SENTRY_INTEGRATION.md` (8,000+ words), `docs/SENTRY_QUICKSTART.md` (3,000+ words)
+
+**Automated Database Backups**
+- Cross-platform backup automation script: `scripts/backup-automation.js`
+  - Support for Windows (Task Scheduler), Linux/Mac (cron), Docker (crond)
+  - Automatic scheduling (default 2:00 AM, configurable)
+  - PostgreSQL custom format compression (level 9)
+  - Size verification to detect failures
+  - Detailed logging in `backups/logs/`
+- Intelligent retention policy
+  - Configurable policy (30 days default)
+  - Automatic cleanup of obsolete backups
+  - Preservation of manual backups
+  - Protection of `pre_restore_*` backups
+- HTTP monitoring service: `scripts/backup-monitor.js`
+  - `/health` endpoint - Status 200 (healthy) or 503 (unhealthy)
+  - `/metrics` endpoint - Prometheus-compatible metrics
+  - `/status` endpoint - HTML dashboard with details
+  - Detection of missing or stale backups
+- Setup scripts: `scripts/setup-backup-automation.bat` (Windows), `scripts/setup-backup-automation.sh` (Linux/Mac)
+- Docker configuration: `docker-compose.backup.yml`
+- Documentation: `docs/BACKUP_AUTOMATION.md` (12,000+ words)
+
+**Critical Path E2E Tests**
+- Smoke tests: `apps/web/e2e/00-smoke.spec.ts` (10 tests, ~2 min)
+  - Login and dashboard access
+  - Complete menu navigation
+  - Employee, asset model, asset item creation
+  - Loan creation
+  - Data export
+  - Logout and route protection
+  - Functional search
+  - Error handling
+- Critical loan workflow: `apps/web/e2e/11-critical-loan-workflow.spec.ts`
+  - Complete lifecycle: create → add items → pickup signature → return signature → close
+  - Uses fixtures for test data
+  - Automatic cleanup after each test
+- Test fixtures: `apps/web/e2e/fixtures.ts`
+  - `createTestEmployee()` - Create employee with unique data
+  - `createTestAssetModel()` - Create asset model
+  - `createTestAssetItem()` - Create asset item
+  - `createTestStockItem()` - Create stock item
+  - `createTestLoan()` - Create loan
+  - `cleanupTestData()` - Complete cleanup
+- GitHub Actions CI/CD: `.github/workflows/e2e-tests.yml`
+  - Triggers: PRs, main pushes, nightly, manual
+  - Services: PostgreSQL 16 + Redis 7
+  - Execution: smoke tests (fail fast) → critical tests → all tests
+  - Upload: HTML reports + failure videos + traces
+  - Automatic PR result comments
+- Helper scripts: `scripts/run-e2e-tests.bat` (Windows), `scripts/run-e2e-tests.sh` (Linux/Mac)
+- Documentation: `docs/E2E_TESTING.md` (11,000+ words)
+
+### Changed
+
+**API Configuration**
+- Modified `apps/api/src/index.js` - Added Sentry initialization
+- Modified `apps/api/src/app.js` - Integrated Sentry request handling
+- Modified `apps/api/src/middleware/errorHandler.js` - Sentry error capture
+
+**Frontend Configuration**
+- Modified `apps/web/src/main.tsx` - Sentry initialization before React render
+- Modified `apps/web/src/App.tsx` - Wrapped Routes with Sentry tracking
+- Modified `apps/web/src/lib/hooks/useAuth.ts` - User context tracking
+
+**Environment Variables**
+- Updated `.env.example` files with Sentry configuration variables
+- Added backup automation configuration variables
+
+### Documentation
+
+**New Documents (35,000+ words)**
+- `docs/SENTRY_INTEGRATION.md` - Complete Sentry guide (8,000 words)
+- `docs/SENTRY_QUICKSTART.md` - Sentry quick start (3,000 words)
+- `docs/BACKUP_AUTOMATION.md` - Automated backups guide (12,000 words)
+- `docs/E2E_TESTING.md` - E2E testing guide (11,000 words)
+- `COURT_TERME_COMPLETE.md` - Complete summary of improvements
+- `ROADMAP.md` - Project roadmap with short/medium/long term plans
+- `.release-notes/v0.8.1.md` - Comprehensive release notes
+
+**Updated Documents**
+- `README.md` - Added v0.8.1 section, new badges, updated documentation links
+- `backups/README.md` - New automation features
+
+### Metrics
+
+**Before v0.8.1:**
+- Tests: 292 tests (backend + frontend)
+- Documentation: ~50,000 words
+- Monitoring: None
+- Backups: Manual only (PowerShell scripts)
+- E2E Tests: Existing but loan test disabled
+
+**After v0.8.1:**
+- Tests: 300+ tests (added smoke + critical workflow)
+- Documentation: ~85,000 words (+35,000 words)
+- Monitoring: Sentry integrated (backend + frontend)
+- Backups: Automated multi-platform with monitoring
+- E2E Tests: Critical paths functional + CI/CD
+
+**Impact:**
+- 🎯 Real-time production error detection
+- 📊 Performance metrics (API + Web Vitals)
+- 🤖 Guaranteed daily backups without intervention
+- 📈 Backup health monitoring with alerts
+- ✅ Automated critical tests on PRs
+
+### Dependencies
+
+**Added:**
+- `@sentry/node@10.36.0` - Sentry backend SDK
+- `@sentry/profiling-node@8.41.0` - Sentry profiling
+- `@sentry/react@10.36.0` - Sentry frontend SDK
+
+### Notes
+
+- Sentry requires separate DSN configuration for backend and frontend
+- Backup automation requires Node.js 20+ and Docker
+- Windows backup setup requires Administrator rights for Task Scheduler
+- Linux/Mac backup setup requires active cron daemon
+- E2E CI/CD requires GitHub Actions enabled
+- Sentry package installed with `--legacy-peer-deps` for React 19 compatibility
+
+## [0.8.0] - 2026-01-XX
+
+### Security
+
+**CORS & Security Headers**
+- Helmet CSP (Content Security Policy) integration
+- CORS configuration hardening
+- CSRF protection implementation
+
+**Code Cleanup**
+- Removal of unused files and dependencies
+- Code quality improvements
+
 ## [0.6.4] - 2025-12-30
 
 ### Added
