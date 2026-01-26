@@ -315,6 +315,174 @@ export async function clearAll() {
   }
 }
 
+/**
+ * ============================================
+ * TOKEN BLACKLIST - Phase 2 Security
+ * ============================================
+ * Implements token revocation for immediate logout and security.
+ *
+ * Use cases:
+ * - User logout (revoke access token immediately)
+ * - User role change (invalidate all sessions)
+ * - Security breach (revoke all user tokens)
+ * - Account deletion (revoke all tokens)
+ */
+
+/**
+ * Blacklist a single access token
+ *
+ * Token is blacklisted until its natural expiration time.
+ * After expiration, it would be invalid anyway, so we auto-expire the blacklist entry.
+ *
+ * @param {string} token - JWT access token to blacklist
+ * @param {number} expiresIn - Seconds until token expires (from JWT payload)
+ * @returns {Promise<boolean>} Success status
+ *
+ * @example
+ * // On logout
+ * const decoded = jwt.decode(accessToken)
+ * const remainingTime = decoded.exp - Math.floor(Date.now() / 1000)
+ * await blacklistToken(accessToken, remainingTime)
+ */
+export async function blacklistToken(token, expiresIn) {
+  try {
+    const key = `blacklist:token:${token}`
+    const client = getRedisClient()
+
+    // Set with TTL = remaining token lifetime
+    // After token expires naturally, blacklist entry also expires
+    await client.setex(key, Math.max(expiresIn, 1), 'revoked')
+
+    logger.info(`🔒 Token blacklisted (TTL: ${expiresIn}s)`)
+    return true
+  } catch (error) {
+    logger.error('Failed to blacklist token:', error)
+    return false
+  }
+}
+
+/**
+ * Check if token is blacklisted
+ *
+ * @param {string} token - JWT access token to check
+ * @returns {Promise<boolean>} True if blacklisted
+ *
+ * @example
+ * if (await isTokenBlacklisted(token)) {
+ *   throw new UnauthorizedError('Token has been revoked')
+ * }
+ */
+export async function isTokenBlacklisted(token) {
+  try {
+    const key = `blacklist:token:${token}`
+    const client = getRedisClient()
+
+    const exists = await client.exists(key)
+    return exists === 1
+  } catch (error) {
+    logger.error('Failed to check token blacklist:', error)
+    // On error, allow access (fail open) but log for investigation
+    return false
+  }
+}
+
+/**
+ * Invalidate all sessions for a user (global logout)
+ *
+ * Sets a timestamp marker. Any token issued BEFORE this timestamp
+ * is considered invalid. Used for:
+ * - User role change (force re-login to get new permissions)
+ * - Password change (force re-login for security)
+ * - Security breach (revoke all sessions immediately)
+ *
+ * @param {string} userId - User ID to invalidate sessions for
+ * @param {number} ttl - How long to maintain invalidation (default: 7 days = max refresh token lifetime)
+ * @returns {Promise<boolean>} Success status
+ *
+ * @example
+ * // After password change
+ * await invalidateUserSessions(userId)
+ *
+ * // After role change
+ * await invalidateUserSessions(userId)
+ */
+export async function invalidateUserSessions(userId, ttl = 7 * 24 * 60 * 60) {
+  try {
+    const key = `blacklist:user:${userId}`
+    const client = getRedisClient()
+
+    // Store current timestamp
+    const invalidationTime = Date.now().toString()
+    await client.setex(key, ttl, invalidationTime)
+
+    logger.info(`🔒 All sessions invalidated for user ${userId}`)
+    return true
+  } catch (error) {
+    logger.error(`Failed to invalidate sessions for user ${userId}:`, error)
+    return false
+  }
+}
+
+/**
+ * Check if user's sessions are invalidated
+ *
+ * Compares token issue time (iat) with user's invalidation timestamp.
+ * If token was issued BEFORE invalidation, it's considered invalid.
+ *
+ * @param {string} userId - User ID
+ * @param {number} tokenIat - Token issue time (from JWT payload, Unix timestamp in seconds)
+ * @returns {Promise<boolean>} True if sessions are invalidated
+ *
+ * @example
+ * const decoded = jwt.decode(token)
+ * if (await areUserSessionsInvalidated(decoded.userId, decoded.iat)) {
+ *   throw new UnauthorizedError('Session expired - please login again')
+ * }
+ */
+export async function areUserSessionsInvalidated(userId, tokenIat) {
+  try {
+    const key = `blacklist:user:${userId}`
+    const client = getRedisClient()
+
+    const invalidationTime = await client.get(key)
+    if (!invalidationTime) {
+      return false // No invalidation
+    }
+
+    // Convert invalidation time (ms) to seconds for comparison with JWT iat
+    const invalidationTimeSec = parseInt(invalidationTime, 10) / 1000
+
+    // Token is invalid if it was issued before invalidation time
+    return tokenIat < invalidationTimeSec
+  } catch (error) {
+    logger.error(`Failed to check user session invalidation for ${userId}:`, error)
+    // On error, allow access but log
+    return false
+  }
+}
+
+/**
+ * Get blacklist statistics
+ *
+ * @returns {Promise<object>} Blacklist stats
+ */
+export async function getBlacklistStats() {
+  try {
+    const client = getRedisClient()
+    const tokenKeys = await client.keys('blacklist:token:*')
+    const userKeys = await client.keys('blacklist:user:*')
+
+    return {
+      blacklistedTokens: tokenKeys.length,
+      invalidatedUsers: userKeys.length,
+      totalBlacklistEntries: tokenKeys.length + userKeys.length,
+    }
+  } catch (error) {
+    logger.error('Failed to get blacklist stats:', error)
+    return { error: error.message }
+  }
+}
+
 // Graceful shutdown
 process.on('SIGTERM', async () => {
   if (redis) {
@@ -335,4 +503,10 @@ export default {
   clearAll,
   generateKey,
   TTL,
+  // Token blacklist - Phase 2
+  blacklistToken,
+  isTokenBlacklisted,
+  invalidateUserSessions,
+  areUserSessionsInvalidated,
+  getBlacklistStats,
 }

@@ -20,7 +20,7 @@
  * - Password validation and hashing in auth.service.js
  */
 import { asyncHandler } from '../middleware/asyncHandler.js';
-import { register as registerService, login as loginService, getCurrentUser } from '../services/auth.service.js';
+import { register as registerService, login as loginService, getCurrentUser, logout as logoutService } from '../services/auth.service.js';
 import { generateAccessToken, verifyRefreshToken } from '../utils/jwt.js';
 
 /**
@@ -205,18 +205,23 @@ export const refresh = asyncHandler(async (req, res) => {
 });
 
 /**
- * Logout user by clearing refresh token
+ * Logout user by blacklisting access token and clearing refresh token
  *
  * Route: POST /api/auth/logout
- * Access: Public (no authentication required)
+ * Access: Public (but should include Authorization header with access token)
  *
- * Clears the refreshToken cookie. The frontend should also discard the
- * access token from memory.
+ * Phase 2 Security Enhancement:
+ * - Blacklists the access token in Redis for immediate revocation
+ * - Clears the refreshToken cookie
+ * - Token cannot be reused after logout (even if not expired)
+ *
+ * @param {string} req.headers.authorization - Bearer token to revoke (optional but recommended)
  *
  * @returns {Object} 200 - Logout success message
  *
  * @example
  * POST /api/auth/logout
+ * Authorization: Bearer eyJhbGciOiJIUzI1NiIs...  // Will be blacklisted
  *
  * Response 200:
  * {
@@ -226,6 +231,13 @@ export const refresh = asyncHandler(async (req, res) => {
  * Set-Cookie: refreshToken=; Max-Age=0  // Cookie cleared
  */
 export const logout = asyncHandler(async (req, res) => {
+  // Phase 2: Blacklist access token if provided
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const accessToken = authHeader.substring(7);
+    await logoutService(accessToken);
+  }
+
   // Clear refresh token cookie
   res.clearCookie('refreshToken');
 

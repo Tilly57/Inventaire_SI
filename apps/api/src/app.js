@@ -29,8 +29,14 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, Postman, server-to-server)
+    // In production, reject requests without origin (security: prevents file://, data: URIs)
+    // In development, allow for tools like Postman, curl, server-to-server
     if (!origin) {
+      if (process.env.NODE_ENV === 'production') {
+        logger.warn('CORS blocked request with no origin header (production security)');
+        return callback(new Error('Origin header required'));
+      }
+      // Development: allow no-origin requests (Postman, curl, etc.)
       return callback(null, true);
     }
 
@@ -43,17 +49,23 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-XSRF-TOKEN'],
   maxAge: 86400 // 24 hours
 }));
 
 // Security headers with Helmet - Production-ready CSP
+// In production, we disable Swagger and enforce strict CSP (no unsafe-inline)
+// In development, we relax CSP slightly for Swagger UI
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'"], // unsafe-inline needed for Swagger UI
-      styleSrc: ["'self'", "'unsafe-inline'"], // unsafe-inline needed for Swagger UI
+      scriptSrc: process.env.NODE_ENV === 'production'
+        ? ["'self'"]  // Strict in production - NO unsafe-inline
+        : ["'self'", "'unsafe-inline'"],  // Relaxed for Swagger in dev
+      styleSrc: process.env.NODE_ENV === 'production'
+        ? ["'self'"]  // Strict in production - NO unsafe-inline
+        : ["'self'", "'unsafe-inline'"],  // Relaxed for Swagger in dev
       imgSrc: ["'self'", "data:", "https:"],
       connectSrc: ["'self'"],
       fontSrc: ["'self'", "data:"],
@@ -63,7 +75,7 @@ app.use(helmet({
       upgradeInsecureRequests: process.env.NODE_ENV === 'production' ? [] : null
     }
   },
-  crossOriginEmbedderPolicy: false, // Allow embedding for Swagger UI
+  crossOriginEmbedderPolicy: false,
   hsts: {
     maxAge: 31536000, // 1 year
     includeSubDomains: true,
@@ -116,16 +128,23 @@ app.use('/api', setCacheHeaders);
 // Metrics endpoint
 app.use('/api', metricsRoutes);
 
-// Swagger API Documentation
-app.get('/api-docs.json', (req, res) => {
-  res.setHeader('Content-Type', 'application/json');
-  res.send(swaggerSpec);
-});
+// Swagger API Documentation - Only in development
+// In production, use external documentation or separate subdomain
+if (process.env.NODE_ENV !== 'production') {
+  app.get('/api-docs.json', (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.send(swaggerSpec);
+  });
 
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-  customCss: '.swagger-ui .topbar { display: none }',
-  customSiteTitle: 'Inventaire SI - API Docs',
-}));
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+    customCss: '.swagger-ui .topbar { display: none }',
+    customSiteTitle: 'Inventaire SI - API Docs',
+  }));
+
+  logger.info('📚 Swagger UI available at /api-docs');
+} else {
+  logger.info('📚 Swagger UI disabled in production (security: strict CSP)');
+}
 
 // API routes
 app.use('/api', routes);

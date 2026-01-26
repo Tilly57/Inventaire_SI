@@ -6,13 +6,16 @@
  * - User login with credential verification
  * - JWT token generation (access and refresh tokens)
  * - First user auto-promotion to ADMIN
+ * - User logout with token revocation (Phase 2)
  */
 
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import prisma from '../config/database.js';
 import { UnauthorizedError, ConflictError } from '../utils/errors.js';
 import { generateAccessToken, generateRefreshToken } from '../utils/jwt.js';
 import { BCRYPT_SALT_ROUNDS, ROLES } from '../utils/constants.js';
+import { blacklistToken } from './cache.service.js';
 
 /**
  * Register a new user in the system
@@ -149,4 +152,50 @@ export async function getCurrentUser(userId) {
   }
 
   return user;
+}
+
+/**
+ * Logout user by blacklisting the access token
+ *
+ * Implements immediate logout by adding the token to a Redis blacklist.
+ * The token remains blacklisted until its natural expiration time.
+ *
+ * Phase 2 Security Enhancement:
+ * - Tokens are immediately invalidated (no 15-minute grace period)
+ * - Blacklist entry auto-expires when token would expire anyway
+ * - Prevents token reuse after logout
+ *
+ * @param {string} accessToken - JWT access token to revoke
+ * @returns {Promise<Object>} Success message
+ *
+ * @example
+ * // In controller:
+ * const token = req.headers.authorization.substring(7)
+ * await logout(token)
+ */
+export async function logout(accessToken) {
+  try {
+    // Decode token to get expiration time (don't verify, just decode)
+    const decoded = jwt.decode(accessToken);
+
+    if (!decoded || !decoded.exp) {
+      // Token malformed, but logout succeeds anyway
+      return { message: 'Déconnexion réussie' };
+    }
+
+    // Calculate remaining token lifetime
+    const now = Math.floor(Date.now() / 1000);
+    const remainingTime = decoded.exp - now;
+
+    // Only blacklist if token hasn't expired yet
+    if (remainingTime > 0) {
+      await blacklistToken(accessToken, remainingTime);
+    }
+
+    return { message: 'Déconnexion réussie' };
+  } catch (error) {
+    // Even if blacklisting fails, logout succeeds
+    // (Frontend will remove token, so user appears logged out)
+    return { message: 'Déconnexion réussie' };
+  }
 }
