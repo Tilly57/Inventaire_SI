@@ -33,28 +33,35 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  loansCreated Loan[]     @relation("LoanCreatedBy")
-  loansDeleted Loan[]     @relation("LoanDeletedBy")
-  auditLogs    AuditLog[]
+  loansCreated     Loan[]     @relation("LoanCreatedBy")
+  loansDeleted     Loan[]     @relation("LoanDeletedBy")
+  managedEmployees Employee[] @relation("EmployeeManager")
+  auditLogs        AuditLog[]
 
   @@index([email])
   @@index([role])
+  @@index([role, createdAt])
 }
 
 model Employee {
-  id        String   @id @default(cuid())
-  firstName String
-  lastName  String
-  email     String?  @unique
-  dept      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String                    @id @default(cuid())
+  firstName    String
+  lastName     String
+  email        String?                   @unique
+  dept         String?
+  managerId    String?
+  searchVector Unsupported("tsvector")?
+  createdAt    DateTime                  @default(now())
+  updatedAt    DateTime                  @updatedAt
 
+  manager   User?    @relation("EmployeeManager", fields: [managerId], references: [id])
   loans     Loan[]
 
   @@index([lastName, firstName])
   @@index([email])
   @@index([dept])
+  @@index([managerId])
+  @@index([managerId, dept])
 }
 
 model EquipmentType {
@@ -65,12 +72,13 @@ model EquipmentType {
 }
 
 model AssetModel {
-  id        String   @id @default(cuid())
-  type      String
-  brand     String
-  modelName String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String                    @id @default(cuid())
+  type         String
+  brand        String
+  modelName    String
+  searchVector Unsupported("tsvector")?
+  createdAt    DateTime                  @default(now())
+  updatedAt    DateTime                  @updatedAt
 
   items      AssetItem[]
   stockItems StockItem[]
@@ -81,14 +89,15 @@ model AssetModel {
 }
 
 model AssetItem {
-  id           String      @id @default(cuid())
+  id           String                    @id @default(cuid())
   assetModelId String
-  assetTag     String?     @unique
-  serial       String?     @unique
-  status       AssetStatus @default(EN_STOCK)
+  assetTag     String?                   @unique
+  serial       String?                   @unique
+  status       AssetStatus               @default(EN_STOCK)
   notes        String?
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  searchVector Unsupported("tsvector")?
+  createdAt    DateTime                  @default(now())
+  updatedAt    DateTime                  @updatedAt
 
   assetModel   AssetModel  @relation(fields: [assetModelId], references: [id])
   loanLines    LoanLine[]
@@ -142,9 +151,11 @@ model Loan {
   @@index([deletedAt])
   @@index([openedAt])
   @@index([closedAt])
+  @@index([createdById])
   @@index([employeeId, status])
   @@index([openedAt, status])
-  @@index([createdById])
+  @@index([createdById, status])
+  @@index([createdById, openedAt])
 }
 
 model LoanLine {
