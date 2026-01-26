@@ -9,6 +9,9 @@
  */
 
 import prisma from '../config/database.js';
+import { createContextLogger } from '../config/logger.js';
+
+const logger = createContextLogger('SearchService');
 
 /**
  * Global search across employees, asset items, and asset models
@@ -114,7 +117,10 @@ export async function globalSearch({ query, limit = 10 }) {
       stockItems
     };
   } catch (error) {
-    console.error('Global search error:', error);
+    logger.error('Global search error', {
+      error: error.message,
+      stack: error.stack
+    });
     throw error;
   }
 }

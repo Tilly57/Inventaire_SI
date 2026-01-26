@@ -27,6 +27,15 @@ const statusConfig = {
 export function StatusBadge({ status }: StatusBadgeProps) {
   const config = statusConfig[status]
 
+  // Handle unknown status gracefully
+  if (!config) {
+    return (
+      <Badge variant="outline">
+        {status}
+      </Badge>
+    )
+  }
+
   return (
     <Badge variant={config.variant}>
       {config.label}

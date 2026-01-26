@@ -85,11 +85,11 @@ describe('employees.controller', () => {
       await getAllEmployees(req, res);
 
       expect(mockGetAllEmployees).toHaveBeenCalledTimes(1);
+      expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         data: mockEmployees
       });
-      expect(res.status).not.toHaveBeenCalled();
     });
 
     it('should return empty array when no employees exist', async () => {
@@ -130,11 +130,11 @@ describe('employees.controller', () => {
       await getEmployeeById(req, res);
 
       expect(mockGetEmployeeById).toHaveBeenCalledWith('emp-123');
+      expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         data: mockEmployee
       });
-      expect(res.status).not.toHaveBeenCalled();
     });
 
     it('should handle employee not found error', async () => {

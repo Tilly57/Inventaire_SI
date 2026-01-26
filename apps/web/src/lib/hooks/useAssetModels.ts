@@ -137,10 +137,10 @@ export function useCreateAssetModel() {
   return useMutation({
     mutationFn: (data: CreateAssetModelDto) => createAssetModelApi(data),
     onSuccess: async () => {
-      // Invalidate all related queries (React Query will automatically refetch active queries)
-      await queryClient.invalidateQueries({ queryKey: ['assetModels'] })
-      await queryClient.invalidateQueries({ queryKey: ['assetItems'] })
-      await queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+      // Invalidate all related queries
+      await queryClient.resetQueries({ queryKey: ['assetModels'] })
+      await queryClient.resetQueries({ queryKey: ['assetItems'] })
+      await queryClient.resetQueries({ queryKey: ['dashboard'] })
       toast({
         title: 'Modèle créé',
         description: 'Le modèle d\'équipement a été créé avec succès',
@@ -187,12 +187,13 @@ export function useUpdateAssetModel() {
     mutationFn: ({ id, data }: { id: string; data: UpdateAssetModelDto }) =>
       updateAssetModelApi(id, data),
     onSuccess: async (_result, variables) => {
-      await queryClient.invalidateQueries({ queryKey: ['assetModels'] })
-      await queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+      await queryClient.resetQueries({ queryKey: ['assetModels'] })
+      await queryClient.resetQueries({ queryKey: ['dashboard'] })
 
       // Only invalidate assetItems if quantity was provided (new items were created)
       if (variables.data.quantity && variables.data.quantity > 0) {
-        await queryClient.invalidateQueries({ queryKey: ['assetItems'] })
+        await queryClient.invalidateQueries({ queryKey: ['assetItems'], refetchType: 'active' })
+        await queryClient.refetchQueries({ queryKey: ['assetItems'] })
       }
 
       toast({
@@ -258,9 +259,9 @@ export function useDeleteAssetModel() {
   return useMutation({
     mutationFn: (id: string) => deleteAssetModelApi(id),
     onSuccess: async () => {
-      // Invalidate all related queries (no refetch needed - invalidate triggers automatic refetch)
-      await queryClient.invalidateQueries({ queryKey: ['assetModels'] })
-      await queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+      // Invalidate all related queries
+      await queryClient.resetQueries({ queryKey: ['assetModels'] })
+      await queryClient.resetQueries({ queryKey: ['dashboard'] })
       toast({
         title: 'Modèle supprimé',
         description: 'Le modèle d\'équipement a été supprimé avec succès',
@@ -312,11 +313,11 @@ export function useBatchDeleteAssetModels() {
   return useMutation({
     mutationFn: (modelIds: string[]) => batchDeleteAssetModelsApi(modelIds),
     onSuccess: async (result) => {
-      // Invalidate all related caches (no refetch needed - invalidate triggers automatic refetch)
-      await queryClient.invalidateQueries({ queryKey: ['assetModels'] })
-      await queryClient.invalidateQueries({ queryKey: ['assetItems'] })
-      await queryClient.invalidateQueries({ queryKey: ['stockItems'] })
-      await queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+      // Invalidate all related caches
+      await queryClient.resetQueries({ queryKey: ['assetModels'] })
+      await queryClient.resetQueries({ queryKey: ['assetItems'] })
+      await queryClient.resetQueries({ queryKey: ['stockItems'] })
+      await queryClient.resetQueries({ queryKey: ['dashboard'] })
 
       toast({
         title: 'Modèles supprimés',

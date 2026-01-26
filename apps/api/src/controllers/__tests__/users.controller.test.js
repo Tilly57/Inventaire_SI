@@ -119,7 +119,7 @@ describe('users.controller', () => {
 
       await createUser(req, res);
 
-      expect(mockCreateUser).toHaveBeenCalledWith('admin@test.com', 'Pass123!', 'ADMIN');
+      expect(mockCreateUser).toHaveBeenCalledWith('admin@test.com', 'Pass123!', 'ADMIN', req);
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalledWith({
         success: true,
@@ -134,7 +134,7 @@ describe('users.controller', () => {
 
       await createUser(req, res);
 
-      expect(mockCreateUser).toHaveBeenCalledWith('gest@test.com', 'Pass123!', 'GESTIONNAIRE');
+      expect(mockCreateUser).toHaveBeenCalledWith('gest@test.com', 'Pass123!', 'GESTIONNAIRE', req);
       expect(res.status).toHaveBeenCalledWith(201);
     });
 
@@ -145,7 +145,7 @@ describe('users.controller', () => {
 
       await createUser(req, res);
 
-      expect(mockCreateUser).toHaveBeenCalledWith('read@test.com', 'Pass123!', 'LECTURE');
+      expect(mockCreateUser).toHaveBeenCalledWith('read@test.com', 'Pass123!', 'LECTURE', req);
       expect(res.status).toHaveBeenCalledWith(201);
     });
 
@@ -201,7 +201,7 @@ describe('users.controller', () => {
 
       await updateUser(req, res);
 
-      expect(mockUpdateUser).toHaveBeenCalledWith('user-1', req.body);
+      expect(mockUpdateUser).toHaveBeenCalledWith('user-1', req.body, req);
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         data: mockUpdated
@@ -215,7 +215,7 @@ describe('users.controller', () => {
 
       await updateUser(req, res);
 
-      expect(mockUpdateUser).toHaveBeenCalledWith('user-1', req.body);
+      expect(mockUpdateUser).toHaveBeenCalledWith('user-1', req.body, req);
     });
 
     it('should update only role', async () => {
@@ -225,7 +225,7 @@ describe('users.controller', () => {
 
       await updateUser(req, res);
 
-      expect(mockUpdateUser).toHaveBeenCalledWith('user-1', req.body);
+      expect(mockUpdateUser).toHaveBeenCalledWith('user-1', req.body, req);
     });
 
     it('should handle user not found', async () => {
@@ -252,7 +252,7 @@ describe('users.controller', () => {
 
       await deleteUser(req, res);
 
-      expect(mockDeleteUser).toHaveBeenCalledWith('user-1');
+      expect(mockDeleteUser).toHaveBeenCalledWith('user-1', req);
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         data: { message: 'Utilisateur supprimé' }

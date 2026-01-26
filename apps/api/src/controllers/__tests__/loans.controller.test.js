@@ -115,11 +115,11 @@ describe('loans.controller', () => {
       await getAllLoans(req, res);
 
       expect(mockGetAllLoans).toHaveBeenCalledWith({ status: undefined, employeeId: undefined });
+      expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         data: mockLoans
       });
-      expect(res.status).not.toHaveBeenCalled();
     });
 
     it('should get loans filtered by status', async () => {
@@ -202,11 +202,11 @@ describe('loans.controller', () => {
       await getLoanById(req, res);
 
       expect(mockGetLoanById).toHaveBeenCalledWith('loan-123');
+      expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         data: mockLoan
       });
-      expect(res.status).not.toHaveBeenCalled();
     });
 
     it('should handle loan not found error', async () => {
@@ -236,7 +236,7 @@ describe('loans.controller', () => {
 
       await createLoan(req, res);
 
-      expect(mockCreateLoan).toHaveBeenCalledWith('emp-001', 'user-123');
+      expect(mockCreateLoan).toHaveBeenCalledWith('emp-001', 'user-123', req);
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalledWith({
         success: true,
@@ -283,7 +283,7 @@ describe('loans.controller', () => {
 
       await addLoanLine(req, res);
 
-      expect(mockAddLoanLine).toHaveBeenCalledWith('loan-123', { assetItemId: 'asset-001' });
+      expect(mockAddLoanLine).toHaveBeenCalledWith('loan-123', { assetItemId: 'asset-001' }, req);
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalledWith({
         success: true,
@@ -304,7 +304,7 @@ describe('loans.controller', () => {
 
       await addLoanLine(req, res);
 
-      expect(mockAddLoanLine).toHaveBeenCalledWith('loan-123', { stockItemId: 'stock-001', quantity: 5 });
+      expect(mockAddLoanLine).toHaveBeenCalledWith('loan-123', { stockItemId: 'stock-001', quantity: 5 }, req);
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalledWith({
         success: true,
@@ -344,11 +344,11 @@ describe('loans.controller', () => {
       await removeLoanLine(req, res);
 
       expect(mockRemoveLoanLine).toHaveBeenCalledWith('loan-123', 'line-001');
+      expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         data: mockResult
       });
-      expect(res.status).not.toHaveBeenCalled();
     });
 
     it('should handle loan line not found error', async () => {
@@ -377,12 +377,12 @@ describe('loans.controller', () => {
 
       await uploadPickupSignature(req, res);
 
-      expect(mockUploadPickupSignature).toHaveBeenCalledWith('loan-123', req.file);
+      expect(mockUploadPickupSignature).toHaveBeenCalledWith('loan-123', req.file, req);
+      expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         data: mockLoanWithSignature
       });
-      expect(res.status).not.toHaveBeenCalled();
     });
 
     it('should upload pickup signature with base64 successfully', async () => {
@@ -392,7 +392,7 @@ describe('loans.controller', () => {
 
       await uploadPickupSignature(req, res);
 
-      expect(mockUploadPickupSignature).toHaveBeenCalledWith('loan-123', 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgA...');
+      expect(mockUploadPickupSignature).toHaveBeenCalledWith('loan-123', 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgA...', req);
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         data: mockLoanWithSignature
@@ -441,12 +441,12 @@ describe('loans.controller', () => {
 
       await uploadReturnSignature(req, res);
 
-      expect(mockUploadReturnSignature).toHaveBeenCalledWith('loan-123', req.file);
+      expect(mockUploadReturnSignature).toHaveBeenCalledWith('loan-123', req.file, req);
+      expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         data: mockLoanWithSignature
       });
-      expect(res.status).not.toHaveBeenCalled();
     });
 
     it('should upload return signature with base64 successfully', async () => {
@@ -456,7 +456,7 @@ describe('loans.controller', () => {
 
       await uploadReturnSignature(req, res);
 
-      expect(mockUploadReturnSignature).toHaveBeenCalledWith('loan-123', 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgA...');
+      expect(mockUploadReturnSignature).toHaveBeenCalledWith('loan-123', 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgA...', req);
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         data: mockLoanWithSignature
@@ -504,12 +504,12 @@ describe('loans.controller', () => {
 
       await closeLoan(req, res);
 
-      expect(mockCloseLoan).toHaveBeenCalledWith('loan-123');
+      expect(mockCloseLoan).toHaveBeenCalledWith('loan-123', req);
+      expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         data: mockClosedLoan
       });
-      expect(res.status).not.toHaveBeenCalled();
     });
 
     it('should handle missing signatures error', async () => {
@@ -550,12 +550,12 @@ describe('loans.controller', () => {
 
       await deleteLoan(req, res);
 
-      expect(mockDeleteLoan).toHaveBeenCalledWith('loan-123', 'user-123');
+      expect(mockDeleteLoan).toHaveBeenCalledWith('loan-123', 'user-123', req);
+      expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         data: mockResult
       });
-      expect(res.status).not.toHaveBeenCalled();
     });
 
     it('should handle loan not found error', async () => {
@@ -594,11 +594,11 @@ describe('loans.controller', () => {
         ['loan-1', 'loan-2', 'loan-3', 'loan-4', 'loan-5'],
         'user-123'
       );
+      expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         data: mockResult
       });
-      expect(res.status).not.toHaveBeenCalled();
     });
 
     it('should handle empty loanIds array', async () => {
@@ -634,11 +634,11 @@ describe('loans.controller', () => {
       await deletePickupSignature(req, res);
 
       expect(mockDeletePickupSignature).toHaveBeenCalledWith('loan-123');
+      expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         data: mockLoan
       });
-      expect(res.status).not.toHaveBeenCalled();
     });
 
     it('should handle loan not found error', async () => {
@@ -664,11 +664,11 @@ describe('loans.controller', () => {
       await deleteReturnSignature(req, res);
 
       expect(mockDeleteReturnSignature).toHaveBeenCalledWith('loan-123');
+      expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         data: mockLoan
       });
-      expect(res.status).not.toHaveBeenCalled();
     });
 
     it('should handle loan not found error', async () => {

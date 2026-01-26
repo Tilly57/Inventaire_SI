@@ -125,9 +125,9 @@ export function useCreateUser() {
 
   return useMutation({
     mutationFn: (data: CreateUserDto) => createUserApi(data),
-    onSuccess: () => {
-      // Invalidate users cache to trigger automatic refetch
-      queryClient.invalidateQueries({ queryKey: ['users'] })
+    onSuccess: async () => {
+      // Invalidate users cache
+      await queryClient.resetQueries({ queryKey: ['users'] })
 
       // Show success notification
       toast({
@@ -176,8 +176,8 @@ export function useUpdateUser() {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateUserDto }) =>
       updateUserApi(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] })
+    onSuccess: async () => {
+      await queryClient.resetQueries({ queryKey: ['users'] })
       toast({
         title: 'Utilisateur modifié',
         description: 'L\'utilisateur a été modifié avec succès',
@@ -229,8 +229,8 @@ export function useDeleteUser() {
 
   return useMutation({
     mutationFn: (id: string) => deleteUserApi(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] })
+    onSuccess: async () => {
+      await queryClient.resetQueries({ queryKey: ['users'] })
       toast({
         title: 'Utilisateur supprimé',
         description: 'L\'utilisateur a été supprimé avec succès',

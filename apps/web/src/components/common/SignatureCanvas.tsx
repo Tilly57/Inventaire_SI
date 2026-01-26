@@ -35,6 +35,9 @@ export function SignatureCanvas({ onSave, onCancel, disabled }: SignatureCanvasP
   return (
     <Card className="w-full">
       <CardContent className="p-4 space-y-4">
+        <div className="text-center text-sm text-muted-foreground mb-2">
+          Dessinez votre signature ci-dessous
+        </div>
         <div className="border-2 border-dashed border-gray-300 rounded-lg bg-white">
           <ReactSignatureCanvas
             ref={sigCanvas}

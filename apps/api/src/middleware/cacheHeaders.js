@@ -25,77 +25,12 @@
  * @param {import('express').NextFunction} next - Next middleware
  */
 export function setCacheHeaders(req, res, next) {
-  // Skip non-GET requests (no caching for mutations)
-  if (req.method !== 'GET') {
-    res.set('Cache-Control', 'no-store')
-    return next()
-  }
-
-  const path = req.path
-
-  // Static/rarely changing data - Cache 1 hour
-  if (
-    path.includes('/asset-models') ||
-    path.includes('/equipment-types') ||
-    path.match(/\/asset-models\/[\w-]+$/) // Single model by ID
-  ) {
-    res.set('Cache-Control', 'public, max-age=3600, stale-while-revalidate=60')
-    return next()
-  }
-
-  // Semi-static data - Cache 5 minutes
-  if (
-    path.includes('/employees') && !path.includes('/bulk') ||
-    path.includes('/stock-items')
-  ) {
-    res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=30')
-    return next()
-  }
-
-  // Dynamic data - Cache 1 minute
-  if (
-    path.includes('/dashboard') ||
-    path.includes('/asset-items') && !path.includes('/bulk')
-  ) {
-    res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=10')
-    return next()
-  }
-
-  // Loans data - Cache 30 seconds (frequently updated)
-  if (path.includes('/loans') && !path.match(/\/loans\/[\w-]+\/(lines|close|pickup-signature|return-signature)/)) {
-    res.set('Cache-Control', 'public, max-age=30, stale-while-revalidate=5')
-    return next()
-  }
-
-  // User-specific data - Private cache only
-  if (
-    path.includes('/users/me') ||
-    path.includes('/auth/refresh')
-  ) {
-    res.set('Cache-Control', 'private, no-cache, must-revalidate')
-    return next()
-  }
-
-  // Search results - Cache 2 minutes
-  if (path.includes('/search')) {
-    res.set('Cache-Control', 'public, max-age=120, stale-while-revalidate=15')
-    return next()
-  }
-
-  // Audit logs - Cache 5 minutes (historical data)
-  if (path.includes('/audit-logs')) {
-    res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=30')
-    return next()
-  }
-
-  // Export endpoints - No cache (generated on-demand)
-  if (path.includes('/export')) {
-    res.set('Cache-Control', 'no-store')
-    return next()
-  }
-
-  // Default for other GET requests - Cache 1 minute
-  res.set('Cache-Control', 'public, max-age=60, must-revalidate')
+  // DISABLED: HTTP caching conflicts with React Query frontend cache
+  // All caching is now handled by Redis (backend) and React Query (frontend)
+  // This ensures immediate data refresh after mutations
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+  res.set('Pragma', 'no-cache')
+  res.set('Expires', '0')
   next()
 }
 

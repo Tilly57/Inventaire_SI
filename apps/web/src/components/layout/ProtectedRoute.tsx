@@ -43,6 +43,12 @@ import { UserRole } from '@/lib/types/enums.ts'
 interface ProtectedRouteProps {
   /** Optional array of user roles allowed to access this route */
   allowedRoles?: UserRole[]
+  /** Optional children to render (for testing or direct usage) */
+  children?: React.ReactNode
+  /** Single required role (alternative to allowedRoles array) */
+  requiredRole?: UserRole
+  /** Multiple required roles (alternative to requiredRole) */
+  requiredRoles?: UserRole[]
 }
 
 /**
@@ -82,8 +88,11 @@ interface ProtectedRouteProps {
  *   <Route path="/assets" element={<AssetsPage />} />
  * </Route>
  */
-export function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
+export function ProtectedRoute({ allowedRoles, children, requiredRole, requiredRoles }: ProtectedRouteProps) {
   const { user, isAuthenticated, isLoading } = useAuth()
+
+  // Normalize role requirements (support both old and new prop names)
+  const roles = allowedRoles || requiredRoles || (requiredRole ? [requiredRole] : undefined)
 
   // Show loading state while checking authentication
   // The useAuth hook verifies JWT token and fetches user data
@@ -105,8 +114,8 @@ export function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
   }
 
   // Check if user has required role (RBAC)
-  // If allowedRoles is undefined, any authenticated user can access
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
+  // If roles is undefined, any authenticated user can access
+  if (roles && !roles.includes(user.role)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -122,6 +131,6 @@ export function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
   }
 
   // User is authenticated and has correct role
-  // Render child routes via React Router's Outlet component
-  return <Outlet />
+  // Render children if provided (for testing/direct usage), otherwise use Outlet for nested routes
+  return children ? <>{children}</> : <Outlet />
 }

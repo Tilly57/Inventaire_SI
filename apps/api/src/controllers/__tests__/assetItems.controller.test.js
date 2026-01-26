@@ -130,7 +130,7 @@ describe('assetItems.controller', () => {
 
       await createAssetItem(req, res);
 
-      expect(mockCreateAssetItem).toHaveBeenCalledWith(req.body);
+      expect(mockCreateAssetItem).toHaveBeenCalledWith(req.body, req);
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalledWith({
         success: true,
@@ -169,7 +169,7 @@ describe('assetItems.controller', () => {
 
       await updateAssetItem(req, res);
 
-      expect(mockUpdateAssetItem).toHaveBeenCalledWith('item-1', req.body);
+      expect(mockUpdateAssetItem).toHaveBeenCalledWith('item-1', req.body, req);
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         data: mockUpdated
@@ -183,7 +183,7 @@ describe('assetItems.controller', () => {
 
       await updateAssetItem(req, res);
 
-      expect(mockUpdateAssetItem).toHaveBeenCalledWith('item-1', req.body);
+      expect(mockUpdateAssetItem).toHaveBeenCalledWith('item-1', req.body, req);
     });
 
     it('should update only serial number', async () => {
@@ -193,7 +193,7 @@ describe('assetItems.controller', () => {
 
       await updateAssetItem(req, res);
 
-      expect(mockUpdateAssetItem).toHaveBeenCalledWith('item-1', req.body);
+      expect(mockUpdateAssetItem).toHaveBeenCalledWith('item-1', req.body, req);
     });
 
     it('should handle item not found', async () => {
@@ -214,7 +214,7 @@ describe('assetItems.controller', () => {
 
       await updateAssetItemStatus(req, res);
 
-      expect(mockUpdateAssetItemStatus).toHaveBeenCalledWith('item-1', 'PRETE');
+      expect(mockUpdateAssetItemStatus).toHaveBeenCalledWith('item-1', 'PRETE', req);
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         data: mockUpdated
@@ -229,7 +229,7 @@ describe('assetItems.controller', () => {
 
       await updateAssetItemStatus(req, res);
 
-      expect(mockUpdateAssetItemStatus).toHaveBeenCalledWith('item-1', 'HS');
+      expect(mockUpdateAssetItemStatus).toHaveBeenCalledWith('item-1', 'HS', req);
     });
 
     it('should update status to REPARATION successfully', async () => {
@@ -240,7 +240,7 @@ describe('assetItems.controller', () => {
 
       await updateAssetItemStatus(req, res);
 
-      expect(mockUpdateAssetItemStatus).toHaveBeenCalledWith('item-1', 'REPARATION');
+      expect(mockUpdateAssetItemStatus).toHaveBeenCalledWith('item-1', 'REPARATION', req);
     });
 
     it('should update status to EN_STOCK successfully', async () => {
@@ -251,7 +251,7 @@ describe('assetItems.controller', () => {
 
       await updateAssetItemStatus(req, res);
 
-      expect(mockUpdateAssetItemStatus).toHaveBeenCalledWith('item-1', 'EN_STOCK');
+      expect(mockUpdateAssetItemStatus).toHaveBeenCalledWith('item-1', 'EN_STOCK', req);
     });
 
     it('should handle invalid status', async () => {
@@ -278,7 +278,7 @@ describe('assetItems.controller', () => {
 
       await deleteAssetItem(req, res);
 
-      expect(mockDeleteAssetItem).toHaveBeenCalledWith('item-1');
+      expect(mockDeleteAssetItem).toHaveBeenCalledWith('item-1', req);
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         data: { message: 'Asset item deleted' }
