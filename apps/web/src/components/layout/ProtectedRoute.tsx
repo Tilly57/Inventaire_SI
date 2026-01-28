@@ -19,8 +19,12 @@
  * - Failed auth redirects to /login with replace (no back button)
  */
 import { Navigate, Outlet } from 'react-router-dom'
+import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '@/lib/hooks/useAuth'
 import { UserRole } from '@/lib/types/enums.ts'
+import { getAccessToken } from '@/lib/api/client'
+import { refreshTokenApi } from '@/lib/api/auth.api'
+import { useAuthStore } from '@/lib/stores/authStore'
 
 /**
  * Props for ProtectedRoute component
@@ -43,6 +47,12 @@ import { UserRole } from '@/lib/types/enums.ts'
 interface ProtectedRouteProps {
   /** Optional array of user roles allowed to access this route */
   allowedRoles?: UserRole[]
+  /** Optional children to render (for testing or direct usage) */
+  children?: React.ReactNode
+  /** Single required role (alternative to allowedRoles array) */
+  requiredRole?: UserRole
+  /** Multiple required roles (alternative to requiredRole) */
+  requiredRoles?: UserRole[]
 }
 
 /**
@@ -82,12 +92,43 @@ interface ProtectedRouteProps {
  *   <Route path="/assets" element={<AssetsPage />} />
  * </Route>
  */
-export function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
+export function ProtectedRoute({ allowedRoles, children, requiredRole, requiredRoles }: ProtectedRouteProps) {
   const { user, isAuthenticated, isLoading } = useAuth()
+  const setToken = useAuthStore((s) => s.setToken)
+  const logout = useAuthStore((s) => s.logout)
 
-  // Show loading state while checking authentication
-  // The useAuth hook verifies JWT token and fetches user data
-  if (isLoading) {
+  // Vérifie si une tentative de refresh a été effectuée après rehydration
+  const [isInitializing, setIsInitializing] = useState(true)
+  const hasAttempted = useRef(false)
+
+  useEffect(() => {
+    // Si le store dit "authentifié" mais qu'il n'y a pas de token en mémoire,
+    // c'est une rehydration depuis localStorage — on tente un refresh.
+    if (hasAttempted.current) return
+    hasAttempted.current = true
+
+    if (isAuthenticated && !getAccessToken()) {
+      refreshTokenApi()
+        .then(({ accessToken }) => {
+          setToken(accessToken)
+        })
+        .catch(() => {
+          // Refresh échoué — session expirée, on logout proprement
+          logout()
+        })
+        .finally(() => {
+          setIsInitializing(false)
+        })
+    } else {
+      setIsInitializing(false)
+    }
+  }, [isAuthenticated, setToken, logout])
+
+  // Normalize role requirements (support both old and new prop names)
+  const roles = allowedRoles || requiredRoles || (requiredRole ? [requiredRole] : undefined)
+
+  // Bloque le rendu tant que le refresh initial n'est pas terminé
+  if (isLoading || isInitializing) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -105,8 +146,8 @@ export function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
   }
 
   // Check if user has required role (RBAC)
-  // If allowedRoles is undefined, any authenticated user can access
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
+  // If roles is undefined, any authenticated user can access
+  if (roles && !roles.includes(user.role)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -122,6 +163,6 @@ export function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
   }
 
   // User is authenticated and has correct role
-  // Render child routes via React Router's Outlet component
-  return <Outlet />
+  // Render children if provided (for testing/direct usage), otherwise use Outlet for nested routes
+  return children ? <>{children}</> : <Outlet />
 }
