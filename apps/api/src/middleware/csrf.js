@@ -15,15 +15,14 @@
  */
 
 import crypto from 'crypto';
-import { UnauthorizedError } from './errorHandler.js';
+import { UnauthorizedError } from '../utils/errors.js';
 
 // Exempt routes that don't need CSRF protection
 const EXEMPT_ROUTES = [
-  '/api/auth/login',
-  '/api/auth/register',
-  '/api/health',
-  '/api/metrics',
-  '/api-docs',
+  '/auth/login',
+  '/auth/register',
+  '/health',
+  '/metrics',
 ];
 
 // Methods that don't need CSRF protection (safe methods)

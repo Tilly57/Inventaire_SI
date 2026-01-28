@@ -11,7 +11,16 @@
  */
 
 import * as Sentry from '@sentry/node';
-import { ProfilingIntegration } from '@sentry/profiling-node';
+
+let profilingIntegration = null;
+try {
+  const profiling = await import('@sentry/profiling-node');
+  if (profiling.ProfilingIntegration) {
+    profilingIntegration = new profiling.ProfilingIntegration();
+  }
+} catch {
+  // Profiling integration non disponible — Sentry v8+ l'intègre automatiquement
+}
 
 /**
  * Initialize Sentry with configuration from environment variables
@@ -35,6 +44,11 @@ export function initializeSentry() {
     return false;
   }
 
+  const integrations = [];
+  if (profilingIntegration) {
+    integrations.push(profilingIntegration);
+  }
+
   // Initialize Sentry
   Sentry.init({
     dsn,
@@ -45,10 +59,7 @@ export function initializeSentry() {
 
     // Profiling (optional - requires additional quota)
     profilesSampleRate: environment === 'production' ? 0.1 : 1.0,
-    integrations: [
-      // Enable profiling
-      new ProfilingIntegration(),
-    ],
+    integrations,
 
     // Release tracking (automatically detected from package.json version)
     release: `inventaire-si-api@${process.env.npm_package_version || 'unknown'}`,

@@ -20,23 +20,15 @@ import { csrfTokenGenerator, csrfProtection, getCsrfToken } from './middleware/c
 const app = express();
 
 // CORS - Production-ready configuration with restricted origins
-const allowedOrigins = [
-  process.env.CORS_ORIGIN || 'http://localhost:5173', // Frontend dev
-  'http://localhost:8080', // Frontend production (Docker)
-  'http://localhost:3000', // Alternative dev port
-  // Add production domains here when deployed
-].filter(Boolean);
+const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173')
+  .split(',')
+  .map(o => o.trim())
+  .filter(Boolean);
 
 app.use(cors({
   origin: (origin, callback) => {
-    // In production, reject requests without origin (security: prevents file://, data: URIs)
-    // In development, allow for tools like Postman, curl, server-to-server
+    // Allow requests without Origin (health checks, monitoring tools, internal calls)
     if (!origin) {
-      if (process.env.NODE_ENV === 'production') {
-        logger.warn('CORS blocked request with no origin header (production security)');
-        return callback(new Error('Origin header required'));
-      }
-      // Development: allow no-origin requests (Postman, curl, etc.)
       return callback(null, true);
     }
 
@@ -93,13 +85,11 @@ app.use(express.urlencoded({ extended: true }));
 // Cookie parser
 app.use(cookieParser());
 
-// Sentry request handler - MUST be before all other middleware/routes
-// Adds request data to Sentry events (user, request, breadcrumbs)
-app.use(Sentry.Handlers.requestHandler());
-
-// Sentry tracing handler - MUST be after requestHandler
-// Enables performance monitoring for all requests
-app.use(Sentry.Handlers.tracingHandler());
+// Sentry request/tracing handlers (Sentry v7 API — skipped if unavailable in v8+)
+if (Sentry.Handlers) {
+  app.use(Sentry.Handlers.requestHandler());
+  app.use(Sentry.Handlers.tracingHandler());
+}
 
 // HTTP request logging middleware
 app.use((req, res, next) => {
@@ -152,15 +142,14 @@ app.use('/api', routes);
 // 404 handler
 app.use(notFoundHandler);
 
-// Sentry error handler - MUST be before other error handlers
-// Automatically captures all errors and sends to Sentry
-app.use(Sentry.Handlers.errorHandler({
-  shouldHandleError(error) {
-    // Capture all errors with status code >= 500
-    // Or any error without a status code
-    return !error.statusCode || error.statusCode >= 500;
-  }
-}));
+// Sentry error handler (Sentry v7 API — skipped if unavailable in v8+)
+if (Sentry.Handlers) {
+  app.use(Sentry.Handlers.errorHandler({
+    shouldHandleError(error) {
+      return !error.statusCode || error.statusCode >= 500;
+    }
+  }));
+}
 
 // Global error handler
 app.use(errorHandler);

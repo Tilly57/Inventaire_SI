@@ -19,8 +19,12 @@
  * - Failed auth redirects to /login with replace (no back button)
  */
 import { Navigate, Outlet } from 'react-router-dom'
+import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '@/lib/hooks/useAuth'
 import { UserRole } from '@/lib/types/enums.ts'
+import { getAccessToken } from '@/lib/api/client'
+import { refreshTokenApi } from '@/lib/api/auth.api'
+import { useAuthStore } from '@/lib/stores/authStore'
 
 /**
  * Props for ProtectedRoute component
@@ -90,13 +94,41 @@ interface ProtectedRouteProps {
  */
 export function ProtectedRoute({ allowedRoles, children, requiredRole, requiredRoles }: ProtectedRouteProps) {
   const { user, isAuthenticated, isLoading } = useAuth()
+  const setToken = useAuthStore((s) => s.setToken)
+  const logout = useAuthStore((s) => s.logout)
+
+  // Vérifie si une tentative de refresh a été effectuée après rehydration
+  const [isInitializing, setIsInitializing] = useState(true)
+  const hasAttempted = useRef(false)
+
+  useEffect(() => {
+    // Si le store dit "authentifié" mais qu'il n'y a pas de token en mémoire,
+    // c'est une rehydration depuis localStorage — on tente un refresh.
+    if (hasAttempted.current) return
+    hasAttempted.current = true
+
+    if (isAuthenticated && !getAccessToken()) {
+      refreshTokenApi()
+        .then(({ accessToken }) => {
+          setToken(accessToken)
+        })
+        .catch(() => {
+          // Refresh échoué — session expirée, on logout proprement
+          logout()
+        })
+        .finally(() => {
+          setIsInitializing(false)
+        })
+    } else {
+      setIsInitializing(false)
+    }
+  }, [isAuthenticated, setToken, logout])
 
   // Normalize role requirements (support both old and new prop names)
   const roles = allowedRoles || requiredRoles || (requiredRole ? [requiredRole] : undefined)
 
-  // Show loading state while checking authentication
-  // The useAuth hook verifies JWT token and fetches user data
-  if (isLoading) {
+  // Bloque le rendu tant que le refresh initial n'est pas terminé
+  if (isLoading || isInitializing) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">

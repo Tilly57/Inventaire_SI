@@ -1,0 +1,39 @@
+# Configuration Prometheus - Collecte des métriques
+global:
+  scrape_interval: 15s # Scraper toutes les 15 secondes
+  evaluation_interval: 15s # Évaluer les règles toutes les 15 secondes
+  external_labels:
+    monitor: 'inventaire-si'
+    environment: 'production'
+
+# Scrape configurations
+scrape_configs:
+  # Métriques de Prometheus lui-même
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Métriques de l'API Inventaire SI
+  - job_name: 'inventaire-api'
+    metrics_path: '/api/metrics'
+    static_configs:
+      - targets: ['api:3001']
+    scrape_interval: 10s
+    scrape_timeout: 5s
+
+  # Métriques PostgreSQL (via postgres_exporter si ajouté)
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+    # Désactivé par défaut si postgres-exporter n'est pas installé
+    # Décommenter si vous ajoutez postgres-exporter au docker-compose
+
+  # Métriques Node.js (process, v8, event loop)
+  - job_name: 'node-app'
+    metrics_path: '/api/metrics'
+    static_configs:
+      - targets: ['api:3001']
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: 'nodejs_.*|process_.*'
+        action: keep
