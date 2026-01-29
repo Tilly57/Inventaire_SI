@@ -8,19 +8,24 @@ import logger from './logger.js';
 const accessSecret = process.env.JWT_ACCESS_SECRET;
 const refreshSecret = process.env.JWT_REFRESH_SECRET;
 
-// In production, secrets MUST be set - fail hard if missing
+// Secrets MUST be set — fail hard si absents (toutes les envs sauf development)
 if (!accessSecret || !refreshSecret) {
-  if (process.env.NODE_ENV === 'production') {
-    logger.error('🔴 CRITICAL: JWT secrets must be set in production environment!');
-    logger.error('Set JWT_ACCESS_SECRET and JWT_REFRESH_SECRET environment variables');
+  if (process.env.NODE_ENV !== 'development') {
+    logger.error('🔴 CRITICAL: JWT_ACCESS_SECRET and JWT_REFRESH_SECRET must be set!');
+    logger.error('Generate with: node -e "console.log(require(\'crypto\').randomBytes(64).toString(\'base64\'))"');
     process.exit(1);
   }
-  logger.warn('⚠️  WARNING: JWT secrets not set in environment variables. Using default values (DEVELOPMENT ONLY!)');
+  logger.warn('⚠️  WARNING: JWT secrets not set. Using auto-generated dev secrets (NEVER use in production).');
 }
 
+// En développement uniquement : génère des secrets aléatoires plutôt que des valeurs fixes
+import crypto from 'crypto';
+const devAccessSecret = accessSecret || crypto.randomBytes(64).toString('base64');
+const devRefreshSecret = refreshSecret || crypto.randomBytes(64).toString('base64');
+
 export const jwtConfig = {
-  accessSecret: accessSecret || 'dev_access_secret_change_in_production',
-  refreshSecret: refreshSecret || 'dev_refresh_secret_change_in_production',
+  accessSecret: devAccessSecret,
+  refreshSecret: devRefreshSecret,
   accessExpiresIn: JWT_ACCESS_TOKEN_EXPIRES_IN,
   refreshExpiresIn: JWT_REFRESH_TOKEN_EXPIRES_IN,
 };
