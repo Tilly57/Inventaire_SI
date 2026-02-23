@@ -15,7 +15,9 @@ import { deleteSignatureFile, deleteSignatureFiles } from '../utils/fileUtils.js
 import { saveBase64Image } from '../utils/saveBase64Image.js';
 import { findOneOrFail } from '../utils/prismaHelpers.js';
 import { logCreate, logUpdate, logDelete } from '../utils/auditHelpers.js';
-import { executePaginatedQuery, buildOrderBy } from '../utils/pagination.js';
+import { executePaginatedQuery, buildOrderBy, validateSortParams } from '../utils/pagination.js';
+
+const LOAN_SORT_FIELDS = ['openedAt', 'closedAt', 'createdAt', 'status'];
 import path from 'path';
 import { fileURLToPath } from 'url';
 import logger from '../config/logger.js';
@@ -130,8 +132,9 @@ export async function getAllLoansPaginated(options = {}) {
     where.employeeId = employeeId;
   }
 
-  // Build ORDER BY clause
-  const orderBy = buildOrderBy(sortBy, sortOrder);
+  // Validate and build ORDER BY clause
+  const validated = validateSortParams(sortBy, sortOrder, LOAN_SORT_FIELDS);
+  const orderBy = buildOrderBy(validated.sortBy, validated.sortOrder);
 
   // Execute paginated query
   // NOTE: Include all relations for now, but consider lazy loading in future

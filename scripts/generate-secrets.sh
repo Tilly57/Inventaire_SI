@@ -35,19 +35,19 @@ else
     print_warning "Dossier secrets/ existe déjà"
 fi
 
-# Generate JWT Access Secret (64 caractères)
-print_info "Génération JWT Access Secret..."
-openssl rand -base64 48 | tr -d '\n' > "$SECRETS_DIR/jwt_access_secret.txt"
+# Generate JWT Access Secret (64 bytes = 512 bits entropy)
+print_info "Génération JWT Access Secret (64 bytes)..."
+openssl rand -base64 64 | tr -d '\n' > "$SECRETS_DIR/jwt_access_secret.txt"
 print_success "JWT Access Secret généré"
 
-# Generate JWT Refresh Secret (64 caractères)
-print_info "Génération JWT Refresh Secret..."
-openssl rand -base64 48 | tr -d '\n' > "$SECRETS_DIR/jwt_refresh_secret.txt"
+# Generate JWT Refresh Secret (64 bytes = 512 bits entropy)
+print_info "Génération JWT Refresh Secret (64 bytes)..."
+openssl rand -base64 64 | tr -d '\n' > "$SECRETS_DIR/jwt_refresh_secret.txt"
 print_success "JWT Refresh Secret généré"
 
-# Generate Database Password (32 caractères alphanumériques)
-print_info "Génération Database Password..."
-openssl rand -base64 32 | tr -dc 'a-zA-Z0-9' | head -c 32 > "$SECRETS_DIR/db_password.txt"
+# Generate Database Password (48 caractères alphanumériques)
+print_info "Génération Database Password (48 chars)..."
+openssl rand -base64 48 | tr -dc 'a-zA-Z0-9' | head -c 48 > "$SECRETS_DIR/db_password.txt"
 print_success "Database Password généré"
 
 # Set proper permissions (read-only for owner)
