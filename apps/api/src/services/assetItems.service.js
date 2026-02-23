@@ -16,7 +16,9 @@ import prisma from '../config/database.js';
 import { NotFoundError, ConflictError, ValidationError } from '../utils/errors.js';
 import { findOneOrFail, validateUniqueFields } from '../utils/prismaHelpers.js';
 import { logCreate, logUpdate, logDelete } from '../utils/auditHelpers.js';
-import { executePaginatedQuery, buildOrderBy } from '../utils/pagination.js';
+import { executePaginatedQuery, buildOrderBy, validateSortParams } from '../utils/pagination.js';
+
+const ASSET_ITEM_SORT_FIELDS = ['assetTag', 'serial', 'status', 'createdAt'];
 import { getCached, invalidateEntity, generateKey, TTL } from './cache.service.js';
 
 /**
@@ -140,7 +142,8 @@ export async function getAllAssetItemsPaginated(options = {}) {
         ];
       }
 
-      const orderBy = buildOrderBy(sortBy, sortOrder);
+      const validated = validateSortParams(sortBy, sortOrder, ASSET_ITEM_SORT_FIELDS);
+      const orderBy = buildOrderBy(validated.sortBy, validated.sortOrder);
 
       const result = await executePaginatedQuery(prisma.assetItem, {
         where,
