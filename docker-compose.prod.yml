@@ -55,7 +55,7 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-CHANGER_MOI_EN_PRODUCTION}
-      CORS_ORIGIN: ${CORS_ORIGIN:-https://www.TillyInventaire.ti,https://192.168.1.225}
+      CORS_ORIGIN: ${CORS_ORIGIN:-https://www.TillyInventaire.ti,https://www.tillyinventaire.ti,https://192.168.1.225}
     depends_on:
       redis:
         condition: service_healthy
