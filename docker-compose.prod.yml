@@ -68,6 +68,10 @@ services:
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-CHANGER_MOI_EN_PRODUCTION}
       CORS_ORIGIN: ${CORS_ORIGIN:-https://www.TillyInventaire.ti,https://www.tillyinventaire.ti,https://192.168.1.225}
+      # Sentry — monitoring erreurs et performances (backend)
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-production}
+      SENTRY_TRACES_SAMPLE_RATE: ${SENTRY_TRACES_SAMPLE_RATE:-0.1}
     depends_on:
       redis:
         condition: service_healthy
@@ -104,6 +108,13 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_URL: ${VITE_API_URL:-/api}
+        # Sentry — monitoring erreurs et performances (frontend)
+        VITE_SENTRY_DSN: ${VITE_SENTRY_DSN:-}
+        VITE_SENTRY_ENVIRONMENT: ${VITE_SENTRY_ENVIRONMENT:-production}
+        VITE_SENTRY_TRACES_SAMPLE_RATE: ${VITE_SENTRY_TRACES_SAMPLE_RATE:-0.1}
+        VITE_SENTRY_REPLAYS_SESSION_SAMPLE_RATE: ${VITE_SENTRY_REPLAYS_SESSION_SAMPLE_RATE:-0.1}
+        VITE_SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE: ${VITE_SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE:-1.0}
+        VITE_APP_VERSION: ${VITE_APP_VERSION:-0.9.6}
     container_name: inventaire_web
     restart: unless-stopped
     # Port non exposé — accessible uniquement via le reverse proxy Nginx
