@@ -3,6 +3,33 @@
 All notable changes to this project will be documented in this file.
 
 
+# Release v0.9.6 - 2026-02-23
+
+## Summary
+
+<!-- Add a brief summary of this release -->
+
+## Changes
+
+### ✨ Features
+
+
+### 🐛 Bug Fixes
+- fix(ci): E2E workflow — add --legacy-peer-deps and dynamic JWT secrets
+
+### 📚 Documentation
+
+
+### 🔧 Improvements
+
+
+### 📦 Dependencies
+
+
+### All Commits
+- dc07507 fix(ci): E2E workflow — add --legacy-peer-deps and dynamic JWT secrets (Tilly57)
+
+
 # Release v0.9.5 - 2026-02-23
 
 ## Summary
