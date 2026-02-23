@@ -3,6 +3,33 @@
 All notable changes to this project will be documented in this file.
 
 
+# Release v0.9.1 - 2026-02-23
+
+## Summary
+
+<!-- Add a brief summary of this release -->
+
+## Changes
+
+### ✨ Features
+
+
+### 🐛 Bug Fixes
+- fix: add lowercase CORS origin for www.tillyinventaire.ti
+
+### 📚 Documentation
+
+
+### 🔧 Improvements
+
+
+### 📦 Dependencies
+
+
+### All Commits
+- 6aa121e fix: add lowercase CORS origin for www.tillyinventaire.ti (Tilly57)
+
+
 # Release v0.9.0 - 2026-02-23
 
 ## Summary
