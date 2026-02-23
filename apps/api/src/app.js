@@ -19,6 +19,9 @@ import { csrfTokenGenerator, csrfProtection, getCsrfToken } from './middleware/c
 
 const app = express();
 
+// Trust first proxy (Nginx) — needed for correct req.ip and req.protocol behind reverse proxy
+app.set('trust proxy', 1);
+
 // CORS - Production-ready configuration with restricted origins
 const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173')
   .split(',')
