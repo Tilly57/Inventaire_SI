@@ -3,6 +3,33 @@
 All notable changes to this project will be documented in this file.
 
 
+# Release v0.9.7 - 2026-02-23
+
+## Summary
+
+<!-- Add a brief summary of this release -->
+
+## Changes
+
+### ✨ Features
+- feat: add Sentry configuration to docker-compose and web Dockerfile
+
+### 🐛 Bug Fixes
+
+
+### 📚 Documentation
+
+
+### 🔧 Improvements
+
+
+### 📦 Dependencies
+
+
+### All Commits
+- 16a6ac5 feat: add Sentry configuration to docker-compose and web Dockerfile (Tilly57)
+
+
 # Release v0.9.6 - 2026-02-23
 
 ## Summary
