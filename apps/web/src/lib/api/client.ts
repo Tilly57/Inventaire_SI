@@ -22,6 +22,7 @@ export const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 30_000, // 30s — prevent requests from hanging indefinitely
   withCredentials: true, // Important: enables cookie transmission for refresh tokens
 })
 

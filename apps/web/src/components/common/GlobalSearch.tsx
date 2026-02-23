@@ -12,18 +12,28 @@ import { useNavigate } from 'react-router-dom'
 import { globalSearch } from '@/lib/api/search.api'
 import { cn } from '@/lib/utils'
 
+function useDebounce<T>(value: T, delay: number): T {
+  const [debounced, setDebounced] = useState(value)
+  useEffect(() => {
+    const timer = setTimeout(() => setDebounced(value), delay)
+    return () => clearTimeout(timer)
+  }, [value, delay])
+  return debounced
+}
+
 export function GlobalSearch() {
   const [query, setQuery] = useState('')
+  const debouncedQuery = useDebounce(query, 300)
   const [isOpen, setIsOpen] = useState(false)
   const searchRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const navigate = useNavigate()
 
-  // Fetch search results
+  // Fetch search results (debounced 300ms to avoid excessive API calls)
   const { data, isLoading } = useQuery({
-    queryKey: ['globalSearch', query],
-    queryFn: () => globalSearch(query, 5),
-    enabled: query.length >= 2,
+    queryKey: ['globalSearch', debouncedQuery],
+    queryFn: () => globalSearch(debouncedQuery, 5),
+    enabled: debouncedQuery.length >= 2,
     staleTime: 30000, // Cache 30s
   })
 

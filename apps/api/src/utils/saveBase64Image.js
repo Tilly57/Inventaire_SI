@@ -23,6 +23,13 @@ export async function saveBase64Image(base64Data, signaturesDir) {
   // Convert base64 to buffer
   const imageBuffer = Buffer.from(base64String, 'base64');
 
+  // Validate image magic bytes (PNG or JPEG only)
+  const isPng = imageBuffer[0] === 0x89 && imageBuffer[1] === 0x50 && imageBuffer[2] === 0x4E && imageBuffer[3] === 0x47;
+  const isJpeg = imageBuffer[0] === 0xFF && imageBuffer[1] === 0xD8 && imageBuffer[2] === 0xFF;
+  if (!isPng && !isJpeg) {
+    throw new Error('Invalid image format: only PNG and JPEG are allowed');
+  }
+
   // Generate unique filename with timestamp
   const timestamp = Date.now();
   const randomString = crypto.randomBytes(8).toString('hex');

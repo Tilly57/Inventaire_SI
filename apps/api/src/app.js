@@ -81,9 +81,9 @@ app.use(helmet({
 // Compression
 app.use(compression());
 
-// Body parsers
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Body parsers (with size limits to prevent DoS via large payloads)
+app.use(express.json({ limit: '10kb' }));
+app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 
 // Cookie parser
 app.use(cookieParser());
