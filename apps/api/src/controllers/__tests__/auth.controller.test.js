@@ -15,6 +15,7 @@ import { jest } from '@jest/globals';
 const mockRegister = jest.fn();
 const mockLogin = jest.fn();
 const mockGetCurrentUser = jest.fn();
+const mockLogout = jest.fn();
 const mockVerifyRefreshToken = jest.fn();
 const mockGenerateAccessToken = jest.fn();
 const mockAsyncHandler = jest.fn((fn) => fn); // Pass through function
@@ -22,7 +23,8 @@ const mockAsyncHandler = jest.fn((fn) => fn); // Pass through function
 jest.unstable_mockModule('../../services/auth.service.js', () => ({
   register: mockRegister,
   login: mockLogin,
-  getCurrentUser: mockGetCurrentUser
+  getCurrentUser: mockGetCurrentUser,
+  logout: mockLogout
 }));
 
 jest.unstable_mockModule('../../utils/jwt.js', () => ({
