@@ -37,10 +37,14 @@ export function initializeSentry() {
   const environment = process.env.SENTRY_ENVIRONMENT || process.env.NODE_ENV || 'development';
   const tracesSampleRate = parseFloat(process.env.SENTRY_TRACES_SAMPLE_RATE || '1.0');
 
-  // Skip initialization if DSN is not configured
+  // En production, SENTRY_DSN est obligatoire — pas de monitoring = pas de déploiement
   if (!dsn) {
-    console.warn('[Sentry] DSN not configured. Error tracking is disabled.');
-    console.warn('[Sentry] Set SENTRY_DSN environment variable to enable Sentry.');
+    if (environment === 'production') {
+      console.error('[Sentry] 🔴 CRITICAL: SENTRY_DSN must be set in production!');
+      console.error('[Sentry] Error tracking is mandatory for production deployments.');
+      process.exit(1);
+    }
+    console.warn('[Sentry] DSN not configured. Error tracking is disabled (dev/staging only).');
     return false;
   }
 

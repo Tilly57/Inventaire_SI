@@ -2,6 +2,37 @@
 
 All notable changes to this project will be documented in this file.
 
+
+# Release v0.9.0 - 2026-02-23
+
+## Summary
+
+<!-- Add a brief summary of this release -->
+
+## Changes
+
+### ✨ Features
+- feat: add HTTPS reverse proxy with Nginx SSL termination
+
+### 🐛 Bug Fixes
+
+
+### 📚 Documentation
+
+
+### 🔧 Improvements
+
+
+### 📦 Dependencies
+- chore: add production branch to release workflow
+- chore: prepare release 0.8.2
+
+### All Commits
+- aef366e chore: add production branch to release workflow (Tilly57)
+- 6ab7a23 feat: add HTTPS reverse proxy with Nginx SSL termination (Tilly57)
+- e1cfeba security: fix critical audit findings (C1, C2, C3) (Tilly57)
+- 442f98e chore: prepare release 0.8.2 (Tilly57)
+
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
