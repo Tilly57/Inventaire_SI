@@ -381,8 +381,9 @@ export async function isTokenBlacklisted(token) {
     return exists === 1
   } catch (error) {
     logger.error('Failed to check token blacklist:', error)
-    // On error, allow access (fail open) but log for investigation
-    return false
+    // Production: fail closed (deny access) — revoked tokens must not pass
+    // Development: fail open (allow access) — Redis may not be running
+    return process.env.NODE_ENV === 'production'
   }
 }
 
@@ -456,8 +457,9 @@ export async function areUserSessionsInvalidated(userId, tokenIat) {
     return tokenIat < invalidationTimeSec
   } catch (error) {
     logger.error(`Failed to check user session invalidation for ${userId}:`, error)
-    // On error, allow access but log
-    return false
+    // Production: fail closed (deny access) — force re-login for safety
+    // Development: fail open (allow access) — Redis may not be running
+    return process.env.NODE_ENV === 'production'
   }
 }
 

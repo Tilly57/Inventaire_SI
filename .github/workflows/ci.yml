@@ -31,14 +31,12 @@ jobs:
       - name: Run ESLint
         run: |
           cd apps/api
-          npm run lint || echo "⚠️ ESLint found issues (non-blocking)"
-        continue-on-error: true
+          npm run lint
 
       - name: Check code formatting
         run: |
           cd apps/api
-          npm run format:check || echo "⚠️ Formatting issues found (non-blocking)"
-        continue-on-error: true
+          npm run format:check
 
   # Job 2: API Tests
   test-api:
@@ -90,8 +88,7 @@ jobs:
       - name: Run API tests
         run: |
           cd apps/api
-          npm test || echo "⚠️ Some tests failed (check logs)"
-        continue-on-error: true
+          npm test
 
   # Job 3: Build Check
   build:
@@ -144,8 +141,7 @@ jobs:
       - name: Run npm audit
         run: |
           cd apps/api
-          npm audit --audit-level=moderate || echo "⚠️ Security vulnerabilities found (review needed)"
-        continue-on-error: true
+          npm audit --audit-level=high
 
   # Summary Job
   ci-summary:
@@ -163,9 +159,21 @@ jobs:
           echo "Build: ${{ needs.build.result }}"
           echo "Security: ${{ needs.security.result }}"
 
-          if [ "${{ needs.build.result }}" != "success" ]; then
-            echo "❌ Build check failed - blocking merge"
+          FAILED=0
+          for job in lint test-api build security; do
+            result="${{ needs.lint.result }}"
+            [ "$job" = "test-api" ] && result="${{ needs.test-api.result }}"
+            [ "$job" = "build" ] && result="${{ needs.build.result }}"
+            [ "$job" = "security" ] && result="${{ needs.security.result }}"
+            if [ "$result" != "success" ]; then
+              echo "❌ $job failed"
+              FAILED=1
+            fi
+          done
+
+          if [ "$FAILED" = "1" ]; then
+            echo "❌ CI checks failed - blocking merge"
             exit 1
           fi
 
-          echo "✅ Critical checks passed - PR can be merged"
+          echo "✅ All checks passed - PR can be merged"

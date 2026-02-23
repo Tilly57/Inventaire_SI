@@ -31,8 +31,7 @@ const AuditLogsPage = lazy(() => import('@/pages/AuditLogsPage'))
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 0, // Always consider data stale - fetch fresh data every time
-      refetchOnMount: 'always',
+      staleTime: 30_000, // 30s — avoid excessive refetches on navigation
       refetchOnWindowFocus: true,
       retry: 1,
     },
