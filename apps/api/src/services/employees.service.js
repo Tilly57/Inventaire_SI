@@ -12,7 +12,9 @@ import prisma from '../config/database.js';
 import { NotFoundError, ConflictError, ValidationError } from '../utils/errors.js';
 import { findOneOrFail, validateUniqueFields } from '../utils/prismaHelpers.js';
 import { logCreate, logUpdate, logDelete } from '../utils/auditHelpers.js';
-import { executePaginatedQuery, buildOrderBy } from '../utils/pagination.js';
+import { executePaginatedQuery, buildOrderBy, validateSortParams } from '../utils/pagination.js';
+
+const EMPLOYEE_SORT_FIELDS = ['lastName', 'firstName', 'email', 'dept', 'createdAt'];
 import { getCached, invalidateEntity, generateKey, TTL } from './cache.service.js';
 
 /**
@@ -95,7 +97,8 @@ export async function getAllEmployeesPaginated(options = {}) {
         where.dept = { contains: dept, mode: 'insensitive' };
       }
 
-      const orderBy = buildOrderBy(sortBy, sortOrder);
+      const validated = validateSortParams(sortBy, sortOrder, EMPLOYEE_SORT_FIELDS);
+      const orderBy = buildOrderBy(validated.sortBy, validated.sortOrder);
 
       const result = await executePaginatedQuery(prisma.employee, {
         where,

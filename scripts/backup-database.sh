@@ -14,8 +14,13 @@ RETENTION_DAYS=7
 # Create backup directory if it doesn't exist
 mkdir -p "$BACKUP_DIR"
 
-# Export password (read from .env file)
-export PGPASSWORD="inventaire_pwd"
+# Export password from environment variable
+if [ -z "$POSTGRES_PASSWORD" ]; then
+    echo "❌ Error: POSTGRES_PASSWORD environment variable not set"
+    echo "   Usage: POSTGRES_PASSWORD=your_password ./scripts/backup-database.sh"
+    exit 1
+fi
+export PGPASSWORD="$POSTGRES_PASSWORD"
 
 # Perform backup
 echo "🔄 Starting database backup..."
