@@ -3,6 +3,33 @@
 All notable changes to this project will be documented in this file.
 
 
+# Release v0.9.8 - 2026-02-23
+
+## Summary
+
+<!-- Add a brief summary of this release -->
+
+## Changes
+
+### ✨ Features
+- feat: configure Sentry DSN for backend and frontend projects
+
+### 🐛 Bug Fixes
+
+
+### 📚 Documentation
+
+
+### 🔧 Improvements
+
+
+### 📦 Dependencies
+
+
+### All Commits
+- a2d39e8 feat: configure Sentry DSN for backend and frontend projects (Tilly57)
+
+
 # Release v0.9.7 - 2026-02-23
 
 ## Summary
