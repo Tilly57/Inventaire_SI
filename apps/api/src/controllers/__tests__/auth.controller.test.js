@@ -47,6 +47,7 @@ describe('auth.controller', () => {
     req = {
       body: {},
       cookies: {},
+      headers: {},
       user: {}
     };
 
