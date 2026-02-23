@@ -50,8 +50,8 @@ export function useCreateEquipmentType() {
 
   return useMutation({
     mutationFn: (data: CreateEquipmentTypeDto) => createEquipmentTypeApi(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: equipmentTypesKeys.lists() });
+    onSuccess: async () => {
+      await queryClient.resetQueries({ queryKey: equipmentTypesKeys.lists() });
       toast.success('Type d\'équipement créé avec succès');
     },
     onError: (error: any) => {
@@ -70,9 +70,9 @@ export function useUpdateEquipmentType() {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateEquipmentTypeDto }) =>
       updateEquipmentTypeApi(id, data),
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: equipmentTypesKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: equipmentTypesKeys.detail(id) });
+    onSuccess: async (_, { id }) => {
+      await queryClient.resetQueries({ queryKey: equipmentTypesKeys.lists() });
+      await queryClient.resetQueries({ queryKey: equipmentTypesKeys.detail(id) });
       toast.success('Type d\'équipement modifié avec succès');
     },
     onError: (error: any) => {
@@ -90,8 +90,8 @@ export function useDeleteEquipmentType() {
 
   return useMutation({
     mutationFn: (id: string) => deleteEquipmentTypeApi(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: equipmentTypesKeys.lists() });
+    onSuccess: async () => {
+      await queryClient.resetQueries({ queryKey: equipmentTypesKeys.lists() });
       toast.success('Type d\'équipement supprimé avec succès');
     },
     onError: (error: any) => {

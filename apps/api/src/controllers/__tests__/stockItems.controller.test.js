@@ -115,7 +115,7 @@ describe('stockItems.controller', () => {
 
       await createStockItem(req, res);
 
-      expect(mockCreateStockItem).toHaveBeenCalledWith(req.body);
+      expect(mockCreateStockItem).toHaveBeenCalledWith(req.body, req);
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalledWith({
         success: true,
@@ -147,7 +147,7 @@ describe('stockItems.controller', () => {
 
       await updateStockItem(req, res);
 
-      expect(mockUpdateStockItem).toHaveBeenCalledWith('stock-1', req.body);
+      expect(mockUpdateStockItem).toHaveBeenCalledWith('stock-1', req.body, req);
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         data: mockUpdated
@@ -172,7 +172,7 @@ describe('stockItems.controller', () => {
 
       await adjustQuantity(req, res);
 
-      expect(mockAdjustStockQuantity).toHaveBeenCalledWith('stock-1', 10);
+      expect(mockAdjustStockQuantity).toHaveBeenCalledWith('stock-1', 10, req);
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         data: mockAdjusted
@@ -187,7 +187,7 @@ describe('stockItems.controller', () => {
 
       await adjustQuantity(req, res);
 
-      expect(mockAdjustStockQuantity).toHaveBeenCalledWith('stock-1', -5);
+      expect(mockAdjustStockQuantity).toHaveBeenCalledWith('stock-1', -5, req);
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         data: mockAdjusted
@@ -218,7 +218,7 @@ describe('stockItems.controller', () => {
 
       await deleteStockItem(req, res);
 
-      expect(mockDeleteStockItem).toHaveBeenCalledWith('stock-1');
+      expect(mockDeleteStockItem).toHaveBeenCalledWith('stock-1', req);
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         data: { message: 'Article supprimé' }

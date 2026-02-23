@@ -1,10 +1,11 @@
 /**
- * @fileoverview Axios HTTP client configuration with JWT authentication
+ * @fileoverview Axios HTTP client configuration with JWT authentication and CSRF protection
  *
  * This module provides:
  * - Axios instance with default configuration
  * - Access token management (in-memory storage for security)
- * - Request interceptor to inject auth tokens
+ * - CSRF token management (cookie-based double submit pattern)
+ * - Request interceptor to inject auth tokens and CSRF tokens
  * - Response interceptor for automatic token refresh on 401 errors
  * - Request queueing during token refresh to prevent race conditions
  */
@@ -52,18 +53,67 @@ export const getAccessToken = () => {
 }
 
 /**
- * Request interceptor: Automatically adds Bearer token to Authorization header
+ * Get CSRF token from cookie
  *
- * This interceptor runs before every API request and injects the
- * access token if available.
+ * The CSRF token is stored in a cookie named 'XSRF-TOKEN' by the backend.
+ * This cookie is readable by JavaScript (not httpOnly) to allow client-side access.
+ *
+ * @returns CSRF token string or null if not found
+ */
+export const getCsrfToken = (): string | null => {
+  if (typeof document === 'undefined') return null
+
+  const match = document.cookie.match(/XSRF-TOKEN=([^;]+)/)
+  return match ? match[1] : null
+}
+
+/**
+ * Initialize CSRF protection by fetching the CSRF token from the backend
+ *
+ * This should be called once when the application starts.
+ * The backend will set the XSRF-TOKEN cookie which will be used
+ * for all subsequent state-changing requests.
+ *
+ * @returns Promise that resolves when CSRF token is initialized
+ */
+export const initializeCsrf = async (): Promise<void> => {
+  try {
+    await apiClient.get('/csrf-token')
+    console.log('[CSRF] Token initialized successfully')
+  } catch (error) {
+    console.error('[CSRF] Failed to initialize token:', error)
+    // Don't throw - allow app to continue even if CSRF init fails
+    // The backend will return 401 on mutations if token is missing
+  }
+}
+
+/**
+ * Request interceptor: Automatically adds Bearer token and CSRF token to headers
+ *
+ * This interceptor runs before every API request and:
+ * 1. Injects the JWT access token if available
+ * 2. Injects the CSRF token for state-changing operations (POST/PUT/PATCH/DELETE)
  */
 apiClient.interceptors.request.use(
   (config) => {
+    // 1. Add JWT access token
     const token = getAccessToken()
     if (token && config.headers) {
-      // Inject Bearer token into Authorization header
       config.headers.Authorization = `Bearer ${token}`
     }
+
+    // 2. Add CSRF token for state-changing operations
+    const method = config.method?.toUpperCase()
+    const mutationMethods = ['POST', 'PUT', 'PATCH', 'DELETE']
+
+    if (method && mutationMethods.includes(method) && config.headers) {
+      const csrfToken = getCsrfToken()
+      if (csrfToken) {
+        // Use standard CSRF header name (matches backend expectation)
+        config.headers['X-XSRF-TOKEN'] = csrfToken
+      }
+    }
+
     return config
   },
   (error) => {
@@ -124,8 +174,21 @@ apiClient.interceptors.response.use(
   async (error: AxiosError) => {
     const originalRequest = error.config as any
 
-    // Handle 401 Unauthorized errors (expired token)
+    // Handle 401 Unauthorized errors (expired token or CSRF failure)
     if (error.response?.status === 401 && !originalRequest._retry) {
+      const errorMessage = (error.response?.data as any)?.error || ''
+
+      // Check if this is a CSRF token error
+      if (errorMessage.includes('CSRF')) {
+        console.log('[CSRF] Token validation failed, reinitializing...')
+
+        // Reinitialize CSRF token
+        await initializeCsrf()
+
+        // Retry the original request with new CSRF token
+        originalRequest._retry = true
+        return apiClient(originalRequest)
+      }
       // Don't attempt refresh for auth endpoints (would cause infinite loop)
       if (originalRequest.url?.includes('/auth/login') ||
           originalRequest.url?.includes('/auth/register') ||

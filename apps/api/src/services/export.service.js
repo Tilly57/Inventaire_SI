@@ -30,7 +30,6 @@ export async function exportEmployees(filters = {}) {
   const { search, dept } = filters
 
   const where = {
-    deletedAt: null,
     ...(search && {
       OR: [
         { firstName: { contains: search, mode: 'insensitive' } },
@@ -94,7 +93,6 @@ export async function exportAssetModels(filters = {}) {
   const { type, brand } = filters
 
   const where = {
-    deletedAt: null,
     ...(type && { type: { contains: type, mode: 'insensitive' } }),
     ...(brand && { brand: { contains: brand, mode: 'insensitive' } }),
   }
@@ -151,7 +149,6 @@ export async function exportAssetItems(filters = {}) {
   const { status, type, assetModelId } = filters
 
   const where = {
-    deletedAt: null,
     ...(status && { status }),
     ...(assetModelId && { assetModelId }),
     ...(type && {
@@ -222,7 +219,6 @@ export async function exportStockItems(filters = {}) {
   const { lowStock } = filters
 
   const where = {
-    deletedAt: null,
     ...(lowStock && { quantity: { lt: 5 } }),
   }
 
@@ -281,7 +277,6 @@ export async function exportLoans(filters = {}) {
   const { status, employeeId, startDate, endDate } = filters
 
   const where = {
-    deletedAt: null,
     ...(status && { status }),
     ...(employeeId && { employeeId }),
     ...(startDate &&
@@ -398,8 +393,17 @@ export async function exportDashboard() {
 
   // 1. Feuille Vue d'ensemble
   const stats = await prisma.$queryRaw`
-    SELECT * FROM dashboard_stats
+    SELECT
+      total_employees::int,
+      total_assets::int,
+      available_assets::int,
+      active_loans::int,
+      low_stock_items::int,
+      out_of_stock_items::int,
+      last_updated
+    FROM dashboard_stats
   `
+
   const statsData = [
     { Statistique: 'Total Employés', Valeur: stats[0]?.total_employees || 0 },
     { Statistique: 'Total Équipements', Valeur: stats[0]?.total_assets || 0 },
@@ -420,7 +424,6 @@ export async function exportDashboard() {
 
   // 2. Feuille Employés
   const employees = await prisma.employee.findMany({
-    where: { deletedAt: null },
     orderBy: [{ lastName: 'asc' }],
     select: {
       lastName: true,
@@ -441,7 +444,6 @@ export async function exportDashboard() {
 
   // 3. Feuille Équipements
   const assets = await prisma.assetItem.findMany({
-    where: { deletedAt: null },
     orderBy: { assetTag: 'asc' },
     include: {
       assetModel: {
@@ -476,10 +478,10 @@ export async function exportDashboard() {
   ]
   XLSX.utils.book_append_sheet(workbook, assetsSheet, 'Équipements')
 
-  // 4. Feuille Stock
-  const stock = await prisma.stockItem.findMany({
-    where: { deletedAt: null },
-    orderBy: { quantity: 'asc' },
+  // 4. Feuille Stock (Équipements EN_STOCK uniquement)
+  const stock = await prisma.assetItem.findMany({
+    where: { status: 'EN_STOCK' },
+    orderBy: { assetTag: 'asc' },
     include: {
       assetModel: {
         select: {
@@ -491,25 +493,23 @@ export async function exportDashboard() {
     },
   })
   const stockData = stock.map((s) => ({
+    Tag: s.assetTag,
     Type: s.assetModel.type,
     Marque: s.assetModel.brand,
     Modèle: s.assetModel.modelName,
-    'Qté Dispo': s.quantity,
-    'Qté Prêtée': s.loaned,
   }))
   const stockSheet = XLSX.utils.json_to_sheet(stockData)
   stockSheet['!cols'] = [
     { wch: 15 },
     { wch: 15 },
+    { wch: 15 },
     { wch: 25 },
-    { wch: 12 },
-    { wch: 12 },
   ]
   XLSX.utils.book_append_sheet(workbook, stockSheet, 'Stock')
 
   // 5. Feuille Prêts Actifs
   const loans = await prisma.loan.findMany({
-    where: { status: 'OPEN', deletedAt: null },
+    where: { status: 'OPEN' },
     orderBy: { openedAt: 'desc' },
     include: {
       employee: {

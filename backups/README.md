@@ -13,29 +13,97 @@ backups/
 
 ## 🚀 Commandes Rapides
 
-### Créer un Backup
+### Créer un Backup (Recommandé - Multi-plateforme)
 
 ```bash
+# Backup automatique avec script Node.js
+node scripts/backup-automation.js
+
+# Backup manuel avec nom personnalisé
+node scripts/backup-automation.js --name="avant_maj_v0.8.0"
+```
+
+### Créer un Backup (Méthode directe)
+
+```bash
+# Linux/Mac
 docker exec inventaire_si-db-1 pg_dump -U inventaire -Fc -Z9 inventaire > backups/database/backup_$(date +%Y%m%d_%H%M%S).dump
+
+# Windows PowerShell
+.\scripts\backups\backup.ps1
+
+# Windows Batch
+scripts\backups\backup-database.bat
 ```
 
 ### Restaurer un Backup
 
-```batch
-set PGPASSWORD=inventaire_pwd && "C:\Program Files\PostgreSQL\18\bin\pg_restore.exe" -h localhost -p 5432 -U inventaire -d inventaire --clean --if-exists --no-owner --no-privileges backups\database\FICHIER.dump
+```bash
+# PowerShell (Recommandé pour Windows)
+.\scripts\backups\restore.ps1
+
+# Batch
+scripts\backups\restore-database.bat
 ```
 
 ### Lister les Backups
 
 ```bash
+# Linux/Mac
 ls -lht database/*.dump | head -10
+
+# Windows PowerShell
+Get-ChildItem database\*.dump | Sort-Object LastWriteTime -Descending | Select-Object -First 10
 ```
+
+### Vérifier la Santé des Backups
+
+```bash
+# Démarrer le service de monitoring
+node scripts/backup-monitor.js
+
+# Ouvrir dans le navigateur
+http://localhost:8080/status
+
+# Vérifier via API
+curl http://localhost:8080/health
+```
+
+## 🤖 Automatisation
+
+### Activer les Backups Automatiques
+
+**Windows:**
+```batch
+# Ouvrir PowerShell en tant qu'Administrateur
+scripts\setup-backup-automation.bat
+```
+
+**Linux/Mac:**
+```bash
+# Exécuter le script d'installation
+chmod +x scripts/setup-backup-automation.sh
+./scripts/setup-backup-automation.sh
+```
+
+**Docker:**
+```bash
+# Démarrer avec automatisation
+docker-compose -f docker-compose.yml -f docker-compose.backup.yml up -d
+```
+
+Une fois configuré:
+- ✅ Backups quotidiens à 2h00 du matin
+- ✅ Suppression automatique après 30 jours
+- ✅ Logs détaillés dans `backups/logs/`
+- ✅ Monitoring de santé disponible
 
 ## 📚 Documentation Complète
 
+- **Automatisation** : `docs/BACKUP_AUTOMATION.md` ⭐ NOUVEAU
 - **Guide Rapide** : `docs/BACKUP_RAPIDE.md`
 - **Documentation Complète** : `docs/BACKUP_GUIDE.md`
-- **Scripts** : `scripts/backups/`
+- **Scripts PowerShell/Batch** : `scripts/backups/README.md`
 
 ## ⚠️ Important
 

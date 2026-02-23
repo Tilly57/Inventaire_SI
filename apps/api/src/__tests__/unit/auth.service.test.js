@@ -20,16 +20,19 @@ describe('Auth Service - register()', () => {
   });
 
   test('should register first user as ADMIN automatically', async () => {
-    const user = await authService.register(
+    const result = await authService.register(
       'first@example.com',
       'password123',
       ROLES.GESTIONNAIRE
     );
 
-    expect(user).toBeDefined();
-    expect(user.email).toBe('first@example.com');
-    expect(user.role).toBe(ROLES.ADMIN); // Auto-promoted
-    expect(user.passwordHash).toBeUndefined(); // Should be excluded
+    expect(result).toBeDefined();
+    expect(result.user).toBeDefined();
+    expect(result.user.email).toBe('first@example.com');
+    expect(result.user.role).toBe(ROLES.ADMIN); // Auto-promoted
+    expect(result.user.passwordHash).toBeUndefined(); // Should be excluded
+    expect(result.accessToken).toBeDefined();
+    expect(result.refreshToken).toBeDefined();
   });
 
   test('should register second user with specified role', async () => {
@@ -37,15 +40,16 @@ describe('Auth Service - register()', () => {
     await authService.register('first@example.com', 'password123', ROLES.GESTIONNAIRE);
 
     // Create second user
-    const user = await authService.register(
+    const result = await authService.register(
       'second@example.com',
       'password123',
       ROLES.GESTIONNAIRE
     );
 
-    expect(user).toBeDefined();
-    expect(user.email).toBe('second@example.com');
-    expect(user.role).toBe(ROLES.GESTIONNAIRE); // NOT auto-promoted
+    expect(result).toBeDefined();
+    expect(result.user).toBeDefined();
+    expect(result.user.email).toBe('second@example.com');
+    expect(result.user.role).toBe(ROLES.GESTIONNAIRE); // NOT auto-promoted
   });
 
   test('should throw ConflictError if email already exists', async () => {
@@ -58,14 +62,14 @@ describe('Auth Service - register()', () => {
 
   test('should hash password before storing', async () => {
     const password = 'mySecretPassword123';
-    const user = await authService.register('test@example.com', password);
+    const result = await authService.register('test@example.com', password);
 
     // Password should be hashed, not stored in plain text
-    expect(user.passwordHash).toBeUndefined(); // Not returned
+    expect(result.user.passwordHash).toBeUndefined(); // Not returned
 
     // Verify we can login with the password (implicitly tests hashing worked)
     const loginResult = await authService.login('test@example.com', password);
-    expect(loginResult.user.id).toBe(user.id);
+    expect(loginResult.user.id).toBe(result.user.id);
   });
 
   test('should default to GESTIONNAIRE role if not specified', async () => {
@@ -73,9 +77,9 @@ describe('Auth Service - register()', () => {
     await authService.register('admin@example.com', 'password123');
 
     // Create user without specifying role
-    const user = await authService.register('test@example.com', 'password123');
+    const result = await authService.register('test@example.com', 'password123');
 
-    expect(user.role).toBe(ROLES.GESTIONNAIRE);
+    expect(result.user.role).toBe(ROLES.GESTIONNAIRE);
   });
 });
 

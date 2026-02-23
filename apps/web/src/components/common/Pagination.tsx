@@ -161,7 +161,7 @@ export const Pagination = memo(function Pagination({
           </div>
 
           <div className="text-sm font-medium whitespace-nowrap">
-            Page {currentPage} sur {totalPages || 1}
+            Page {currentPage} sur {totalPages}
           </div>
 
           <div className="flex items-center gap-1">

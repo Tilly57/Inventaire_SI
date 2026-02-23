@@ -15,7 +15,7 @@
  * - Optional fields: Société, Agence, Civilité
  *
  * Features:
- * - Uses xlsx library for Excel parsing
+ * - Uses exceljs library for secure Excel parsing
  * - Sanitizes names for email generation (removes accents, special chars)
  * - Validates data before creation
  * - Atomic operations (each employee created independently)
@@ -33,7 +33,7 @@
  */
 import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-// Dynamic import: xlsx loaded only when import button clicked (saves 333 kB on initial load)
+// Dynamic import: exceljs loaded only when import button clicked
 import {
   Dialog,
   DialogContent,
@@ -171,14 +171,41 @@ export function ImportEmployeesDialog({ open, onClose }: ImportEmployeesDialogPr
     const importResult: ImportResult = { success: 0, skipped: 0, errors: [] }
 
     try {
-      // Dynamically import xlsx library (only loaded when needed, saves 333 kB on initial page load)
-      const XLSX = await import('xlsx')
+      // Dynamically import exceljs library (only loaded when needed)
+      const ExcelJS = await import('exceljs')
 
       // Read Excel file
-      const data = await file.arrayBuffer()
-      const workbook = XLSX.read(data)
-      const worksheet = workbook.Sheets[workbook.SheetNames[0]]
-      const rows: EmployeeRow[] = XLSX.utils.sheet_to_json(worksheet)
+      const buffer = await file.arrayBuffer()
+      const workbook = new ExcelJS.Workbook()
+      await workbook.xlsx.load(buffer)
+
+      // Get first worksheet
+      const worksheet = workbook.worksheets[0]
+      if (!worksheet) {
+        throw new Error('Aucune feuille trouvée dans le fichier Excel')
+      }
+
+      // Extract column headers from first row
+      const headerRow = worksheet.getRow(1)
+      const headers: string[] = []
+      headerRow.eachCell((cell, colNumber) => {
+        headers[colNumber] = cell.value?.toString() || ''
+      })
+
+      // Parse rows into EmployeeRow objects
+      const rows: EmployeeRow[] = []
+      worksheet.eachRow((row, rowNumber) => {
+        if (rowNumber === 1) return // Skip header row
+
+        const rowData: EmployeeRow = {}
+        row.eachCell((cell, colNumber) => {
+          const header = headers[colNumber]
+          if (header && cell.value) {
+            rowData[header as keyof EmployeeRow] = cell.value.toString()
+          }
+        })
+        rows.push(rowData)
+      })
 
       // Build set of existing emails for fast lookup
       const existingEmails = new Set(

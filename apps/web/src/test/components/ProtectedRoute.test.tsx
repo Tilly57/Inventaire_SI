@@ -2,18 +2,16 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
-import { useAuthStore } from '@/lib/stores/authStore';
+import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
+import * as useAuthHook from '@/lib/hooks/useAuth';
 
 /**
  * Tests for ProtectedRoute component
  * Tests authentication and authorization checks
  */
 
-// Mock the auth store
-vi.mock('@/lib/stores/authStore', () => ({
-  useAuthStore: vi.fn(),
-}));
+// Mock the auth hook
+vi.mock('@/lib/hooks/useAuth');
 
 const createWrapper = () => {
   const queryClient = new QueryClient({
@@ -39,10 +37,10 @@ describe('ProtectedRoute', () => {
 
   it('should redirect to login when not authenticated', () => {
     // Mock unauthenticated state
-    vi.mocked(useAuthStore).mockReturnValue({
+    vi.mocked(useAuthHook.useAuth).mockReturnValue({
       user: null,
-      accessToken: null,
       isAuthenticated: false,
+      isLoading: false,
     } as any);
 
     render(
@@ -52,7 +50,7 @@ describe('ProtectedRoute', () => {
             <div>Protected Content</div>
           </ProtectedRoute>
         } />
-        <Route path="/" element={<div>Login Page</div>} />
+        <Route path="/login" element={<div>Login Page</div>} />
       </Routes>,
       { wrapper: createWrapper() }
     );
@@ -64,10 +62,10 @@ describe('ProtectedRoute', () => {
 
   it('should render content when authenticated', () => {
     // Mock authenticated state
-    vi.mocked(useAuthStore).mockReturnValue({
+    vi.mocked(useAuthHook.useAuth).mockReturnValue({
       user: { id: '1', email: 'test@example.com', role: 'ADMIN' },
-      accessToken: 'fake-token',
       isAuthenticated: true,
+      isLoading: false,
     } as any);
 
     render(
@@ -86,45 +84,48 @@ describe('ProtectedRoute', () => {
 
   it('should block access for LECTEUR role when requiredRole is ADMIN', () => {
     // Mock LECTEUR user
-    vi.mocked(useAuthStore).mockReturnValue({
+    vi.mocked(useAuthHook.useAuth).mockReturnValue({
       user: { id: '1', email: 'lecteur@example.com', role: 'LECTURE' },
-      accessToken: 'fake-token',
       isAuthenticated: true,
+      isLoading: false,
     } as any);
 
-    render(
-      <Routes>
-        <Route path="/users" element={
-          <ProtectedRoute requiredRole="ADMIN">
-            <div>Admin Content</div>
-          </ProtectedRoute>
-        } />
-        <Route path="/dashboard" element={<div>Dashboard</div>} />
-      </Routes>,
-      { wrapper: createWrapper() }
+    const { container } = render(
+      <MemoryRouter initialEntries={['/users']}>
+        <Routes>
+          <Route path="/users" element={
+            <ProtectedRoute requiredRole="ADMIN">
+              <div>Admin Content</div>
+            </ProtectedRoute>
+          } />
+          <Route path="/dashboard" element={<div>Dashboard</div>} />
+        </Routes>
+      </MemoryRouter>
     );
 
-    // Should not show admin content
+    // Should not show admin content, should show access denied
     expect(screen.queryByText('Admin Content')).not.toBeInTheDocument();
+    expect(screen.getByText(/Accès refusé/i)).toBeInTheDocument();
   });
 
   it('should allow access for ADMIN role', () => {
     // Mock ADMIN user
-    vi.mocked(useAuthStore).mockReturnValue({
+    vi.mocked(useAuthHook.useAuth).mockReturnValue({
       user: { id: '1', email: 'admin@example.com', role: 'ADMIN' },
-      accessToken: 'fake-token',
       isAuthenticated: true,
+      isLoading: false,
     } as any);
 
     render(
-      <Routes>
-        <Route path="/users" element={
-          <ProtectedRoute requiredRole="ADMIN">
-            <div>Admin Content</div>
-          </ProtectedRoute>
-        } />
-      </Routes>,
-      { wrapper: createWrapper() }
+      <MemoryRouter initialEntries={['/users']}>
+        <Routes>
+          <Route path="/users" element={
+            <ProtectedRoute requiredRole="ADMIN">
+              <div>Admin Content</div>
+            </ProtectedRoute>
+          } />
+        </Routes>
+      </MemoryRouter>
     );
 
     expect(screen.getByText('Admin Content')).toBeInTheDocument();
@@ -132,21 +133,22 @@ describe('ProtectedRoute', () => {
 
   it('should allow GESTIONNAIRE to access non-admin routes', () => {
     // Mock GESTIONNAIRE user
-    vi.mocked(useAuthStore).mockReturnValue({
+    vi.mocked(useAuthHook.useAuth).mockReturnValue({
       user: { id: '1', email: 'gestionnaire@example.com', role: 'GESTIONNAIRE' },
-      accessToken: 'fake-token',
       isAuthenticated: true,
+      isLoading: false,
     } as any);
 
     render(
-      <Routes>
-        <Route path="/employees" element={
-          <ProtectedRoute requiredRole="GESTIONNAIRE">
-            <div>Employees Content</div>
-          </ProtectedRoute>
-        } />
-      </Routes>,
-      { wrapper: createWrapper() }
+      <MemoryRouter initialEntries={['/employees']}>
+        <Routes>
+          <Route path="/employees" element={
+            <ProtectedRoute requiredRole="GESTIONNAIRE">
+              <div>Employees Content</div>
+            </ProtectedRoute>
+          } />
+        </Routes>
+      </MemoryRouter>
     );
 
     expect(screen.getByText('Employees Content')).toBeInTheDocument();
@@ -154,21 +156,22 @@ describe('ProtectedRoute', () => {
 
   it('should allow access with multiple allowed roles', () => {
     // Mock GESTIONNAIRE user
-    vi.mocked(useAuthStore).mockReturnValue({
+    vi.mocked(useAuthHook.useAuth).mockReturnValue({
       user: { id: '1', email: 'gestionnaire@example.com', role: 'GESTIONNAIRE' },
-      accessToken: 'fake-token',
       isAuthenticated: true,
+      isLoading: false,
     } as any);
 
     render(
-      <Routes>
-        <Route path="/dashboard" element={
-          <ProtectedRoute requiredRoles={['ADMIN', 'GESTIONNAIRE']}>
-            <div>Dashboard Content</div>
-          </ProtectedRoute>
-        } />
-      </Routes>,
-      { wrapper: createWrapper() }
+      <MemoryRouter initialEntries={['/dashboard']}>
+        <Routes>
+          <Route path="/dashboard" element={
+            <ProtectedRoute requiredRoles={['ADMIN', 'GESTIONNAIRE']}>
+              <div>Dashboard Content</div>
+            </ProtectedRoute>
+          } />
+        </Routes>
+      </MemoryRouter>
     );
 
     expect(screen.getByText('Dashboard Content')).toBeInTheDocument();
@@ -176,25 +179,26 @@ describe('ProtectedRoute', () => {
 
   it('should show loading state while checking auth', () => {
     // Mock loading state
-    vi.mocked(useAuthStore).mockReturnValue({
+    vi.mocked(useAuthHook.useAuth).mockReturnValue({
       user: null,
-      accessToken: null,
       isAuthenticated: false,
       isLoading: true,
     } as any);
 
     render(
-      <Routes>
-        <Route path="/dashboard" element={
-          <ProtectedRoute>
-            <div>Protected Content</div>
-          </ProtectedRoute>
-        } />
-      </Routes>,
-      { wrapper: createWrapper() }
+      <MemoryRouter initialEntries={['/dashboard']}>
+        <Routes>
+          <Route path="/dashboard" element={
+            <ProtectedRoute>
+              <div>Protected Content</div>
+            </ProtectedRoute>
+          } />
+        </Routes>
+      </MemoryRouter>
     );
 
     // Should show loading indicator
     expect(screen.queryByText('Protected Content')).not.toBeInTheDocument();
+    expect(screen.getByText(/Chargement/i)).toBeInTheDocument();
   });
 });

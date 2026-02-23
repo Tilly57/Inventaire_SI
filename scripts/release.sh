@@ -159,10 +159,10 @@ generate_changelog_entry() {
 
     if [[ -z "$last_tag" ]]; then
         commit_range="HEAD"
-        print_info "No previous tags found. Generating changelog from all commits."
+        print_info "No previous tags found. Generating changelog from all commits." >&2
     else
         commit_range="${last_tag}..HEAD"
-        print_info "Generating changelog from ${last_tag} to HEAD"
+        print_info "Generating changelog from ${last_tag} to HEAD" >&2
     fi
 
     # Generate release notes
@@ -207,7 +207,7 @@ EOF
     git log $commit_range --pretty=format:"- %h %s (%an)" >> "$notes_file"
     echo "" >> "$notes_file"
 
-    print_success "Generated release notes: $notes_file"
+    print_success "Generated release notes: $notes_file" >&2
     echo "$notes_file"
 }
 
@@ -333,6 +333,34 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
     print_success "Merged to main, created tag v${version}, and pushed"
 }
 
+# Merge to production branch
+merge_to_production() {
+    local version=$1
+
+    print_info "Merging main to production..."
+
+    # Create production branch if it doesn't exist
+    if ! git show-ref --verify --quiet "refs/heads/production"; then
+        print_info "Creating production branch from main..."
+        git checkout -b production main
+    else
+        git checkout production
+        git pull origin production
+    fi
+
+    git merge --no-ff main -m "chore(release): deploy v${version} to production
+
+Merge main to production for deployment.
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>"
+
+    git push -u origin production
+
+    print_success "Merged to production and pushed"
+}
+
 # Create GitHub release (if gh CLI is available)
 create_github_release() {
     local version=$1
@@ -388,28 +416,28 @@ main() {
     echo ""
 
     # Step 1: Create release branch
-    print_info "[1/7] Creating release branch..."
+    print_info "[1/8] Creating release branch..."
     create_release_branch "$new_version"
 
     # Step 2: Update version file
-    print_info "[2/7] Updating version file..."
+    print_info "[2/8] Updating version file..."
     update_version_file "$new_version"
 
     # Step 3: Generate changelog
-    print_info "[3/7] Generating changelog and release notes..."
+    print_info "[3/8] Generating changelog and release notes..."
     local notes_file=$(generate_changelog_entry "$new_version")
     update_changelog "$new_version" "$notes_file"
 
     # Step 4: Commit changes
-    print_info "[4/7] Committing version bump..."
+    print_info "[4/8] Committing version bump..."
     commit_version_bump "$new_version"
 
     # Step 5: Push release branch
-    print_info "[5/7] Pushing release branch..."
+    print_info "[5/8] Pushing release branch..."
     push_release_branch "$new_version"
 
     # Step 6: Merge to staging
-    print_info "[6/7] Merging to staging..."
+    print_info "[6/8] Merging to staging..."
     merge_to_staging "$new_version"
 
     # Step 7: Ask about production deployment
@@ -417,12 +445,18 @@ main() {
     print_warning "Release branch merged to staging for testing."
     print_info "Test the changes on staging before deploying to production."
     echo ""
-    read -p "Deploy to production (main) now? (y/N): " deploy_confirm
+    read -p "Deploy to production (main + production branch) now? (y/N): " deploy_confirm
 
     if [[ "$deploy_confirm" == "y" || "$deploy_confirm" == "Y" ]]; then
-        print_info "[7/7] Deploying to production..."
+        print_info "[7/8] Merging to main and tagging..."
         merge_to_main_and_tag "$new_version"
         create_github_release "$new_version"
+
+        print_info "[8/8] Deploying to production branch..."
+        merge_to_production "$new_version"
+
+        # Return to main branch
+        git checkout main
 
         echo ""
         print_success "Release v${new_version} completed successfully! 🎉"
@@ -430,6 +464,7 @@ main() {
         print_info "Summary:"
         print_info "  - Release branch: release/${new_version}"
         print_info "  - Staging: merged ✓"
+        print_info "  - Main: merged ✓"
         print_info "  - Production: merged ✓"
         print_info "  - Tag: v${new_version} ✓"
         print_info "  - Release notes: ${notes_file}"
@@ -440,6 +475,7 @@ main() {
         print_info "Summary:"
         print_info "  - Release branch: release/${new_version}"
         print_info "  - Staging: merged ✓"
+        print_info "  - Main: pending"
         print_info "  - Production: pending"
         echo ""
         print_warning "To deploy to production later, run:"

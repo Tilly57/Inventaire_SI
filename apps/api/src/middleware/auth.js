@@ -4,16 +4,20 @@
  * This middleware:
  * - Extracts and validates JWT access tokens from Authorization headers
  * - Verifies token signature and expiration
+ * - Checks token blacklist for revoked tokens (Phase 2)
+ * - Checks user session invalidation for global logout (Phase 2)
  * - Attaches authenticated user information to request object
  * - Protects routes requiring authentication
  *
  * Security: Uses Bearer token authentication with short-lived access tokens.
  * Refresh tokens are handled separately via httpOnly cookies.
+ * Phase 2: Token revocation via Redis blacklist for immediate logout.
  */
 
 import { verifyAccessToken } from '../utils/jwt.js';
 import { UnauthorizedError } from '../utils/errors.js';
 import { asyncHandler } from './asyncHandler.js';
+import { isTokenBlacklisted, areUserSessionsInvalidated } from '../services/cache.service.js';
 
 /**
  * Require authentication middleware
@@ -74,6 +78,26 @@ export const requireAuth = asyncHandler(async (req, res, next) => {
   // Verify JWT token signature and expiration
   // This throws UnauthorizedError if token is invalid or expired
   const payload = verifyAccessToken(token);
+
+  // ============================================
+  // Phase 2: Token Revocation Checks
+  // ============================================
+
+  // Check 1: Is this specific token blacklisted? (single logout)
+  const isBlacklisted = await isTokenBlacklisted(token);
+  if (isBlacklisted) {
+    throw new UnauthorizedError('Token has been revoked. Please login again.');
+  }
+
+  // Check 2: Are all user's sessions invalidated? (global logout, role change, etc.)
+  const sessionsInvalidated = await areUserSessionsInvalidated(payload.userId, payload.iat);
+  if (sessionsInvalidated) {
+    throw new UnauthorizedError('Session expired. Please login again.');
+  }
+
+  // ============================================
+  // Token valid - Attach user info to request
+  // ============================================
 
   // Attach authenticated user information to request
   // Available to all subsequent middleware and route handlers

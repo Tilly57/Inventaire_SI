@@ -17,6 +17,7 @@ export async function cleanDatabase() {
   await prisma.stockItem.deleteMany();
   await prisma.assetItem.deleteMany();
   await prisma.assetModel.deleteMany();
+  await prisma.equipmentType.deleteMany(); // Clean equipment types
   await prisma.employee.deleteMany();
   await prisma.user.deleteMany();
 }

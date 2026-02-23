@@ -27,6 +27,10 @@ const mockPrisma = {
   loanLine: {
     deleteMany: jest.fn(),
   },
+  $transaction: jest.fn((callback) => {
+    // Execute the callback with the mock prisma client as transaction
+    return callback(mockPrisma);
+  }),
 };
 
 // Set up mocks before importing service

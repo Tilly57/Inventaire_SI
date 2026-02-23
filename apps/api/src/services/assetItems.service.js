@@ -256,6 +256,8 @@ export async function createAssetItem(data, req) {
 
   // Invalidate cache - Phase 3.2
   await invalidateEntity('asset_items');
+  await invalidateEntity('asset_models'); // Update model counts
+  await invalidateEntity('asset_models'); // Update model counts
 
   return assetItem;
 }
@@ -325,6 +327,7 @@ export async function updateAssetItem(id, data, req) {
 
   // Invalidate cache - Phase 3.2
   await invalidateEntity('asset_items');
+  await invalidateEntity('asset_models'); // Update model counts
 
   return assetItem;
 }
@@ -375,6 +378,7 @@ export async function updateAssetItemStatus(id, status, req) {
 
   // Invalidate cache - Phase 3.2
   await invalidateEntity('asset_items');
+  await invalidateEntity('asset_models'); // Update model counts
 
   return assetItem;
 }
@@ -411,6 +415,7 @@ export async function deleteAssetItem(id, req) {
 
   // Invalidate cache - Phase 3.2
   await invalidateEntity('asset_items');
+  await invalidateEntity('asset_models'); // Update model counts
 
   return { message: 'Article d\'équipement supprimé avec succès' };
 }
@@ -607,6 +612,7 @@ export async function createAssetItemsBulk(data) {
 
   // Invalidate cache - Phase 3.2
   await invalidateEntity('asset_items');
+  await invalidateEntity('asset_models'); // Update model counts
 
   return createdItems;
 }

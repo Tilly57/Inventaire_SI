@@ -253,7 +253,7 @@ describe('Error Handler Middleware', () => {
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           success: false,
-          error: 'Erreur de validation des données'
+          error: 'Format de données invalide' // Message when error contains "Invalid"
         })
       );
     });

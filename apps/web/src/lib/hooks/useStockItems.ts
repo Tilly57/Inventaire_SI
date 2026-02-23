@@ -145,9 +145,9 @@ export function useCreateStockItem() {
   return useMutation({
     mutationFn: (data: CreateStockItemDto) => createStockItemApi(data),
     onSuccess: async () => {
-      // Invalidate all related queries (no refetch needed - invalidate triggers automatic refetch)
-      await queryClient.invalidateQueries({ queryKey: ['stockItems'] })
-      await queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+      // Invalidate all related queries
+      await queryClient.resetQueries({ queryKey: ['stockItems'] })
+      await queryClient.resetQueries({ queryKey: ['dashboard'] })
       toast({
         title: 'Article créé',
         description: 'L\'article de stock a été créé avec succès',
@@ -203,9 +203,9 @@ export function useUpdateStockItem() {
     mutationFn: ({ id, data }: { id: string; data: UpdateStockItemDto }) =>
       updateStockItemApi(id, data),
     onSuccess: async () => {
-      // Invalidate all related queries (no refetch needed - invalidate triggers automatic refetch)
-      await queryClient.invalidateQueries({ queryKey: ['stockItems'] })
-      await queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+      // Invalidate all related queries
+      await queryClient.resetQueries({ queryKey: ['stockItems'] })
+      await queryClient.resetQueries({ queryKey: ['dashboard'] })
       toast({
         title: 'Article modifié',
         description: 'L\'article de stock a été modifié avec succès',
@@ -264,9 +264,9 @@ export function useDeleteStockItem() {
   return useMutation({
     mutationFn: (id: string) => deleteStockItemApi(id),
     onSuccess: async () => {
-      // Invalidate all related queries (no refetch needed - invalidate triggers automatic refetch)
-      await queryClient.invalidateQueries({ queryKey: ['stockItems'] })
-      await queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+      // Invalidate all related queries
+      await queryClient.resetQueries({ queryKey: ['stockItems'] })
+      await queryClient.resetQueries({ queryKey: ['dashboard'] })
       toast({
         title: 'Article supprimé',
         description: 'L\'article de stock a été supprimé avec succès',

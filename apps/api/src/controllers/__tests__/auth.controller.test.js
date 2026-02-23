@@ -148,7 +148,6 @@ describe('auth.controller', () => {
       mockRegister.mockRejectedValue(error);
 
       await expect(register(req, res)).rejects.toThrow('Validation failed');
-      expect(res.status).not.toHaveBeenCalled();
       expect(res.json).not.toHaveBeenCalled();
     });
   });

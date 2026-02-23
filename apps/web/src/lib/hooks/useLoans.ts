@@ -222,7 +222,7 @@ export function useCreateLoan() {
       // Set the created loan data in cache immediately
       queryClient.setQueryData(['loans', loan.id], loan)
 
-      // Invalidate all related queries (no refetch needed - invalidate triggers automatic refetch)
+      // Invalidate all related queries
       await queryClient.invalidateQueries({ queryKey: ['loans'] })
       await queryClient.invalidateQueries({ queryKey: ['dashboard'] })
       toast({
@@ -284,7 +284,7 @@ export function useAddLoanLine() {
     mutationFn: ({ loanId, data }: { loanId: string; data: AddLoanLineDto }) =>
       addLoanLineApi(loanId, data),
     onSuccess: async (_, variables) => {
-      // Invalidate all related queries (no refetch needed - invalidate triggers automatic refetch)
+      // Invalidate all related queries
       await queryClient.invalidateQueries({ queryKey: ['loans'] })
       await queryClient.invalidateQueries({ queryKey: ['loans', variables.loanId] })
       await queryClient.invalidateQueries({ queryKey: ['assetItems'] })
@@ -347,7 +347,7 @@ export function useRemoveLoanLine() {
     mutationFn: ({ loanId, lineId }: { loanId: string; lineId: string }) =>
       removeLoanLineApi(loanId, lineId),
     onSuccess: async (_, variables) => {
-      // Invalidate all related queries (no refetch needed - invalidate triggers automatic refetch)
+      // Invalidate all related queries
       await queryClient.invalidateQueries({ queryKey: ['loans'] })
       await queryClient.invalidateQueries({ queryKey: ['loans', variables.loanId] })
       await queryClient.invalidateQueries({ queryKey: ['assetItems'] })
@@ -413,7 +413,7 @@ export function useUploadPickupSignature() {
     mutationFn: ({ loanId, signature }: { loanId: string; signature: File | string }) =>
       uploadPickupSignatureApi(loanId, signature),
     onSuccess: async (_, variables) => {
-      // Invalidate all related queries (no refetch needed - invalidate triggers automatic refetch)
+      // Invalidate all related queries
       await queryClient.invalidateQueries({ queryKey: ['loans'] })
       await queryClient.invalidateQueries({ queryKey: ['loans', variables.loanId] })
       toast({
@@ -474,7 +474,7 @@ export function useUploadReturnSignature() {
     mutationFn: ({ loanId, signature }: { loanId: string; signature: File | string }) =>
       uploadReturnSignatureApi(loanId, signature),
     onSuccess: async (_, variables) => {
-      // Invalidate all related queries (no refetch needed - invalidate triggers automatic refetch)
+      // Invalidate all related queries
       await queryClient.invalidateQueries({ queryKey: ['loans'] })
       await queryClient.invalidateQueries({ queryKey: ['loans', variables.loanId] })
       toast({
@@ -543,7 +543,7 @@ export function useCloseLoan() {
   return useMutation({
     mutationFn: (loanId: string) => closeLoanApi(loanId),
     onSuccess: async (_, loanId) => {
-      // Invalidate all related queries (no refetch needed - invalidate triggers automatic refetch)
+      // Invalidate all related queries
       await queryClient.invalidateQueries({ queryKey: ['loans'] })
       await queryClient.invalidateQueries({ queryKey: ['loans', loanId] })
       await queryClient.invalidateQueries({ queryKey: ['assetItems'] })
@@ -612,7 +612,7 @@ export function useDeleteLoan() {
   return useMutation({
     mutationFn: (id: string) => deleteLoanApi(id),
     onSuccess: async () => {
-      // Invalidate all related queries (no refetch needed - invalidate triggers automatic refetch)
+      // Invalidate all related queries
       await queryClient.invalidateQueries({ queryKey: ['loans'] })
       await queryClient.invalidateQueries({ queryKey: ['assetItems'] })
       await queryClient.invalidateQueries({ queryKey: ['assetModels'] })
@@ -652,7 +652,7 @@ export function useBatchDeleteLoans() {
   return useMutation({
     mutationFn: (loanIds: string[]) => batchDeleteLoansApi(loanIds),
     onSuccess: async (result) => {
-      // Invalidate all related queries (no refetch needed - invalidate triggers automatic refetch)
+      // Invalidate all related queries
       await queryClient.invalidateQueries({ queryKey: ['loans'] })
       await queryClient.invalidateQueries({ queryKey: ['assetItems'] })
       await queryClient.invalidateQueries({ queryKey: ['assetModels'] })

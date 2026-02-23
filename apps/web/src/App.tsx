@@ -1,10 +1,11 @@
 import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { QUERY_STALE_TIME } from '@/lib/utils/constants'
 import { Toaster } from '@/components/ui/toaster'
 import { ThemeProvider } from '@/lib/contexts/ThemeContext'
 import { ErrorBoundary } from '@/components/common/ErrorBoundary'
+import { AppInitializer } from '@/components/common/AppInitializer'
+import * as Sentry from '@sentry/react'
 
 // Layout (not lazy-loaded - needed immediately)
 import { AppLayout } from '@/components/layout/AppLayout'
@@ -30,22 +31,27 @@ const AuditLogsPage = lazy(() => import('@/pages/AuditLogsPage'))
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: QUERY_STALE_TIME,
-      refetchOnWindowFocus: false,
+      staleTime: 0, // Always consider data stale - fetch fresh data every time
+      refetchOnMount: 'always',
+      refetchOnWindowFocus: true,
       retry: 1,
     },
   },
 })
+
+// Wrap BrowserRouter with Sentry for automatic navigation tracking
+const SentryRoutes = Sentry.withSentryRouting(Routes)
 
 function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider>
         <QueryClientProvider client={queryClient}>
-          <Toaster />
-          <BrowserRouter>
+          <AppInitializer>
+            <Toaster />
+            <BrowserRouter>
         <Suspense fallback={<PageSkeleton />}>
-          <Routes>
+          <SentryRoutes>
             {/* Public routes */}
             <Route path="/login" element={<LoginPage />} />
 
@@ -86,9 +92,10 @@ function App() {
 
             {/* 404 - Catch all */}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </Routes>
+          </SentryRoutes>
         </Suspense>
         </BrowserRouter>
+          </AppInitializer>
         </QueryClientProvider>
       </ThemeProvider>
     </ErrorBoundary>

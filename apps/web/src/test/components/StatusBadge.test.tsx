@@ -41,14 +41,14 @@ describe('StatusBadge', () => {
   it('should apply correct CSS classes for EN_STOCK', () => {
     const { container } = render(<StatusBadge status="EN_STOCK" />);
 
-    const badge = container.querySelector('.bg-green-100');
+    const badge = container.querySelector('.bg-primary');
     expect(badge).toBeInTheDocument();
   });
 
   it('should apply correct CSS classes for HS', () => {
     const { container } = render(<StatusBadge status="HS" />);
 
-    const badge = container.querySelector('.bg-red-100');
+    const badge = container.querySelector('.bg-destructive');
     expect(badge).toBeInTheDocument();
   });
 });
