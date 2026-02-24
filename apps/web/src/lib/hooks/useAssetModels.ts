@@ -63,6 +63,7 @@ export function useAssetModels() {
   return useQuery({
     queryKey: ['assetModels'],
     queryFn: getAllAssetModelsApi,
+    staleTime: 30_000,
   })
 }
 

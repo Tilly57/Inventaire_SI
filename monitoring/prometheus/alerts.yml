@@ -1,0 +1,64 @@
+groups:
+  - name: inventaire-api
+    rules:
+      # High error rate (>5% of requests returning 5xx over 5 minutes)
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High API error rate ({{ $value | humanizePercentage }})"
+          description: "More than 5% of API requests are returning 5xx errors."
+
+      # Slow API responses (P95 > 2s over 5 minutes)
+      - alert: SlowApiResponses
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Slow API response time (P95: {{ $value | humanizeDuration }})"
+          description: "95th percentile API response time exceeds 2 seconds."
+
+      # API service down
+      - alert: ApiDown
+        expr: up{job="inventaire-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Inventaire API is down"
+          description: "The API service has been unreachable for more than 1 minute."
+
+  - name: infrastructure
+    rules:
+      # High memory usage on Node.js process (>512MB)
+      - alert: HighMemoryUsage
+        expr: process_resident_memory_bytes{job="inventaire-api"} > 536870912
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage ({{ $value | humanize1024 }}B)"
+          description: "Node.js process is using more than 512MB of memory."
+
+      # Too many open file descriptors
+      - alert: HighOpenFileDescriptors
+        expr: process_open_fds{job="inventaire-api"} / process_max_fds{job="inventaire-api"} > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High file descriptor usage ({{ $value | humanizePercentage }})"
+          description: "More than 80% of file descriptors are in use."
+
+      # Event loop lag (>100ms)
+      - alert: EventLoopLag
+        expr: nodejs_eventloop_lag_seconds{job="inventaire-api"} > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High event loop lag ({{ $value | humanizeDuration }})"
+          description: "Node.js event loop lag exceeds 100ms, indicating blocking operations."

@@ -56,6 +56,7 @@ export function useUsers() {
   return useQuery({
     queryKey: ['users'],
     queryFn: getAllUsersApi,
+    staleTime: 30_000,
   })
 }
 
