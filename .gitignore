@@ -80,6 +80,7 @@ uploads/
 # SSL Certificates
 # ===========================================
 certs/
+certbot/
 
 # ===========================================
 # Test & Temporary Files
