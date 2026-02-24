@@ -3,6 +3,33 @@
 All notable changes to this project will be documented in this file.
 
 
+# Release v0.9.16 - 2026-02-24
+
+## Summary
+
+<!-- Add a brief summary of this release -->
+
+## Changes
+
+### ✨ Features
+
+
+### 🐛 Bug Fixes
+- fix: sprint 4 audit fixes (C1, C2, H2, H3, H4)
+
+### 📚 Documentation
+
+
+### 🔧 Improvements
+
+
+### 📦 Dependencies
+
+
+### All Commits
+- 5b012e6 fix: sprint 4 audit fixes (C1, C2, H2, H3, H4) (Tilly57)
+
+
 # Release v0.9.15 - 2026-02-24
 
 ## Summary

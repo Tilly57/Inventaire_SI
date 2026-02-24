@@ -1,0 +1,36 @@
+# Alertmanager Configuration - Inventaire SI
+# Documentation: https://prometheus.io/docs/alerting/latest/configuration/
+
+global:
+  resolve_timeout: 5m
+
+# Route tree — all alerts go to default receiver
+route:
+  group_by: ['alertname', 'severity']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  receiver: 'default'
+
+  routes:
+    # Critical alerts: shorter repeat interval
+    - match:
+        severity: critical
+      receiver: 'default'
+      repeat_interval: 1h
+
+receivers:
+  # Default receiver — webhook placeholder
+  # Replace with your actual notification endpoint (Slack, email, Teams, etc.)
+  - name: 'default'
+    webhook_configs:
+      - url: '${ALERTMANAGER_WEBHOOK_URL:-http://localhost:9095/webhook}'
+        send_resolved: true
+
+# Inhibition rules — suppress lower severity if critical is firing
+inhibit_rules:
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname']

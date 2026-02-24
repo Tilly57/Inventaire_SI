@@ -75,9 +75,9 @@ export function GlobalSearch() {
     if (!data) return []
     const items: { path: string; label: string }[] = []
     data.employees.forEach((emp) => items.push({ path: '/employees', label: `${emp.lastName} ${emp.firstName}` }))
-    data.assetItems.forEach((item) => items.push({ path: '/asset-items', label: `${item.assetTag} - ${item.brand} ${item.modelName}` }))
-    data.assetModels.forEach((model) => items.push({ path: '/asset-models', label: `${model.brand} ${model.modelName}` }))
-    data.stockItems.forEach((item) => items.push({ path: '/stock-items', label: `${item.brand} ${item.modelName}` }))
+    data.assetItems.forEach((item) => items.push({ path: '/assets/items', label: `${item.assetTag} - ${item.brand} ${item.modelName}` }))
+    data.assetModels.forEach((model) => items.push({ path: '/assets/models', label: `${model.brand} ${model.modelName}` }))
+    data.stockItems.forEach((item) => items.push({ path: '/stock', label: `${item.brand} ${item.modelName}` }))
     return items
   }, [data])
 
@@ -207,7 +207,7 @@ export function GlobalSearch() {
                           id={`search-result-${itemOffset + i}`}
                           role="option"
                           aria-selected={activeIndex === itemOffset + i}
-                          onClick={() => handleResultClick('/asset-items')}
+                          onClick={() => handleResultClick('/assets/items')}
                           className={cn(
                             'w-full text-left px-3 py-2 rounded-md',
                             'hover:bg-gray-100 dark:hover:bg-gray-700',
@@ -236,7 +236,7 @@ export function GlobalSearch() {
                           id={`search-result-${modelOffset + i}`}
                           role="option"
                           aria-selected={activeIndex === modelOffset + i}
-                          onClick={() => handleResultClick('/asset-models')}
+                          onClick={() => handleResultClick('/assets/models')}
                           className={cn(
                             'w-full text-left px-3 py-2 rounded-md',
                             'hover:bg-gray-100 dark:hover:bg-gray-700',
@@ -264,7 +264,7 @@ export function GlobalSearch() {
                           id={`search-result-${stockOffset + i}`}
                           role="option"
                           aria-selected={activeIndex === stockOffset + i}
-                          onClick={() => handleResultClick('/stock-items')}
+                          onClick={() => handleResultClick('/stock')}
                           className={cn(
                             'w-full text-left px-3 py-2 rounded-md',
                             'hover:bg-gray-100 dark:hover:bg-gray-700',
