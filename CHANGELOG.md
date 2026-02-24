@@ -3,6 +3,33 @@
 All notable changes to this project will be documented in this file.
 
 
+# Release v0.9.20 - 2026-02-24
+
+## Summary
+
+<!-- Add a brief summary of this release -->
+
+## Changes
+
+### ✨ Features
+
+
+### 🐛 Bug Fixes
+- fix: audit sprint 9 — rate limiting, race condition, nginx hardening
+
+### 📚 Documentation
+
+
+### 🔧 Improvements
+
+
+### 📦 Dependencies
+
+
+### All Commits
+- 4ea54fd fix: audit sprint 9 — rate limiting, race condition, nginx hardening (Tilly57)
+
+
 # Release v0.9.19 - 2026-02-24
 
 ## Summary
