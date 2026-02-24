@@ -180,10 +180,8 @@ export function AssetItemAutocomplete({
                       {item.assetModel.type}
                       {item.serial && ` • SN: ${item.serial}`}
                     </div>
-                    {/* @ts-ignore - TypeScript has issues with type inference in map with default values */}
                     <div className="mt-1">{getStatusBadge(item.status)}</div>
                   </div>
-                  {/* @ts-ignore - TypeScript has issues with type inference in map with default values */}
                   {value?.id === item.id && (
                     <Check className="h-4 w-4 text-[#EE2722] flex-shrink-0 mt-1" />
                   )}

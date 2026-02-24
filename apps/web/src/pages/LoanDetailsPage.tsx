@@ -38,6 +38,9 @@ import { SignatureSection } from '@/components/loans/SignatureSection'
 // Lazy load dialog
 const AddLoanLineDialog = lazy(() => import('@/components/loans/AddLoanLineDialog').then(m => ({ default: m.AddLoanLineDialog })))
 
+import { ErrorBoundary } from '@/components/common/ErrorBoundary'
+import { ConfirmDialog } from '@/components/common/ConfirmDialog'
+import { useConfirmDialog } from '@/lib/hooks/useConfirmDialog'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -71,6 +74,7 @@ export function LoanDetailsPage() {
 
   // Local state
   const [isAddingLine, setIsAddingLine] = useState(false)
+  const { confirm, dialogProps } = useConfirmDialog()
 
   // Computed values
   const isAdmin = user?.role === UserRole.ADMIN
@@ -81,7 +85,7 @@ export function LoanDetailsPage() {
 
   // Event handlers
   const handleRemoveLine = async (lineId: string) => {
-    if (!confirm('Voulez-vous vraiment retirer cet article du prêt?')) return
+    if (!await confirm({ title: 'Retirer l\'article', description: 'Voulez-vous vraiment retirer cet article du prêt ?' })) return
     await removeLine.mutateAsync({ loanId: loan!.id, lineId })
   }
 
@@ -94,17 +98,17 @@ export function LoanDetailsPage() {
   }
 
   const handleCloseLoan = async () => {
-    if (!confirm('Voulez-vous vraiment fermer ce prêt? Cette action est irréversible.')) return
+    if (!await confirm({ title: 'Fermer le prêt', description: 'Voulez-vous vraiment fermer ce prêt ? Cette action est irréversible.' })) return
     await closeLoan.mutateAsync(loan!.id)
   }
 
   const handleDeletePickupSignature = async () => {
-    if (!confirm('Voulez-vous vraiment supprimer la signature de retrait?')) return
+    if (!await confirm({ title: 'Supprimer la signature', description: 'Voulez-vous vraiment supprimer la signature de retrait ?' })) return
     await deletePickup.mutateAsync(loan!.id)
   }
 
   const handleDeleteReturnSignature = async () => {
-    if (!confirm('Voulez-vous vraiment supprimer la signature de retour?')) return
+    if (!await confirm({ title: 'Supprimer la signature', description: 'Voulez-vous vraiment supprimer la signature de retour ?' })) return
     await deleteReturn.mutateAsync(loan!.id)
   }
 
@@ -217,13 +221,17 @@ export function LoanDetailsPage() {
       )}
 
       {/* Add Line Dialog */}
-      <Suspense fallback={null}>
-        <AddLoanLineDialog
-          loanId={loan.id}
-          open={isAddingLine}
-          onClose={() => setIsAddingLine(false)}
-        />
-      </Suspense>
+      <ErrorBoundary>
+        <Suspense fallback={null}>
+          <AddLoanLineDialog
+            loanId={loan.id}
+            open={isAddingLine}
+            onClose={() => setIsAddingLine(false)}
+          />
+        </Suspense>
+      </ErrorBoundary>
+
+      <ConfirmDialog {...dialogProps} />
     </div>
   )
 }

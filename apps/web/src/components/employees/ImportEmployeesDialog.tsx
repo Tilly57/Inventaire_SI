@@ -45,6 +45,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useToast } from '@/lib/hooks/use-toast'
+import { getErrorMessage } from '@/lib/utils/getErrorMessage'
 import { useEmployees } from '@/lib/hooks/useEmployees'
 import { bulkCreateEmployeesApi } from '@/lib/api/employees.api'
 import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, Loader2, Info } from 'lucide-react'
@@ -283,11 +284,11 @@ export function ImportEmployeesDialog({ open, onClose }: ImportEmployeesDialogPr
           description: message,
         })
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         variant: 'destructive',
         title: 'Erreur',
-        description: error.message || 'Impossible de lire le fichier Excel',
+        description: getErrorMessage(error, 'Impossible de lire le fichier Excel'),
       })
     } finally {
       setIsImporting(false)

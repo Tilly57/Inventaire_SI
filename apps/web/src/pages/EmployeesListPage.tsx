@@ -14,6 +14,9 @@ import { Plus, Search, Upload, Trash2, Download } from 'lucide-react'
 import { formatFullName } from '@/lib/utils/formatters'
 import { DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS } from '@/lib/utils/constants'
 import { useToast } from '@/lib/hooks/use-toast'
+import { getErrorMessage } from '@/lib/utils/getErrorMessage'
+import { ConfirmDialog } from '@/components/common/ConfirmDialog'
+import { useConfirmDialog } from '@/lib/hooks/useConfirmDialog'
 import { exportEmployees } from '@/lib/api/export.api'
 
 export function EmployeesListPage() {
@@ -27,6 +30,7 @@ export function EmployeesListPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
   const [selectedEmployees, setSelectedEmployees] = useState<string[]>([])
+  const { confirm, dialogProps } = useConfirmDialog()
 
   const employeesList = Array.isArray(employees) ? employees : []
 
@@ -71,9 +75,10 @@ export function EmployeesListPage() {
   const handleBulkDelete = async () => {
     if (selectedEmployees.length === 0) return
 
-    const confirmed = window.confirm(
-      `Voulez-vous vraiment supprimer ${selectedEmployees.length} employé(s) ? Cette action est irréversible.`
-    )
+    const confirmed = await confirm({
+      title: 'Supprimer les employés',
+      description: `Voulez-vous vraiment supprimer ${selectedEmployees.length} employé(s) ? Cette action est irréversible.`,
+    })
 
     if (!confirmed) return
 
@@ -85,9 +90,9 @@ export function EmployeesListPage() {
       try {
         await deleteEmployee.mutateAsync(employeeId)
         successCount++
-      } catch (error: any) {
+      } catch (error: unknown) {
         errorCount++
-        const errorMsg = error.response?.data?.error || 'Erreur inconnue'
+        const errorMsg = getErrorMessage(error, 'Erreur inconnue')
         errors.push(errorMsg)
       }
     }
@@ -128,11 +133,11 @@ export function EmployeesListPage() {
         title: 'Export réussi',
         description: `${filteredEmployees.length} employé(s) exporté(s) vers Excel`,
       })
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         variant: 'destructive',
         title: 'Erreur d\'export',
-        description: error.message || 'Impossible d\'exporter les employés',
+        description: getErrorMessage(error, 'Impossible d\'exporter les employés'),
       })
     } finally {
       setIsExporting(false)
@@ -242,6 +247,8 @@ export function EmployeesListPage() {
           onClose={() => setIsImporting(false)}
         />
       </Suspense>
+
+      <ConfirmDialog {...dialogProps} />
     </div>
   )
 }

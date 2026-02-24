@@ -15,7 +15,7 @@
  */
 
 import crypto from 'crypto';
-import { UnauthorizedError } from '../utils/errors.js';
+import { UnauthorizedError, ForbiddenError } from '../utils/errors.js';
 
 // Exempt routes that don't need CSRF protection
 const EXEMPT_ROUTES = [
@@ -83,11 +83,11 @@ export const csrfProtection = (req, res, next) => {
 
   // Validate tokens exist and match
   if (!cookieToken || !headerToken) {
-    throw new UnauthorizedError('CSRF token missing');
+    throw new ForbiddenError('CSRF token missing');
   }
 
   if (cookieToken !== headerToken) {
-    throw new UnauthorizedError('CSRF token validation failed');
+    throw new ForbiddenError('CSRF token validation failed');
   }
 
   next();
