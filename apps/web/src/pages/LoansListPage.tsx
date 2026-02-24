@@ -1,7 +1,7 @@
-/** @fileoverview Page de gestion des prêts avec filtres par statut, impression et suppression groupée */
-import { useState, useEffect, useDeferredValue, useMemo, lazy, Suspense } from 'react'
+/** @fileoverview Page de gestion des prêts avec pagination serveur, filtres et suppression groupée */
+import { useState, useEffect, useDeferredValue, lazy, Suspense } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useLoans } from '@/lib/hooks/useLoans'
+import { useLoansPaginated, useLoans } from '@/lib/hooks/useLoans'
 import { useAuth } from '@/lib/hooks/useAuth'
 import { useEmployees } from '@/lib/hooks/useEmployees'
 import { LoansTable } from '@/components/loans/LoansTable'
@@ -29,7 +29,6 @@ import { formatFullName } from '@/lib/utils/formatters'
 export function LoansListPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { data: loans, isLoading, error } = useLoans()
   const { data: employees = [] } = useEmployees()
   const [isCreating, setIsCreating] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
@@ -43,38 +42,30 @@ export function LoansListPage() {
   const [showPrintView, setShowPrintView] = useState(false)
   const isAdmin = user?.role === 'ADMIN'
 
-  const loansList = Array.isArray(loans) ? loans : []
+  // Debounce search to avoid excessive API calls
+  const deferredSearch = useDeferredValue(searchTerm)
 
-  // Defer search term to avoid blocking UI during typing
-  const deferredSearchTerm = useDeferredValue(searchTerm)
+  // Server-side paginated query
+  const { data: paginatedData, isLoading, error } = useLoansPaginated({
+    page: currentPage,
+    pageSize,
+    status: statusFilter === 'all' ? undefined : statusFilter,
+    search: deferredSearch.length >= 2 ? deferredSearch : undefined,
+    sortBy: 'openedAt',
+    sortOrder: 'desc',
+  })
 
-  // Use deferred search term for filtering with useMemo
-  const filteredLoans = useMemo(
-    () =>
-      loansList.filter((loan) => {
-        const matchesSearch =
-          loan.employee?.firstName?.toLowerCase().includes(deferredSearchTerm.toLowerCase()) ||
-          loan.employee?.lastName?.toLowerCase().includes(deferredSearchTerm.toLowerCase()) ||
-          loan.employee?.email?.toLowerCase().includes(deferredSearchTerm.toLowerCase())
+  // For print feature: fetch all loans (only when print view is needed)
+  const { data: allLoans } = useLoans()
 
-        const matchesStatus = statusFilter === 'all' || loan.status === statusFilter
-
-        return matchesSearch && matchesStatus
-      }),
-    [loansList, deferredSearchTerm, statusFilter]
-  )
+  const loans = paginatedData?.data ?? []
+  const pagination = paginatedData?.pagination
 
   // Reset to page 1 and clear selection when filters change
   useEffect(() => {
     setCurrentPage(1)
     setSelectedLoanIds([])
-  }, [deferredSearchTerm, statusFilter])
-
-  const totalItems = filteredLoans.length
-  const totalPages = Math.ceil(totalItems / pageSize)
-  const startIndex = (currentPage - 1) * pageSize
-  const endIndex = startIndex + pageSize
-  const paginatedLoans = filteredLoans.slice(startIndex, endIndex)
+  }, [deferredSearch, statusFilter])
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
@@ -100,9 +91,10 @@ export function LoansListPage() {
   }
 
   // Get loans to print (filtered by employee if specified)
+  const allLoansList = Array.isArray(allLoans) ? allLoans : []
   const loansToPrint = printEmployeeId
-    ? loansList.filter(loan => loan.employeeId === printEmployeeId)
-    : loansList
+    ? allLoansList.filter(loan => loan.employeeId === printEmployeeId)
+    : allLoansList
 
   const printEmployeeName = printEmployeeId
     ? (() => {
@@ -193,17 +185,17 @@ export function LoansListPage() {
 
       <div className="border rounded-lg">
         <LoansTable
-          loans={paginatedLoans}
+          loans={loans}
           selectedLoans={isAdmin ? selectedLoanIds : undefined}
           onSelectionChange={isAdmin ? setSelectedLoanIds : undefined}
         />
 
-        {totalItems > 0 && (
+        {pagination && pagination.totalItems > 0 && (
           <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            pageSize={pageSize}
-            totalItems={totalItems}
+            currentPage={pagination.page}
+            totalPages={pagination.totalPages}
+            pageSize={pagination.pageSize}
+            totalItems={pagination.totalItems}
             onPageChange={handlePageChange}
             onPageSizeChange={handlePageSizeChange}
             pageSizeOptions={PAGE_SIZE_OPTIONS}
@@ -222,7 +214,7 @@ export function LoansListPage() {
       {isAdmin && (
         <Suspense fallback={null}>
           <BulkDeleteLoansDialog
-            loans={loansList.filter(loan => selectedLoanIds.includes(loan.id))}
+            loans={loans.filter(loan => selectedLoanIds.includes(loan.id))}
             open={isBulkDeleting}
             onClose={() => {
               setIsBulkDeleting(false)

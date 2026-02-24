@@ -113,6 +113,7 @@ export async function getAllLoansPaginated(options = {}) {
   const {
     status,
     employeeId,
+    search,
     page = 1,
     pageSize = 20,
     sortBy = 'openedAt',
@@ -130,6 +131,17 @@ export async function getAllLoansPaginated(options = {}) {
 
   if (employeeId) {
     where.employeeId = employeeId;
+  }
+
+  // Search by employee name or email
+  if (search && search.length >= 2) {
+    where.employee = {
+      OR: [
+        { firstName: { contains: search, mode: 'insensitive' } },
+        { lastName: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+      ]
+    };
   }
 
   // Validate and build ORDER BY clause

@@ -87,7 +87,7 @@ export async function getAllLoansApi(): Promise<Loan[]> {
  * // }
  */
 export async function getLoansApiPaginated(
-  params: PaginationParams & { status?: string; employeeId?: string } = {}
+  params: PaginationParams & { status?: string; employeeId?: string; search?: string } = {}
 ): Promise<PaginatedResponse<Loan>> {
   const queryParams = new URLSearchParams()
 
@@ -97,6 +97,7 @@ export async function getLoansApiPaginated(
   if (params.sortOrder) queryParams.append('sortOrder', params.sortOrder)
   if (params.status) queryParams.append('status', params.status)
   if (params.employeeId) queryParams.append('employeeId', params.employeeId)
+  if (params.search) queryParams.append('search', params.search)
 
   const response = await apiClient.get<PaginatedResponse<Loan>>(`/loans?${queryParams.toString()}`)
   return response.data
