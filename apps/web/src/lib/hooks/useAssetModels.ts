@@ -97,6 +97,7 @@ export function useAssetModel(id: string) {
   return useQuery({
     queryKey: ['assetModels', id],
     queryFn: () => getAssetModelApi(id),
+    staleTime: 30_000,
     enabled: !!id,
   })
 }

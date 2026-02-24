@@ -84,7 +84,8 @@ export function useUser(id: string) {
   return useQuery({
     queryKey: ['users', id],
     queryFn: () => getUserApi(id),
-    enabled: !!id,  // Only fetch if ID is provided
+    staleTime: 30_000,
+    enabled: !!id,
   })
 }
 
