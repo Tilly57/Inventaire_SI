@@ -11,6 +11,7 @@
  */
 
 import * as Sentry from '@sentry/node';
+import logger from './logger.js';
 
 let profilingIntegration = null;
 try {
@@ -40,11 +41,11 @@ export function initializeSentry() {
   // En production, SENTRY_DSN est obligatoire — pas de monitoring = pas de déploiement
   if (!dsn) {
     if (environment === 'production') {
-      console.error('[Sentry] 🔴 CRITICAL: SENTRY_DSN must be set in production!');
-      console.error('[Sentry] Error tracking is mandatory for production deployments.');
+      logger.error('[Sentry] CRITICAL: SENTRY_DSN must be set in production!');
+      logger.error('[Sentry] Error tracking is mandatory for production deployments.');
       process.exit(1);
     }
-    console.warn('[Sentry] DSN not configured. Error tracking is disabled (dev/staging only).');
+    logger.warn('[Sentry] DSN not configured. Error tracking is disabled (dev/staging only).');
     return false;
   }
 
@@ -111,9 +112,9 @@ export function initializeSentry() {
     ],
   });
 
-  console.log(`[Sentry] Initialized successfully`);
-  console.log(`[Sentry] Environment: ${environment}`);
-  console.log(`[Sentry] Traces Sample Rate: ${tracesSampleRate * 100}%`);
+  logger.info(`[Sentry] Initialized successfully`);
+  logger.info(`[Sentry] Environment: ${environment}`);
+  logger.info(`[Sentry] Traces Sample Rate: ${tracesSampleRate * 100}%`);
 
   return true;
 }
