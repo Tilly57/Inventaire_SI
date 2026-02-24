@@ -2,6 +2,7 @@
  * Environment variables validation using Zod
  */
 import { z } from 'zod';
+import logger from './logger.js';
 
 const envSchema = z.object({
   // Node environment
@@ -39,8 +40,7 @@ export function validateEnv() {
   try {
     return envSchema.parse(process.env);
   } catch (error) {
-    console.error('❌ Environment validation failed:');
-    console.error(error.errors);
+    logger.error('Environment validation failed', { errors: error.errors });
     throw new Error('Invalid environment configuration. Check the errors above.');
   }
 }
