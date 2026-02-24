@@ -101,6 +101,7 @@ export function useAssetItem(id: string) {
   return useQuery({
     queryKey: ['assetItems', id],
     queryFn: () => getAssetItemApi(id),
+    staleTime: 30_000,
     enabled: !!id,
   })
 }

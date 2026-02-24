@@ -83,6 +83,7 @@ model AssetModel {
   items      AssetItem[]
   stockItems StockItem[]
 
+  @@unique([type, brand, modelName])
   @@index([type])
   @@index([brand])
   @@index([type, brand])
@@ -195,6 +196,7 @@ model AuditLog {
 
   @@index([tableName, recordId])
   @@index([userId])
+  @@index([userId, createdAt])
   @@index([createdAt])
   @@index([action])
   @@index([tableName, action])
