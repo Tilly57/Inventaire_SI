@@ -1,29 +1,47 @@
 /** @fileoverview Layout principal avec sidebar, header, zone de contenu et session timeout actif */
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { Outlet, useNavigate } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
 import { Header } from './Header'
 import { useAuthStore } from '@/lib/stores/authStore'
+import { useToast } from '@/lib/hooks/use-toast'
 
 const SESSION_DURATION = 30 * 60 * 1000 // 30 minutes
-const CHECK_INTERVAL = 60 * 1000 // Check every 60 seconds
+const WARNING_THRESHOLD = 5 * 60 * 1000 // Warn 5 min before expiry
+const CHECK_INTERVAL = 30 * 1000 // Check every 30 seconds
 
 export function AppLayout() {
   const navigate = useNavigate()
   const logout = useAuthStore((s) => s.logout)
   const updateActivity = useAuthStore((s) => s.updateActivity)
+  const { toast } = useToast()
+  const warningShown = useRef(false)
 
-  // Active session timeout: check every 60s if session has expired
+  // Active session timeout: check every 30s, warn before expiry
   useEffect(() => {
     const interval = setInterval(() => {
       const lastActivity = useAuthStore.getState().lastActivity
-      if (lastActivity && Date.now() - lastActivity > SESSION_DURATION) {
+      if (!lastActivity) return
+
+      const remaining = SESSION_DURATION - (Date.now() - lastActivity)
+
+      if (remaining <= 0) {
         logout()
         navigate('/login')
+      } else if (remaining <= WARNING_THRESHOLD && !warningShown.current) {
+        warningShown.current = true
+        toast({
+          variant: 'destructive',
+          title: 'Session bientôt expirée',
+          description: 'Votre session expire dans 5 minutes. Cliquez ou tapez pour rester connecté.',
+          duration: 10000,
+        })
+      } else if (remaining > WARNING_THRESHOLD) {
+        warningShown.current = false
       }
     }, CHECK_INTERVAL)
     return () => clearInterval(interval)
-  }, [logout, navigate])
+  }, [logout, navigate, toast])
 
   // Track user activity on interactions
   useEffect(() => {

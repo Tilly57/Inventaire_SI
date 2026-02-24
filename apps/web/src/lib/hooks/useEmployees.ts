@@ -29,6 +29,7 @@ import type {
   UpdateEmployeeDto,
 } from '@/lib/types/models.types'
 import { useToast } from '@/lib/hooks/use-toast'
+import { getErrorMessage } from '@/lib/utils/getErrorMessage'
 
 /**
  * Hook to fetch all employees
@@ -146,11 +147,11 @@ export function useCreateEmployee() {
         description: 'L\'employé a été créé avec succès',
       })
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: 'destructive',
         title: 'Erreur',
-        description: error.response?.data?.error || 'Impossible de créer l\'employé',
+        description: getErrorMessage(error, 'Impossible de créer l\'employé'),
       })
     },
   })
@@ -195,11 +196,11 @@ export function useUpdateEmployee() {
         description: 'L\'employé a été modifié avec succès',
       })
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: 'destructive',
         title: 'Erreur',
-        description: error.response?.data?.error || 'Impossible de modifier l\'employé',
+        description: getErrorMessage(error, 'Impossible de modifier l\'employé'),
       })
     },
   })
@@ -262,12 +263,12 @@ export function useDeleteEmployee() {
         description: 'L\'employé a été supprimé avec succès',
       })
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       // Error message explains why deletion failed (e.g., has loan history)
       toast({
         variant: 'destructive',
         title: 'Erreur',
-        description: error.response?.data?.error || 'Impossible de supprimer l\'employé',
+        description: getErrorMessage(error, 'Impossible de supprimer l\'employé'),
       })
     },
   })

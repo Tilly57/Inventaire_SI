@@ -11,6 +11,7 @@ import {
 } from '../api/equipmentTypes.api';
 import type { CreateEquipmentTypeDto, UpdateEquipmentTypeDto } from '../types/models.types';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/lib/utils/getErrorMessage';
 
 // Query keys
 export const equipmentTypesKeys = {
@@ -54,8 +55,8 @@ export function useCreateEquipmentType() {
       await queryClient.resetQueries({ queryKey: equipmentTypesKeys.lists() });
       toast.success('Type d\'équipement créé avec succès');
     },
-    onError: (error: any) => {
-      const message = error.response?.data?.error || 'Erreur lors de la création du type';
+    onError: (error: unknown) => {
+      const message = getErrorMessage(error, 'Erreur lors de la création du type');
       toast.error(message);
     },
   });
@@ -75,8 +76,8 @@ export function useUpdateEquipmentType() {
       await queryClient.resetQueries({ queryKey: equipmentTypesKeys.detail(id) });
       toast.success('Type d\'équipement modifié avec succès');
     },
-    onError: (error: any) => {
-      const message = error.response?.data?.error || 'Erreur lors de la modification du type';
+    onError: (error: unknown) => {
+      const message = getErrorMessage(error, 'Erreur lors de la modification du type');
       toast.error(message);
     },
   });
@@ -94,8 +95,8 @@ export function useDeleteEquipmentType() {
       await queryClient.resetQueries({ queryKey: equipmentTypesKeys.lists() });
       toast.success('Type d\'équipement supprimé avec succès');
     },
-    onError: (error: any) => {
-      const message = error.response?.data?.error || 'Erreur lors de la suppression du type';
+    onError: (error: unknown) => {
+      const message = getErrorMessage(error, 'Erreur lors de la suppression du type');
       toast.error(message);
     },
   });
