@@ -3,6 +3,33 @@
 All notable changes to this project will be documented in this file.
 
 
+# Release v0.9.10 - 2026-02-24
+
+## Summary
+
+<!-- Add a brief summary of this release -->
+
+## Changes
+
+### ✨ Features
+
+
+### 🐛 Bug Fixes
+- fix: MEDIUM audit fixes — token rotation, console suppression, localStorage safety, CI web build
+
+### 📚 Documentation
+
+
+### 🔧 Improvements
+
+
+### 📦 Dependencies
+
+
+### All Commits
+- 8ba39a3 fix: MEDIUM audit fixes — token rotation, console suppression, localStorage safety, CI web build (Tilly57)
+
+
 # Release v0.9.9 - 2026-02-24
 
 ## Summary

@@ -12,6 +12,7 @@
 
 import axios, { AxiosError } from 'axios'
 import { API_URL } from '@/lib/utils/constants'
+import { setUserContext } from '@/lib/sentry'
 
 /**
  * Main Axios instance for all API requests
@@ -80,9 +81,9 @@ export const getCsrfToken = (): string | null => {
 export const initializeCsrf = async (): Promise<void> => {
   try {
     await apiClient.get('/csrf-token')
-    console.log('[CSRF] Token initialized successfully')
+    if (import.meta.env.DEV) console.log('[CSRF] Token initialized successfully')
   } catch (error) {
-    console.error('[CSRF] Failed to initialize token:', error)
+    if (import.meta.env.DEV) console.error('[CSRF] Failed to initialize token:', error)
     // Don't throw - allow app to continue even if CSRF init fails
     // The backend will return 401 on mutations if token is missing
   }
@@ -181,7 +182,7 @@ apiClient.interceptors.response.use(
 
       // Check if this is a CSRF token error
       if (errorMessage.includes('CSRF')) {
-        console.log('[CSRF] Token validation failed, reinitializing...')
+        if (import.meta.env.DEV) console.log('[CSRF] Token validation failed, reinitializing...')
 
         // Reinitialize CSRF token
         await initializeCsrf()
@@ -241,6 +242,7 @@ apiClient.interceptors.response.use(
         // Refresh failed - user session is truly expired
         processQueue(refreshError as Error, null)
         setAccessToken(null)
+        setUserContext(null)
 
         // Redirect to login page (but not if already there)
         if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
