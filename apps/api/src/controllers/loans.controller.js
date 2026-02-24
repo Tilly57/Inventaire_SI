@@ -67,7 +67,7 @@ import { parsePaginationParams } from '../utils/pagination.js';
  * }
  */
 export const getAllLoans = asyncHandler(async (req, res) => {
-  const { status, employeeId, sortBy, sortOrder } = req.query;
+  const { status, employeeId, search, sortBy, sortOrder } = req.query;
 
   // Check if pagination is requested
   const isPaginationRequested = req.query.page !== undefined || req.query.pageSize !== undefined;
@@ -79,6 +79,7 @@ export const getAllLoans = asyncHandler(async (req, res) => {
     const result = await loansService.getAllLoansPaginated({
       status,
       employeeId,
+      search: search?.trim(),
       page,
       pageSize,
       sortBy,

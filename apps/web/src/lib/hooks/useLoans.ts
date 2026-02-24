@@ -131,7 +131,7 @@ export function useLoans() {
  * }
  */
 export function useLoansPaginated(
-  params: PaginationParams & { status?: string; employeeId?: string } = {}
+  params: PaginationParams & { status?: string; employeeId?: string; search?: string } = {}
 ) {
   return useQuery({
     queryKey: ['loans', 'paginated', params],

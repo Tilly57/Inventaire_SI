@@ -3,6 +3,33 @@
 All notable changes to this project will be documented in this file.
 
 
+# Release v0.9.18 - 2026-02-24
+
+## Summary
+
+<!-- Add a brief summary of this release -->
+
+## Changes
+
+### ✨ Features
+- feat: server-side pagination and search for loans (M6)
+
+### 🐛 Bug Fixes
+
+
+### 📚 Documentation
+
+
+### 🔧 Improvements
+
+
+### 📦 Dependencies
+
+
+### All Commits
+- 3789b73 feat: server-side pagination and search for loans (M6) (Tilly57)
+
+
 # Release v0.9.17 - 2026-02-24
 
 ## Summary
