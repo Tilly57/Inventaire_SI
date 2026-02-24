@@ -46,6 +46,7 @@ Feuille de route des améliorations futures pour l'application Inventaire SI.
 - [x] Logs d'audit (AuditLogsPage + AuditTrail)
 - [x] Tests E2E étendus (12-search-filters, 13-error-scenarios, 14-audit-logs)
 - [x] Infrastructure Let's Encrypt prête (certbot + ACME challenge nginx)
+- [x] Let's Encrypt activé en production (SSL valide)
 - [x] Monitoring : Prometheus + Grafana + Loki + Sentry
 - [x] Score audit sécurité : 9.7/10
 
@@ -92,19 +93,7 @@ Feuille de route des améliorations futures pour l'application Inventaire SI.
 
 ---
 
-#### 4. Basculer vers Let's Encrypt
-
-**Priorité:** 🟡 HAUTE (quand domaine public disponible)
-**Effort:** 30 minutes
-**Impact:** SSL production valide
-
-**Prérequis:** Domaine public (Let's Encrypt ne supporte pas les IP ni les TLD internes)
-
-**Tâches:**
-- [ ] Acquérir un domaine public
-- [ ] Configurer DNS vers le serveur
-- [ ] Exécuter certbot (voir docs/HTTPS_SETUP.md)
-- [ ] Mettre à jour nginx pour utiliser les certificats Let's Encrypt
+#### ~~4. Basculer vers Let's Encrypt~~ ✅ COMPLÉTÉ
 
 ---
 
@@ -577,7 +566,7 @@ const provider = new Pact({
 - ✅ **v1.0.0 release**
 - 🚀 Activer monitoring production
 - 🚀 Backups off-site S3
-- 🚀 Basculer vers Let's Encrypt (quand domaine disponible)
+- ✅ Let's Encrypt activé en production
 
 ### Q2 2026 (Apr-Jun)
 
