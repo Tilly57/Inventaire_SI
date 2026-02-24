@@ -5,7 +5,7 @@
  * with keyboard navigation and click-outside handling
  */
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Search, Loader2, User, Package, Layers, Box } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
@@ -25,6 +25,7 @@ export function GlobalSearch() {
   const [query, setQuery] = useState('')
   const debouncedQuery = useDebounce(query, 300)
   const [isOpen, setIsOpen] = useState(false)
+  const [activeIndex, setActiveIndex] = useState(-1)
   const searchRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const navigate = useNavigate()
@@ -62,11 +63,38 @@ export function GlobalSearch() {
     return () => document.removeEventListener('keydown', handleEscape)
   }, [])
 
-  const handleResultClick = (path: string) => {
+  const handleResultClick = useCallback((path: string) => {
     navigate(path)
     setQuery('')
     setIsOpen(false)
-  }
+    setActiveIndex(-1)
+  }, [navigate])
+
+  // Flat list of all results for keyboard navigation
+  const flatResults = useMemo(() => {
+    if (!data) return []
+    const items: { path: string; label: string }[] = []
+    data.employees.forEach((emp) => items.push({ path: '/employees', label: `${emp.lastName} ${emp.firstName}` }))
+    data.assetItems.forEach((item) => items.push({ path: '/asset-items', label: `${item.assetTag} - ${item.brand} ${item.modelName}` }))
+    data.assetModels.forEach((model) => items.push({ path: '/asset-models', label: `${model.brand} ${model.modelName}` }))
+    data.stockItems.forEach((item) => items.push({ path: '/stock-items', label: `${item.brand} ${item.modelName}` }))
+    return items
+  }, [data])
+
+  // Keyboard navigation (Arrow Up/Down + Enter)
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (!isOpen || flatResults.length === 0) return
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setActiveIndex((prev) => (prev < flatResults.length - 1 ? prev + 1 : 0))
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setActiveIndex((prev) => (prev > 0 ? prev - 1 : flatResults.length - 1))
+    } else if (e.key === 'Enter' && activeIndex >= 0) {
+      e.preventDefault()
+      handleResultClick(flatResults[activeIndex].path)
+    }
+  }, [isOpen, flatResults, activeIndex, handleResultClick])
 
   const hasResults =
     data &&
@@ -88,8 +116,15 @@ export function GlobalSearch() {
           onChange={(e) => {
             setQuery(e.target.value)
             setIsOpen(true)
+            setActiveIndex(-1)
           }}
           onFocus={() => query.length >= 2 && setIsOpen(true)}
+          onKeyDown={handleKeyDown}
+          role="combobox"
+          aria-expanded={isOpen}
+          aria-haspopup="listbox"
+          aria-label="Recherche globale"
+          aria-activedescendant={activeIndex >= 0 ? `search-result-${activeIndex}` : undefined}
           className={cn(
             'w-full pl-10 pr-4 py-2 rounded-lg',
             'bg-[#231F20]/50 border border-gray-700',
@@ -106,6 +141,8 @@ export function GlobalSearch() {
       {/* Results Dropdown */}
       {isOpen && query.length >= 2 && (
         <div
+          role="listbox"
+          aria-label="Résultats de recherche"
           className={cn(
             'absolute top-full mt-2 w-full',
             'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700',
@@ -120,120 +157,131 @@ export function GlobalSearch() {
           ) : !hasResults ? (
             <div className="p-4 text-center text-gray-500">Aucun résultat trouvé</div>
           ) : (
-            <>
-              {/* Employees Section */}
-              {data.employees.length > 0 && (
-                <div className="p-2 border-b border-gray-200 dark:border-gray-700">
-                  <h3 className="px-2 py-1 text-xs font-semibold text-gray-500 uppercase flex items-center gap-2">
-                    <User className="h-3 w-3" />
-                    Employés ({data.employees.length})
-                  </h3>
-                  {data.employees.map((emp) => (
-                    <button
-                      key={emp.id}
-                      onClick={() => handleResultClick(`/employees`)}
-                      className={cn(
-                        'w-full text-left px-3 py-2 rounded-md',
-                        'hover:bg-gray-100 dark:hover:bg-gray-700',
-                        'transition-colors duration-150',
-                        'flex flex-col gap-0.5'
-                      )}
-                    >
-                      <div className="font-medium text-sm">
-                        {emp.lastName} {emp.firstName}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {emp.email} • {emp.dept}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
+            {(() => {
+              let idx = 0
+              const empOffset = 0
+              const itemOffset = data.employees.length
+              const modelOffset = itemOffset + data.assetItems.length
+              const stockOffset = modelOffset + data.assetModels.length
+              return (
+                <>
+                  {/* Employees Section */}
+                  {data.employees.length > 0 && (
+                    <div className="p-2 border-b border-gray-200 dark:border-gray-700">
+                      <h3 className="px-2 py-1 text-xs font-semibold text-gray-500 uppercase flex items-center gap-2">
+                        <User className="h-3 w-3" />
+                        Employés ({data.employees.length})
+                      </h3>
+                      {data.employees.map((emp, i) => (
+                        <button
+                          key={emp.id}
+                          id={`search-result-${empOffset + i}`}
+                          role="option"
+                          aria-selected={activeIndex === empOffset + i}
+                          onClick={() => handleResultClick('/employees')}
+                          className={cn(
+                            'w-full text-left px-3 py-2 rounded-md',
+                            'hover:bg-gray-100 dark:hover:bg-gray-700',
+                            'transition-colors duration-150',
+                            'flex flex-col gap-0.5',
+                            activeIndex === empOffset + i && 'bg-gray-100 dark:bg-gray-700'
+                          )}
+                        >
+                          <div className="font-medium text-sm">{emp.lastName} {emp.firstName}</div>
+                          <div className="text-xs text-gray-500">{emp.email} • {emp.dept}</div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
 
-              {/* Asset Items Section */}
-              {data.assetItems.length > 0 && (
-                <div className="p-2 border-b border-gray-200 dark:border-gray-700">
-                  <h3 className="px-2 py-1 text-xs font-semibold text-gray-500 uppercase flex items-center gap-2">
-                    <Package className="h-3 w-3" />
-                    Équipements ({data.assetItems.length})
-                  </h3>
-                  {data.assetItems.map((item) => (
-                    <button
-                      key={item.id}
-                      onClick={() => handleResultClick(`/asset-items`)}
-                      className={cn(
-                        'w-full text-left px-3 py-2 rounded-md',
-                        'hover:bg-gray-100 dark:hover:bg-gray-700',
-                        'transition-colors duration-150',
-                        'flex flex-col gap-0.5'
-                      )}
-                    >
-                      <div className="font-medium text-sm">
-                        {item.assetTag} - {item.brand} {item.modelName}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {item.type} • {item.status}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
+                  {/* Asset Items Section */}
+                  {data.assetItems.length > 0 && (
+                    <div className="p-2 border-b border-gray-200 dark:border-gray-700">
+                      <h3 className="px-2 py-1 text-xs font-semibold text-gray-500 uppercase flex items-center gap-2">
+                        <Package className="h-3 w-3" />
+                        Équipements ({data.assetItems.length})
+                      </h3>
+                      {data.assetItems.map((item, i) => (
+                        <button
+                          key={item.id}
+                          id={`search-result-${itemOffset + i}`}
+                          role="option"
+                          aria-selected={activeIndex === itemOffset + i}
+                          onClick={() => handleResultClick('/asset-items')}
+                          className={cn(
+                            'w-full text-left px-3 py-2 rounded-md',
+                            'hover:bg-gray-100 dark:hover:bg-gray-700',
+                            'transition-colors duration-150',
+                            'flex flex-col gap-0.5',
+                            activeIndex === itemOffset + i && 'bg-gray-100 dark:bg-gray-700'
+                          )}
+                        >
+                          <div className="font-medium text-sm">{item.assetTag} - {item.brand} {item.modelName}</div>
+                          <div className="text-xs text-gray-500">{item.type} • {item.status}</div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
 
-              {/* Asset Models Section */}
-              {data.assetModels.length > 0 && (
-                <div className="p-2 border-b border-gray-200 dark:border-gray-700">
-                  <h3 className="px-2 py-1 text-xs font-semibold text-gray-500 uppercase flex items-center gap-2">
-                    <Layers className="h-3 w-3" />
-                    Modèles ({data.assetModels.length})
-                  </h3>
-                  {data.assetModels.map((model) => (
-                    <button
-                      key={model.id}
-                      onClick={() => handleResultClick(`/asset-models`)}
-                      className={cn(
-                        'w-full text-left px-3 py-2 rounded-md',
-                        'hover:bg-gray-100 dark:hover:bg-gray-700',
-                        'transition-colors duration-150'
-                      )}
-                    >
-                      <div className="font-medium text-sm">
-                        {model.brand} {model.modelName}
-                      </div>
-                      <div className="text-xs text-gray-500">{model.type}</div>
-                    </button>
-                  ))}
-                </div>
-              )}
+                  {/* Asset Models Section */}
+                  {data.assetModels.length > 0 && (
+                    <div className="p-2 border-b border-gray-200 dark:border-gray-700">
+                      <h3 className="px-2 py-1 text-xs font-semibold text-gray-500 uppercase flex items-center gap-2">
+                        <Layers className="h-3 w-3" />
+                        Modèles ({data.assetModels.length})
+                      </h3>
+                      {data.assetModels.map((model, i) => (
+                        <button
+                          key={model.id}
+                          id={`search-result-${modelOffset + i}`}
+                          role="option"
+                          aria-selected={activeIndex === modelOffset + i}
+                          onClick={() => handleResultClick('/asset-models')}
+                          className={cn(
+                            'w-full text-left px-3 py-2 rounded-md',
+                            'hover:bg-gray-100 dark:hover:bg-gray-700',
+                            'transition-colors duration-150',
+                            activeIndex === modelOffset + i && 'bg-gray-100 dark:bg-gray-700'
+                          )}
+                        >
+                          <div className="font-medium text-sm">{model.brand} {model.modelName}</div>
+                          <div className="text-xs text-gray-500">{model.type}</div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
 
-              {/* Stock Items Section */}
-              {data.stockItems.length > 0 && (
-                <div className="p-2">
-                  <h3 className="px-2 py-1 text-xs font-semibold text-gray-500 uppercase flex items-center gap-2">
-                    <Box className="h-3 w-3" />
-                    Stock ({data.stockItems.length})
-                  </h3>
-                  {data.stockItems.map((item) => (
-                    <button
-                      key={item.id}
-                      onClick={() => handleResultClick(`/stock-items`)}
-                      className={cn(
-                        'w-full text-left px-3 py-2 rounded-md',
-                        'hover:bg-gray-100 dark:hover:bg-gray-700',
-                        'transition-colors duration-150',
-                        'flex flex-col gap-0.5'
-                      )}
-                    >
-                      <div className="font-medium text-sm">
-                        {item.brand} {item.modelName}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {item.type} • Qté: {item.quantity - item.loaned}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </>
+                  {/* Stock Items Section */}
+                  {data.stockItems.length > 0 && (
+                    <div className="p-2">
+                      <h3 className="px-2 py-1 text-xs font-semibold text-gray-500 uppercase flex items-center gap-2">
+                        <Box className="h-3 w-3" />
+                        Stock ({data.stockItems.length})
+                      </h3>
+                      {data.stockItems.map((item, i) => (
+                        <button
+                          key={item.id}
+                          id={`search-result-${stockOffset + i}`}
+                          role="option"
+                          aria-selected={activeIndex === stockOffset + i}
+                          onClick={() => handleResultClick('/stock-items')}
+                          className={cn(
+                            'w-full text-left px-3 py-2 rounded-md',
+                            'hover:bg-gray-100 dark:hover:bg-gray-700',
+                            'transition-colors duration-150',
+                            'flex flex-col gap-0.5',
+                            activeIndex === stockOffset + i && 'bg-gray-100 dark:bg-gray-700'
+                          )}
+                        >
+                          <div className="font-medium text-sm">{item.brand} {item.modelName}</div>
+                          <div className="text-xs text-gray-500">{item.type} • Qté: {item.quantity - item.loaned}</div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )
+            })()}
           )}
         </div>
       )}
