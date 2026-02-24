@@ -151,10 +151,8 @@ export function AssetModelAutocomplete({
                     <div className="font-medium text-sm truncate">
                       {model.brand} {model.modelName}
                     </div>
-                    {/* @ts-ignore - TypeScript has issues with type inference in map with default values */}
                     <div className="text-xs text-gray-500 truncate">{model.type}</div>
                   </div>
-                  {/* @ts-ignore - TypeScript has issues with type inference in map with default values */}
                   {value?.id === model.id && (
                     <Check className="h-4 w-4 text-[#EE2722] flex-shrink-0" />
                   )}

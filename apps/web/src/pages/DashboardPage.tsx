@@ -14,6 +14,7 @@ import { AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { exportDashboard } from '@/lib/api/export.api'
 import { useToast } from '@/lib/hooks/use-toast'
+import { getErrorMessage } from '@/lib/utils/getErrorMessage'
 
 export function DashboardPage() {
   const { data: stats, isLoading, error } = useDashboardStats()
@@ -28,11 +29,11 @@ export function DashboardPage() {
         title: 'Export réussi',
         description: 'Dashboard complet exporté vers Excel (multi-feuilles)',
       })
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         variant: 'destructive',
         title: 'Erreur d\'export',
-        description: error.message || 'Impossible d\'exporter le dashboard',
+        description: getErrorMessage(error, 'Impossible d\'exporter le dashboard'),
       })
     } finally {
       setIsExporting(false)

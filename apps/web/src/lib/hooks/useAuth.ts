@@ -18,6 +18,7 @@ import { useAuthStore } from '@/lib/stores/authStore'
 import { loginApi, logoutApi } from '@/lib/api/auth.api'
 import type { LoginDto } from '@/lib/types/models.types'
 import { setUserContext } from '@/lib/sentry'
+import { getErrorMessage } from '@/lib/utils/getErrorMessage'
 
 /**
  * Authentication hook
@@ -101,10 +102,9 @@ export function useAuth() {
       })
 
       return { success: true }
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Extract error message from API response
-      const message =
-        error.response?.data?.error || 'Erreur lors de la connexion'
+      const message = getErrorMessage(error, 'Erreur lors de la connexion')
       return { success: false, error: message }
     }
   }

@@ -200,7 +200,6 @@ export const errorHandler = (err, req, res, next) => {
         url: req.url,
         method: req.method,
         userId: req.user?.id,
-        body: req.body
       }
     });
   }

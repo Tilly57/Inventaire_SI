@@ -8,6 +8,7 @@ import { requireManager, requireAdmin } from '../middleware/rbac.js';
 import { validate } from '../middleware/validateRequest.js';
 import { createLoanSchema, addLoanLineSchema, batchDeleteLoansSchema } from '../validators/loans.validator.js';
 import { upload } from '../config/multer.js';
+import { uploadLimiter } from '../middleware/rateLimiter.js';
 
 const router = express.Router();
 
@@ -31,9 +32,9 @@ router.use(requireAuth, requireManager);
  *           schema:
  *             type: object
  *             required:
- *               - ids
+ *               - loanIds
  *             properties:
- *               ids:
+ *               loanIds:
  *                 type: array
  *                 items:
  *                   type: string
@@ -442,7 +443,7 @@ router.delete('/:id/lines/:lineId', removeLoanLine);
  *       403:
  *         $ref: '#/components/responses/Forbidden'
  */
-router.post('/:id/pickup-signature', upload.single('signature'), uploadPickupSignature);
+router.post('/:id/pickup-signature', uploadLimiter, upload.single('signature'), uploadPickupSignature);
 
 /**
  * @swagger
@@ -500,7 +501,7 @@ router.post('/:id/pickup-signature', upload.single('signature'), uploadPickupSig
  *       403:
  *         $ref: '#/components/responses/Forbidden'
  */
-router.post('/:id/return-signature', upload.single('signature'), uploadReturnSignature);
+router.post('/:id/return-signature', uploadLimiter, upload.single('signature'), uploadReturnSignature);
 
 /**
  * @swagger

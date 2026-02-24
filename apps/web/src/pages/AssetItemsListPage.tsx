@@ -21,6 +21,9 @@ import { Search, Trash2 } from 'lucide-react'
 import { AssetStatus, AssetStatusLabels } from '@/lib/types/enums'
 import { DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS } from '@/lib/utils/constants'
 import { useToast } from '@/lib/hooks/use-toast'
+import { getErrorMessage } from '@/lib/utils/getErrorMessage'
+import { ConfirmDialog } from '@/components/common/ConfirmDialog'
+import { useConfirmDialog } from '@/lib/hooks/useConfirmDialog'
 
 export function AssetItemsListPage() {
   const { data: items, isLoading, error } = useAssetItems()
@@ -34,6 +37,7 @@ export function AssetItemsListPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
   const [selectedItems, setSelectedItems] = useState<string[]>([])
+  const { confirm, dialogProps } = useConfirmDialog()
 
   const itemsList = Array.isArray(items) ? items : []
   const modelsList = Array.isArray(models) ? models : []
@@ -82,9 +86,10 @@ export function AssetItemsListPage() {
   const handleBulkDelete = async () => {
     if (selectedItems.length === 0) return
 
-    const confirmed = window.confirm(
-      `Voulez-vous vraiment supprimer ${selectedItems.length} équipement(s) ? Cette action est irréversible.`
-    )
+    const confirmed = await confirm({
+      title: 'Supprimer les équipements',
+      description: `Voulez-vous vraiment supprimer ${selectedItems.length} équipement(s) ? Cette action est irréversible.`,
+    })
 
     if (!confirmed) return
 
@@ -96,9 +101,9 @@ export function AssetItemsListPage() {
       try {
         await deleteItem.mutateAsync(itemId)
         successCount++
-      } catch (error: any) {
+      } catch (error: unknown) {
         errorCount++
-        const errorMsg = error.response?.data?.error || 'Erreur inconnue'
+        const errorMsg = getErrorMessage(error, 'Erreur inconnue')
         errors.push(errorMsg)
       }
     }
@@ -245,6 +250,8 @@ export function AssetItemsListPage() {
           onClose={() => setIsCreating(false)}
         />
       </Suspense>
+
+      <ConfirmDialog {...dialogProps} />
     </div>
   )
 }
