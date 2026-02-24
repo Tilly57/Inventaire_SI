@@ -17,6 +17,7 @@ import { dirname } from 'path';
 import fs from 'fs/promises';
 import jwt from 'jsonwebtoken';
 import logger from '../config/logger.js';
+import { jwtConfig } from '../config/jwt.js';
 import { UnauthorizedError, ForbiddenError, NotFoundError } from '../utils/errors.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -45,7 +46,7 @@ export const serveProtectedFile = async (req, res, next) => {
     // 2. Vérifier le token JWT
     let decoded;
     try {
-      decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
+      decoded = jwt.verify(token, jwtConfig.accessSecret);
     } catch (error) {
       if (error.name === 'TokenExpiredError') {
         throw new UnauthorizedError('Token expiré');
@@ -56,8 +57,8 @@ export const serveProtectedFile = async (req, res, next) => {
     // 3. Extraire le chemin du fichier demandé
     const requestedPath = req.path; // e.g., /signatures/xyz.png
 
-    // 4. Protection contre path traversal
-    if (requestedPath.includes('..') || requestedPath.includes('~')) {
+    // 4. Protection contre path traversal (reject obvious patterns early)
+    if (requestedPath.includes('..') || requestedPath.includes('~') || requestedPath.includes('\0')) {
       logger.warn('Path traversal attempt detected', {
         userId: decoded.userId,
         requestedPath,
@@ -67,13 +68,24 @@ export const serveProtectedFile = async (req, res, next) => {
     }
 
     // 5. Construire le chemin absolu du fichier
-    const uploadsDir = path.join(__dirname, '../../uploads');
+    const uploadsDir = path.resolve(__dirname, '../../uploads');
     const filePath = path.join(uploadsDir, requestedPath);
 
-    // 6. Vérifier que le fichier existe
+    // 6. Vérifier que le fichier existe et que le chemin résolu reste dans uploadsDir
     try {
-      await fs.access(filePath);
+      const realPath = await fs.realpath(filePath);
+      const realUploadsDir = await fs.realpath(uploadsDir);
+      if (!realPath.startsWith(realUploadsDir + path.sep) && realPath !== realUploadsDir) {
+        logger.warn('Path traversal via symlink detected', {
+          userId: decoded.userId,
+          requestedPath,
+          resolvedPath: realPath,
+          ip: req.ip
+        });
+        throw new ForbiddenError('Accès refusé');
+      }
     } catch (error) {
+      if (error instanceof ForbiddenError) throw error;
       throw new NotFoundError('Fichier non trouvé');
     }
 
@@ -107,7 +119,7 @@ export function generateSignedUrl(filePath, expiresInSeconds = 3600) {
     exp: Math.floor(Date.now() / 1000) + expiresInSeconds
   };
 
-  return jwt.sign(payload, process.env.JWT_ACCESS_SECRET);
+  return jwt.sign(payload, jwtConfig.accessSecret);
 }
 
 /**
@@ -130,7 +142,7 @@ export const serveSignedFile = async (req, res, next) => {
     // 2. Vérifier et décoder le token
     let decoded;
     try {
-      decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
+      decoded = jwt.verify(token, jwtConfig.accessSecret);
     } catch (error) {
       if (error.name === 'TokenExpiredError') {
         throw new UnauthorizedError('Lien expiré');
@@ -151,17 +163,22 @@ export const serveSignedFile = async (req, res, next) => {
     }
 
     // 4. Protection contre path traversal
-    if (requestedPath.includes('..') || requestedPath.includes('~')) {
+    if (requestedPath.includes('..') || requestedPath.includes('~') || requestedPath.includes('\0')) {
       throw new ForbiddenError('Accès refusé');
     }
 
     // 5. Servir le fichier
-    const uploadsDir = path.join(__dirname, '../../uploads');
+    const uploadsDir = path.resolve(__dirname, '../../uploads');
     const filePath = path.join(uploadsDir, requestedPath);
 
     try {
-      await fs.access(filePath);
+      const realPath = await fs.realpath(filePath);
+      const realUploadsDir = await fs.realpath(uploadsDir);
+      if (!realPath.startsWith(realUploadsDir + path.sep) && realPath !== realUploadsDir) {
+        throw new ForbiddenError('Accès refusé');
+      }
     } catch (error) {
+      if (error instanceof ForbiddenError) throw error;
       throw new NotFoundError('Fichier non trouvé');
     }
 
