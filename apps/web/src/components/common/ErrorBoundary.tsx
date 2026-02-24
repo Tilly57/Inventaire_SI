@@ -8,6 +8,7 @@ import type { ReactNode, ErrorInfo } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { captureException } from '@/lib/sentry';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -58,8 +59,12 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       errorInfo,
     });
 
-    // TODO: Send error to error tracking service (Sentry, etc.)
-    // trackError(error, errorInfo);
+    // Send error to Sentry
+    captureException(error, {
+      contexts: {
+        react: { componentStack: errorInfo.componentStack },
+      },
+    });
   }
 
   handleReset = (): void => {
