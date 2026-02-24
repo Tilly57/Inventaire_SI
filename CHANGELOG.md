@@ -3,6 +3,33 @@
 All notable changes to this project will be documented in this file.
 
 
+# Release v0.9.19 - 2026-02-24
+
+## Summary
+
+<!-- Add a brief summary of this release -->
+
+## Changes
+
+### ✨ Features
+
+
+### 🐛 Bug Fixes
+- fix: audit sprint 7-8 — security and code quality fixes
+
+### 📚 Documentation
+
+
+### 🔧 Improvements
+
+
+### 📦 Dependencies
+
+
+### All Commits
+- 5601931 fix: audit sprint 7-8 — security and code quality fixes (Tilly57)
+
+
 # Release v0.9.18 - 2026-02-24
 
 ## Summary
