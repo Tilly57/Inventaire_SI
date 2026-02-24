@@ -3,6 +3,33 @@
 All notable changes to this project will be documented in this file.
 
 
+# Release v0.9.15 - 2026-02-24
+
+## Summary
+
+<!-- Add a brief summary of this release -->
+
+## Changes
+
+### ✨ Features
+
+
+### 🐛 Bug Fixes
+
+
+### 📚 Documentation
+
+
+### 🔧 Improvements
+
+
+### 📦 Dependencies
+- chore: fix remaining audit items (LOW priority)
+
+### All Commits
+- fc559d0 chore: fix remaining audit items (LOW priority) (Tilly57)
+
+
 # Release v0.9.14 - 2026-02-24
 
 ## Summary
