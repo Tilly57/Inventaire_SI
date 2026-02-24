@@ -1,3 +1,4 @@
+/** @fileoverview Dialogue de suppression groupee de modeles d'equipements */
 import type { AssetModel } from '@/lib/types/models.types'
 import { useBatchDeleteAssetModels } from '@/lib/hooks/useAssetModels'
 import {

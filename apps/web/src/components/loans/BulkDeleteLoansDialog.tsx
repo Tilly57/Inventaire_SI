@@ -1,3 +1,4 @@
+/** @fileoverview Dialogue de suppression groupee de prets avec avertissement */
 import { AlertTriangle } from 'lucide-react'
 import {
   Dialog,

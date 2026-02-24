@@ -1,3 +1,4 @@
+/** @fileoverview Tableau des utilisateurs avec gestion des roles et actions d'administration */
 import { useState, memo, lazy, Suspense } from 'react'
 import type { User } from '@/lib/types/models.types'
 import { UserRoleLabels } from '@/lib/types/enums.ts'

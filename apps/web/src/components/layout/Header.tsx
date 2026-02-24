@@ -1,3 +1,4 @@
+/** @fileoverview Barre d'en-tete avec menu utilisateur et navigation mobile */
 import { useAuth } from '@/lib/hooks/useAuth'
 import { UserRoleLabels } from '@/lib/types/enums.ts'
 import { Button } from '@/components/ui/button'

@@ -1,3 +1,4 @@
+/** @fileoverview Dialogue de confirmation de suppression d'un pret */
 import type { Loan } from '@/lib/types/models.types'
 import { useDeleteLoan } from '@/lib/hooks/useLoans'
 import { formatFullName } from '@/lib/utils/formatters'

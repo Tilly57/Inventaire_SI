@@ -1,3 +1,4 @@
+/** @fileoverview Composant d'historique des modifications (journal d'audit) */
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';

@@ -1,3 +1,4 @@
+/** @fileoverview Dialogue de confirmation de suppression d'un employe */
 import type { Employee } from '@/lib/types/models.types'
 import { formatFullName } from '@/lib/utils/formatters'
 import { useDeleteEmployee } from '@/lib/hooks/useEmployees'

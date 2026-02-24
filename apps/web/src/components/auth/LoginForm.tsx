@@ -1,3 +1,4 @@
+/** @fileoverview Formulaire de connexion avec validation des identifiants */
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -17,7 +18,7 @@ import { useNavigate } from 'react-router-dom'
 
 const loginSchema = z.object({
   email: z.string().email('Email invalide'),
-  password: z.string().min(6, 'Le mot de passe doit contenir au moins 6 caractères'),
+  password: z.string().min(1, 'Le mot de passe est requis'),
 })
 
 type LoginFormValues = z.infer<typeof loginSchema>

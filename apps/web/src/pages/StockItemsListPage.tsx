@@ -1,3 +1,4 @@
+/** @fileoverview Page de consultation des consommables avec alerte de stock bas et recherche */
 import { useState, useEffect, useDeferredValue, useMemo } from 'react'
 import { useAssetModels } from '@/lib/hooks/useAssetModels'
 import { StockItemsTable } from '@/components/stock/StockItemsTable'

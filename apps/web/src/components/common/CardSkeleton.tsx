@@ -1,3 +1,4 @@
+/** @fileoverview Placeholder de chargement en forme de carte */
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 
 interface CardSkeletonProps {

@@ -1,3 +1,4 @@
+/** @fileoverview Dialogue de creation d'un pret avec selection d'employe et lignes de pret */
 import { useEffect, useMemo, useCallback, memo } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'

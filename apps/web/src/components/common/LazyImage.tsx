@@ -1,3 +1,4 @@
+/** @fileoverview Image avec chargement differe et placeholder skeleton */
 import { useState, useEffect, useRef } from 'react'
 import type { ImgHTMLAttributes } from 'react'
 import { cn } from '@/lib/utils'

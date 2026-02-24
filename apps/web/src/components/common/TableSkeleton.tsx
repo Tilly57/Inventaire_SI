@@ -1,3 +1,4 @@
+/** @fileoverview Placeholder de chargement en forme de tableau */
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
 interface TableSkeletonProps {

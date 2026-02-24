@@ -1,3 +1,4 @@
+/** @fileoverview Liste du tableau de bord des equipements hors service */
 import { useNavigate } from 'react-router-dom'
 import { useOutOfServiceItems } from '@/lib/hooks/useDashboard'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'

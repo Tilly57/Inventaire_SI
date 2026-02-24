@@ -1,3 +1,4 @@
+/** @fileoverview Bouton de bascule entre les themes clair, sombre et systeme */
 import { Moon, Sun, Monitor } from 'lucide-react'
 import { useTheme } from '@/lib/contexts/ThemeContext'
 import { Button } from '@/components/ui/button'

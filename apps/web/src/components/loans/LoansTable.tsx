@@ -1,3 +1,4 @@
+/** @fileoverview Tableau des prets avec filtrage par statut, tri et navigation vers le detail */
 import { useState, useMemo, useCallback, memo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { Loan } from '@/lib/types/models.types'

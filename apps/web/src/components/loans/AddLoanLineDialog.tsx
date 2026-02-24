@@ -1,3 +1,4 @@
+/** @fileoverview Dialogue d'ajout d'une ligne de pret (equipement ou consommable) */
 import { useEffect, useMemo, useCallback, memo } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
