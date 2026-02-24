@@ -14,7 +14,7 @@
 import { jest } from '@jest/globals';
 
 // Mock dependencies BEFORE imports
-const mockGetAllAssetItems = jest.fn();
+const mockGetAllAssetItemsPaginated = jest.fn();
 const mockGetAssetItemById = jest.fn();
 const mockCreateAssetItem = jest.fn();
 const mockUpdateAssetItem = jest.fn();
@@ -25,7 +25,7 @@ const mockPreviewBulkCreation = jest.fn();
 const mockAsyncHandler = jest.fn((fn) => fn);
 
 jest.unstable_mockModule('../../services/assetItems.service.js', () => ({
-  getAllAssetItems: mockGetAllAssetItems,
+  getAllAssetItemsPaginated: mockGetAllAssetItemsPaginated,
   getAssetItemById: mockGetAssetItemById,
   createAssetItem: mockCreateAssetItem,
   updateAssetItem: mockUpdateAssetItem,
@@ -68,11 +68,13 @@ describe('assetItems.controller', () => {
         { id: 'item-1', assetTag: 'LAP001', serialNumber: 'SN12345', status: 'EN_STOCK' },
         { id: 'item-2', assetTag: 'LAP002', serialNumber: 'SN12346', status: 'PRETE' }
       ];
-      mockGetAllAssetItems.mockResolvedValue(mockItems);
+      mockGetAllAssetItemsPaginated.mockResolvedValue({ data: mockItems });
 
       await getAllAssetItems(req, res);
 
-      expect(mockGetAllAssetItems).toHaveBeenCalledWith({ status: undefined, assetModelId: undefined, search: undefined });
+      expect(mockGetAllAssetItemsPaginated).toHaveBeenCalledWith(
+        expect.objectContaining({ page: 1, pageSize: 1000 })
+      );
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         data: mockItems
@@ -80,7 +82,7 @@ describe('assetItems.controller', () => {
     });
 
     it('should return empty array when no items exist', async () => {
-      mockGetAllAssetItems.mockResolvedValue([]);
+      mockGetAllAssetItemsPaginated.mockResolvedValue({ data: [] });
 
       await getAllAssetItems(req, res);
 
@@ -88,7 +90,7 @@ describe('assetItems.controller', () => {
     });
 
     it('should handle service errors', async () => {
-      mockGetAllAssetItems.mockRejectedValue(new Error('Database error'));
+      mockGetAllAssetItemsPaginated.mockRejectedValue(new Error('Database error'));
 
       await expect(getAllAssetItems(req, res)).rejects.toThrow('Database error');
     });
@@ -428,7 +430,7 @@ describe('assetItems.controller', () => {
     });
 
     it('should return consistent response format', async () => {
-      mockGetAllAssetItems.mockResolvedValue([]);
+      mockGetAllAssetItemsPaginated.mockResolvedValue({ data: [] });
 
       await getAllAssetItems(req, res);
 

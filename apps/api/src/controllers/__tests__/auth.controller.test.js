@@ -18,6 +18,7 @@ const mockGetCurrentUser = jest.fn();
 const mockLogout = jest.fn();
 const mockVerifyRefreshToken = jest.fn();
 const mockGenerateAccessToken = jest.fn();
+const mockGenerateRefreshToken = jest.fn();
 const mockAsyncHandler = jest.fn((fn) => fn); // Pass through function
 
 jest.unstable_mockModule('../../services/auth.service.js', () => ({
@@ -29,7 +30,8 @@ jest.unstable_mockModule('../../services/auth.service.js', () => ({
 
 jest.unstable_mockModule('../../utils/jwt.js', () => ({
   verifyRefreshToken: mockVerifyRefreshToken,
-  generateAccessToken: mockGenerateAccessToken
+  generateAccessToken: mockGenerateAccessToken,
+  generateRefreshToken: mockGenerateRefreshToken
 }));
 
 jest.unstable_mockModule('../../middleware/asyncHandler.js', () => ({
