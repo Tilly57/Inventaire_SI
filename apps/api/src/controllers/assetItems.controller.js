@@ -33,8 +33,17 @@ export const getAllAssetItems = asyncHandler(async (req, res) => {
       ...result
     });
   } else {
-    const assetItems = await assetItemsService.getAllAssetItems({ status, assetModelId, search });
-    sendSuccess(res, assetItems);
+    // Unpaginated query with hard cap (backward compat for export)
+    const result = await assetItemsService.getAllAssetItemsPaginated({
+      status,
+      assetModelId,
+      search,
+      page: 1,
+      pageSize: 1000,
+      sortBy: sortBy || 'createdAt',
+      sortOrder: sortOrder || 'desc'
+    });
+    sendSuccess(res, result.data);
   }
 });
 

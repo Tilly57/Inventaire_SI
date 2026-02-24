@@ -92,9 +92,16 @@ export const getAllLoans = asyncHandler(async (req, res) => {
       ...result  // Contains: { data: [...], pagination: {...} }
     });
   } else {
-    // Legacy unpaginated query (backward compatibility)
-    const loans = await loansService.getAllLoans({ status, employeeId });
-    sendSuccess(res, loans);
+    // Unpaginated query with hard cap (backward compat for print/export)
+    const result = await loansService.getAllLoansPaginated({
+      status,
+      employeeId,
+      page: 1,
+      pageSize: 1000,
+      sortBy: sortBy || 'openedAt',
+      sortOrder: sortOrder || 'desc'
+    });
+    sendSuccess(res, result.data);
   }
 });
 
