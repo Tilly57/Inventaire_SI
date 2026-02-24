@@ -12,7 +12,7 @@
 import { jest } from '@jest/globals';
 
 // Mock dependencies BEFORE imports
-const mockGetAllEmployees = jest.fn();
+const mockGetAllEmployeesPaginated = jest.fn();
 const mockGetEmployeeById = jest.fn();
 const mockCreateEmployee = jest.fn();
 const mockBulkCreateEmployees = jest.fn();
@@ -21,7 +21,7 @@ const mockDeleteEmployee = jest.fn();
 const mockAsyncHandler = jest.fn((fn) => fn); // Pass through function
 
 jest.unstable_mockModule('../../services/employees.service.js', () => ({
-  getAllEmployees: mockGetAllEmployees,
+  getAllEmployeesPaginated: mockGetAllEmployeesPaginated,
   getEmployeeById: mockGetEmployeeById,
   createEmployee: mockCreateEmployee,
   bulkCreateEmployees: mockBulkCreateEmployees,
@@ -80,11 +80,11 @@ describe('employees.controller', () => {
     ];
 
     it('should get all employees successfully', async () => {
-      mockGetAllEmployees.mockResolvedValue(mockEmployees);
+      mockGetAllEmployeesPaginated.mockResolvedValue({ data: mockEmployees });
 
       await getAllEmployees(req, res);
 
-      expect(mockGetAllEmployees).toHaveBeenCalledTimes(1);
+      expect(mockGetAllEmployeesPaginated).toHaveBeenCalledTimes(1);
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({
         success: true,
@@ -93,11 +93,11 @@ describe('employees.controller', () => {
     });
 
     it('should return empty array when no employees exist', async () => {
-      mockGetAllEmployees.mockResolvedValue([]);
+      mockGetAllEmployeesPaginated.mockResolvedValue({ data: [] });
 
       await getAllEmployees(req, res);
 
-      expect(mockGetAllEmployees).toHaveBeenCalledTimes(1);
+      expect(mockGetAllEmployeesPaginated).toHaveBeenCalledTimes(1);
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         data: []
@@ -106,7 +106,7 @@ describe('employees.controller', () => {
 
     it('should handle service errors', async () => {
       const error = new Error('Database connection failed');
-      mockGetAllEmployees.mockRejectedValue(error);
+      mockGetAllEmployeesPaginated.mockRejectedValue(error);
 
       await expect(getAllEmployees(req, res)).rejects.toThrow('Database connection failed');
       expect(res.json).not.toHaveBeenCalled();
@@ -164,7 +164,7 @@ describe('employees.controller', () => {
         email: 'john@example.com',
         loans: []
       };
-      mockGetAllEmployees.mockResolvedValue([mockEmployee]);
+      mockGetAllEmployeesPaginated.mockResolvedValue({ data: [mockEmployee] });
 
       await getAllEmployees(req, res);
 

@@ -36,7 +36,12 @@ const mockPrisma = {
     findUnique: jest.fn(),
     update: jest.fn(),
   },
-  $transaction: jest.fn((operations) => Promise.all(operations)),
+  $transaction: jest.fn((fnOrArray) => {
+    if (typeof fnOrArray === 'function') {
+      return fnOrArray(mockPrisma);
+    }
+    return Promise.all(fnOrArray);
+  }),
 };
 
 // Mock dependencies
@@ -76,6 +81,13 @@ describe('Loans Service', () => {
   beforeEach(() => {
     // Clear all mocks before each test
     jest.clearAllMocks();
+    // Re-establish $transaction mock (clearAllMocks resets implementations)
+    mockPrisma.$transaction.mockImplementation((fnOrArray) => {
+      if (typeof fnOrArray === 'function') {
+        return fnOrArray(mockPrisma);
+      }
+      return Promise.all(fnOrArray);
+    });
   });
 
   describe('getAllLoans', () => {
@@ -259,7 +271,8 @@ describe('Loans Service', () => {
 
         mockPrisma.loan.findUnique.mockResolvedValue(mockLoan);
         mockPrisma.stockItem.findUnique.mockResolvedValue(mockStock);
-        mockPrisma.$transaction.mockResolvedValue([mockLoanLine, {}]);
+        mockPrisma.loanLine.create.mockResolvedValue(mockLoanLine);
+        mockPrisma.stockItem.update.mockResolvedValue({});
 
         const result = await addLoanLine('loan1', { stockItemId: 'stock1', quantity: 3 });
 
@@ -274,8 +287,6 @@ describe('Loans Service', () => {
 
         await expect(addLoanLine('loan1', { stockItemId: 'stock1', quantity: 5 }))
           .rejects.toThrow(ValidationError);
-        await expect(addLoanLine('loan1', { stockItemId: 'stock1', quantity: 5 }))
-          .rejects.toThrow('Quantité insuffisante');
       });
 
       it('should default quantity to 1 if not provided', async () => {

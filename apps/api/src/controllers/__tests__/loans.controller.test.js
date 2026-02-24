@@ -13,7 +13,7 @@
 import { jest } from '@jest/globals';
 
 // Mock dependencies BEFORE imports
-const mockGetAllLoans = jest.fn();
+const mockGetAllLoansPaginated = jest.fn();
 const mockGetLoanById = jest.fn();
 const mockCreateLoan = jest.fn();
 const mockAddLoanLine = jest.fn();
@@ -28,7 +28,7 @@ const mockDeleteReturnSignature = jest.fn();
 const mockAsyncHandler = jest.fn((fn) => fn); // Pass through function
 
 jest.unstable_mockModule('../../services/loans.service.js', () => ({
-  getAllLoans: mockGetAllLoans,
+  getAllLoansPaginated: mockGetAllLoansPaginated,
   getLoanById: mockGetLoanById,
   createLoan: mockCreateLoan,
   addLoanLine: mockAddLoanLine,
@@ -110,11 +110,13 @@ describe('loans.controller', () => {
     ];
 
     it('should get all loans without filters', async () => {
-      mockGetAllLoans.mockResolvedValue(mockLoans);
+      mockGetAllLoansPaginated.mockResolvedValue({ data: mockLoans });
 
       await getAllLoans(req, res);
 
-      expect(mockGetAllLoans).toHaveBeenCalledWith({ status: undefined, employeeId: undefined });
+      expect(mockGetAllLoansPaginated).toHaveBeenCalledWith(
+        expect.objectContaining({ page: 1, pageSize: 1000 })
+      );
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({
         success: true,
@@ -125,11 +127,13 @@ describe('loans.controller', () => {
     it('should get loans filtered by status', async () => {
       req.query = { status: 'OPEN' };
       const openLoans = [mockLoans[0]];
-      mockGetAllLoans.mockResolvedValue(openLoans);
+      mockGetAllLoansPaginated.mockResolvedValue({ data: openLoans });
 
       await getAllLoans(req, res);
 
-      expect(mockGetAllLoans).toHaveBeenCalledWith({ status: 'OPEN', employeeId: undefined });
+      expect(mockGetAllLoansPaginated).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 'OPEN' })
+      );
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         data: openLoans
@@ -139,11 +143,13 @@ describe('loans.controller', () => {
     it('should get loans filtered by employeeId', async () => {
       req.query = { employeeId: 'emp-001' };
       const employeeLoans = [mockLoans[0]];
-      mockGetAllLoans.mockResolvedValue(employeeLoans);
+      mockGetAllLoansPaginated.mockResolvedValue({ data: employeeLoans });
 
       await getAllLoans(req, res);
 
-      expect(mockGetAllLoans).toHaveBeenCalledWith({ status: undefined, employeeId: 'emp-001' });
+      expect(mockGetAllLoansPaginated).toHaveBeenCalledWith(
+        expect.objectContaining({ employeeId: 'emp-001' })
+      );
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         data: employeeLoans
@@ -152,11 +158,13 @@ describe('loans.controller', () => {
 
     it('should get loans filtered by both status and employeeId', async () => {
       req.query = { status: 'OPEN', employeeId: 'emp-001' };
-      mockGetAllLoans.mockResolvedValue([mockLoans[0]]);
+      mockGetAllLoansPaginated.mockResolvedValue({ data: [mockLoans[0]] });
 
       await getAllLoans(req, res);
 
-      expect(mockGetAllLoans).toHaveBeenCalledWith({ status: 'OPEN', employeeId: 'emp-001' });
+      expect(mockGetAllLoansPaginated).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 'OPEN', employeeId: 'emp-001' })
+      );
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         data: [mockLoans[0]]
@@ -165,7 +173,7 @@ describe('loans.controller', () => {
 
     it('should handle service errors', async () => {
       const error = new Error('Database connection failed');
-      mockGetAllLoans.mockRejectedValue(error);
+      mockGetAllLoansPaginated.mockRejectedValue(error);
 
       await expect(getAllLoans(req, res)).rejects.toThrow('Database connection failed');
       expect(res.json).not.toHaveBeenCalled();
@@ -727,11 +735,11 @@ describe('loans.controller', () => {
 
     it('should handle query parameters correctly', async () => {
       req.query = { status: 'OPEN', employeeId: 'emp-001' };
-      mockGetAllLoans.mockResolvedValue([]);
+      mockGetAllLoansPaginated.mockResolvedValue({ data: [] });
 
       await getAllLoans(req, res);
 
-      expect(mockGetAllLoans).toHaveBeenCalledWith(
+      expect(mockGetAllLoansPaginated).toHaveBeenCalledWith(
         expect.objectContaining({
           status: 'OPEN',
           employeeId: 'emp-001'
