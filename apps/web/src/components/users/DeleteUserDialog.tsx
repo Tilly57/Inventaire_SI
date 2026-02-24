@@ -1,3 +1,4 @@
+/** @fileoverview Dialogue de confirmation de suppression d'un utilisateur */
 import type { User } from '@/lib/types/models.types'
 import { useDeleteUser } from '@/lib/hooks/useUsers'
 import {

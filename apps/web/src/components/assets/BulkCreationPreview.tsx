@@ -1,3 +1,4 @@
+/** @fileoverview Apercu de la creation en lot d'equipements avec generation des tags */
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Info, AlertCircle, CheckCircle } from 'lucide-react'
 

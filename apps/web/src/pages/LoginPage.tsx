@@ -1,3 +1,4 @@
+/** @fileoverview Page de connexion avec formulaire d'authentification et redirection automatique */
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/lib/hooks/useAuth'

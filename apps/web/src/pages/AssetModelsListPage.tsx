@@ -1,3 +1,4 @@
+/** @fileoverview Page de gestion des modèles d'équipement et des types avec onglets et suppression groupée */
 import { useState, useEffect, useDeferredValue, useMemo, lazy, Suspense } from 'react'
 import { useAssetModels } from '@/lib/hooks/useAssetModels'
 import { useAuth } from '@/lib/hooks/useAuth'

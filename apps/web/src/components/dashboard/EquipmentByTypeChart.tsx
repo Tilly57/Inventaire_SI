@@ -1,3 +1,4 @@
+/** @fileoverview Graphique camembert de repartition des equipements par type */
 import { useEquipmentByType } from '@/lib/hooks/useDashboard'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts'

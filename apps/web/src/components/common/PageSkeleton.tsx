@@ -1,9 +1,4 @@
-/**
- * PageSkeleton Component
- *
- * Loading skeleton displayed while lazy-loaded pages are loading.
- * Provides visual feedback during code splitting transitions.
- */
+/** @fileoverview Squelette de chargement affiche pendant le chargement des pages lazy-loaded */
 
 export function PageSkeleton() {
   return (

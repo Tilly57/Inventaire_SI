@@ -1,3 +1,4 @@
+/** @fileoverview Carte du tableau de bord listant les prets recents */
 import { useNavigate } from 'react-router-dom'
 import { useRecentLoans } from '@/lib/hooks/useDashboard'
 import { formatDate, formatFullName } from '@/lib/utils/formatters'

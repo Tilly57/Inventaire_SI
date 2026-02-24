@@ -1,3 +1,4 @@
+/** @fileoverview Page de gestion des biens individuels avec filtres, recherche et actions CRUD */
 import { useState, useEffect, useDeferredValue, useMemo, lazy, Suspense } from 'react'
 import { useAssetItems, useDeleteAssetItem } from '@/lib/hooks/useAssetItems'
 import { useAssetModels } from '@/lib/hooks/useAssetModels'

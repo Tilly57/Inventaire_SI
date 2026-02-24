@@ -1,3 +1,4 @@
+/** @fileoverview Tableau des equipements individuels avec suivi de statut et actions */
 import { useState, useMemo, useCallback, memo, lazy, Suspense } from 'react'
 import type { AssetItem } from '@/lib/types/models.types'
 import { formatDate } from '@/lib/utils/formatters'

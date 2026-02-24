@@ -1,3 +1,4 @@
+/** @fileoverview Alerte du tableau de bord pour les articles en stock bas */
 import { useNavigate } from 'react-router-dom'
 import { useLowStockItems } from '@/lib/hooks/useDashboard'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'

@@ -1,3 +1,4 @@
+/** @fileoverview Carte de statistique avec icone, valeur et tendance */
 import { memo } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import type { LucideProps } from 'lucide-react'

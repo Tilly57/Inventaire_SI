@@ -1,3 +1,4 @@
+/** @fileoverview Canvas de capture de signature manuscrite */
 import { useRef, useState } from 'react'
 import ReactSignatureCanvas from 'react-signature-canvas'
 import { Button } from '@/components/ui/button'

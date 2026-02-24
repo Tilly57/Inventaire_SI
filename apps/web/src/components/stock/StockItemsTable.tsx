@@ -1,3 +1,4 @@
+/** @fileoverview Tableau des consommables avec indicateur de stock bas et pagination */
 import { memo } from 'react'
 import type { AssetModel } from '@/lib/types/models.types'
 import { formatDate } from '@/lib/utils/formatters'

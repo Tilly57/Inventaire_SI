@@ -1,3 +1,4 @@
+/** @fileoverview Layout principal avec sidebar, header et zone de contenu */
 import { Outlet } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
 import { Header } from './Header'

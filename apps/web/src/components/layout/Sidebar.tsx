@@ -1,3 +1,4 @@
+/** @fileoverview Barre laterale de navigation avec liens et logo */
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '@/lib/hooks/useAuth'
 import { NAVIGATION_ITEMS } from '@/lib/utils/constants'

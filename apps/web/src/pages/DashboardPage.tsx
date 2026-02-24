@@ -1,3 +1,4 @@
+/** @fileoverview Tableau de bord principal avec statistiques, alertes de stock bas et graphiques */
 import { lazy, Suspense, useState } from 'react'
 import { useDashboardStats } from '@/lib/hooks/useDashboard'
 import { StatsCard } from '@/components/dashboard/StatsCard'

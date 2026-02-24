@@ -1,3 +1,4 @@
+/** @fileoverview Dialogue de creation/edition d'un equipement individuel avec gestion du statut */
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
