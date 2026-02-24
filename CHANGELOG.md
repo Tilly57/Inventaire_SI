@@ -3,6 +3,33 @@
 All notable changes to this project will be documented in this file.
 
 
+# Release v0.9.11 - 2026-02-24
+
+## Summary
+
+<!-- Add a brief summary of this release -->
+
+## Changes
+
+### ✨ Features
+
+
+### 🐛 Bug Fixes
+- fix: LOW audit fixes — replace console.log with logger, enable ETag, gitignore cleanup
+
+### 📚 Documentation
+
+
+### 🔧 Improvements
+
+
+### 📦 Dependencies
+
+
+### All Commits
+- 44b9d87 fix: LOW audit fixes — replace console.log with logger, enable ETag, gitignore cleanup (Tilly57)
+
+
 # Release v0.9.10 - 2026-02-24
 
 ## Summary
