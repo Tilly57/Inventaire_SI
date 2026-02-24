@@ -191,15 +191,22 @@ export async function del(key) {
 export async function delPattern(pattern) {
   try {
     const client = getRedisClient()
-    const keys = await client.keys(pattern)
+    let cursor = '0'
+    let deletedCount = 0
 
-    if (keys.length === 0) {
-      return 0
+    do {
+      const result = await client.scan(cursor, { MATCH: pattern, COUNT: 100 })
+      cursor = result.cursor.toString()
+      if (result.keys.length > 0) {
+        await client.del(result.keys)
+        deletedCount += result.keys.length
+      }
+    } while (cursor !== '0')
+
+    if (deletedCount > 0) {
+      logger.debug(`Cache DEL pattern: ${pattern} (${deletedCount} keys)`)
     }
-
-    await client.del(...keys)
-    logger.debug(`Cache DEL pattern: ${pattern} (${keys.length} keys)`)
-    return keys.length
+    return deletedCount
   } catch (error) {
     logger.error(`Cache DEL pattern error for ${pattern}:`, error)
     return 0

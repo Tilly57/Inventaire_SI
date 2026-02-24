@@ -155,7 +155,6 @@ export function EmployeeAutocomplete({
                       {employee.email} • {employee.dept}
                     </div>
                   </div>
-                  {/* @ts-ignore - TypeScript has issues with type inference in map with default values */}
                   {value?.id === employee.id && (
                     <Check className="h-4 w-4 text-[#EE2722] flex-shrink-0" />
                   )}

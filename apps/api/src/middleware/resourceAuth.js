@@ -81,7 +81,7 @@ async function canAccessLoan(userId, userRole, loanId) {
   // For GESTIONNAIRE: Check if they created this loan
   const loan = await prisma.loan.findUnique({
     where: { id: loanId },
-    select: { id: true, createdBy: true }
+    select: { id: true, createdById: true }
   });
 
   if (!loan) {
@@ -89,7 +89,7 @@ async function canAccessLoan(userId, userRole, loanId) {
   }
 
   // Gestionnaire can only access loans they created
-  return loan.createdBy === userId;
+  return loan.createdById === userId;
 }
 
 /**
