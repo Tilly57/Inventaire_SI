@@ -12,6 +12,7 @@ import { asyncHandler } from '../middleware/asyncHandler.js';
  */
 export const getAuditLogs = asyncHandler(async (req, res) => {
   const { tableName, recordId, userId, limit = 50 } = req.query;
+  const safeLimit = Math.min(Math.max(parseInt(limit) || 50, 1), 100);
 
   let logs;
 
@@ -20,14 +21,14 @@ export const getAuditLogs = asyncHandler(async (req, res) => {
     logs = await auditLogUtils.getAuditLogs(
       tableName,
       recordId,
-      parseInt(limit)
+      safeLimit
     );
   } else if (userId) {
     // Get logs for a specific user
-    logs = await auditLogUtils.getUserAuditLogs(userId, parseInt(limit));
+    logs = await auditLogUtils.getUserAuditLogs(userId, safeLimit);
   } else {
     // Get recent logs
-    logs = await auditLogUtils.getRecentAuditLogs(parseInt(limit));
+    logs = await auditLogUtils.getRecentAuditLogs(safeLimit);
   }
 
   res.json({
@@ -43,11 +44,12 @@ export const getAuditLogs = asyncHandler(async (req, res) => {
 export const getRecordAuditLogs = asyncHandler(async (req, res) => {
   const { tableName, recordId } = req.params;
   const { limit = 50 } = req.query;
+  const safeLimit = Math.min(Math.max(parseInt(limit) || 50, 1), 100);
 
   const logs = await auditLogUtils.getAuditLogs(
     tableName,
     recordId,
-    parseInt(limit)
+    safeLimit
   );
 
   res.json({

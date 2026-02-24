@@ -6,6 +6,25 @@
 import prisma from '../config/database.js';
 import logger from '../config/logger.js';
 
+/** Fields that must never be stored in audit logs */
+const SENSITIVE_FIELDS = ['password', 'passwordHash', 'token', 'refreshToken', 'secret', 'accessToken'];
+
+/**
+ * Remove sensitive fields from an object before storing in audit log
+ * @param {Object} data - Data to sanitize
+ * @returns {Object|null} Sanitized copy or null
+ */
+function sanitizeSensitiveData(data) {
+  if (!data) return null;
+  const sanitized = JSON.parse(JSON.stringify(data));
+  for (const key of Object.keys(sanitized)) {
+    if (SENSITIVE_FIELDS.includes(key)) {
+      sanitized[key] = '[REDACTED]';
+    }
+  }
+  return sanitized;
+}
+
 /**
  * Create an audit log entry
  * @param {Object} params - Audit log parameters
@@ -48,8 +67,8 @@ export async function createAuditLog({
         action: action.toUpperCase(),
         tableName,
         recordId,
-        oldValues: oldValues ? JSON.parse(JSON.stringify(oldValues)) : null,
-        newValues: newValues ? JSON.parse(JSON.stringify(newValues)) : null,
+        oldValues: sanitizeSensitiveData(oldValues),
+        newValues: sanitizeSensitiveData(newValues),
         ipAddress,
         userAgent,
       },
