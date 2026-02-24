@@ -3,6 +3,33 @@
 All notable changes to this project will be documented in this file.
 
 
+# Release v0.9.14 - 2026-02-24
+
+## Summary
+
+<!-- Add a brief summary of this release -->
+
+## Changes
+
+### ✨ Features
+
+
+### 🐛 Bug Fixes
+
+
+### 📚 Documentation
+
+
+### 🔧 Improvements
+- perf+infra: Sprint 2 medium-priority audit fixes
+
+### 📦 Dependencies
+
+
+### All Commits
+- a25c109 perf+infra: Sprint 2 medium-priority audit fixes (Tilly57)
+
+
 # Release v0.9.13 - 2026-02-24
 
 ## Summary
