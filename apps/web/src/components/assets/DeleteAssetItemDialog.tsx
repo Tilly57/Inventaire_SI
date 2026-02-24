@@ -1,3 +1,4 @@
+/** @fileoverview Dialogue de confirmation de suppression d'un equipement individuel */
 import type { AssetItem } from '@/lib/types/models.types'
 import { useDeleteAssetItem } from '@/lib/hooks/useAssetItems'
 import {

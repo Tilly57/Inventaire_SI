@@ -1,3 +1,4 @@
+/** @fileoverview Dialogue d'impression de l'historique des prets avec filtres */
 import { useState } from 'react'
 import {
   Dialog,

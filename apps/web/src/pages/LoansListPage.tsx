@@ -1,3 +1,4 @@
+/** @fileoverview Page de gestion des prêts avec filtres par statut, impression et suppression groupée */
 import { useState, useEffect, useDeferredValue, useMemo, lazy, Suspense } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLoans } from '@/lib/hooks/useLoans'

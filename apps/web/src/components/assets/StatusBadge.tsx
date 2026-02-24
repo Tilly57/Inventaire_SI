@@ -1,3 +1,4 @@
+/** @fileoverview Badge affichant le statut d'un equipement avec code couleur */
 import { AssetStatus } from '@/lib/types/enums'
 import { Badge } from '@/components/ui/badge'
 

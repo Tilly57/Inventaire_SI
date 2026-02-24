@@ -601,6 +601,43 @@ git branch -d feature/my-feature
 
 ---
 
+## ✅ Checklist de Code Review
+
+### Sécurité
+- [ ] Pas de secrets en dur (mots de passe, tokens, DSN)
+- [ ] Validation des entrées utilisateur (Zod côté API ET frontend)
+- [ ] Pas d'injection SQL (utiliser Prisma paramétré, jamais de concaténation)
+- [ ] Pas de XSS (React échappe par défaut, éviter `dangerouslySetInnerHTML`)
+- [ ] CSRF token inclus sur les mutations (POST/PUT/PATCH/DELETE)
+- [ ] Contrôle d'accès RBAC vérifié sur les routes protégées
+- [ ] Politique de mot de passe alignée entre frontend et backend (8+ chars, complexité)
+
+### Qualité du code
+- [ ] Pas de `console.log` dans le code API (utiliser `logger` de Winston)
+- [ ] Pas de `console.log` en production frontend (conditionner avec `import.meta.env.DEV`)
+- [ ] Gestion d'erreurs : `try/catch` pour les opérations qui peuvent échouer
+- [ ] Types TypeScript corrects (pas de `any` sauf nécessité documentée)
+- [ ] `@fileoverview` JSDoc sur chaque nouveau fichier composant
+- [ ] `localStorage` et `sessionStorage` wrappés dans `try/catch`
+
+### Performance
+- [ ] Requêtes N+1 : utiliser `include` Prisma au lieu de boucles
+- [ ] Lazy loading : les pages et dialogues lourds utilisent `React.lazy`
+- [ ] Bibliothèques lourdes importées dynamiquement (`await import(...)`)
+- [ ] Pas de re-renders inutiles (vérifier les dépendances des hooks)
+
+### Base de données
+- [ ] Migration Prisma incluse si le schéma change
+- [ ] Index ajoutés sur les colonnes fréquemment filtrées/triées
+- [ ] Contraintes FK avec le bon `onDelete` (Cascade, Restrict, SetNull)
+
+### Tests
+- [ ] Tests unitaires pour la logique métier
+- [ ] Tests d'intégration pour les endpoints API critiques
+- [ ] Build frontend vérifié (`npm run build`)
+
+---
+
 ## ❓ Questions & Support
 
 ### Canaux de communication

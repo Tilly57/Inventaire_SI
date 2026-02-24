@@ -1,3 +1,4 @@
+/** @fileoverview Page d'administration des utilisateurs avec gestion des rôles et actions CRUD */
 import { useState, useEffect, useDeferredValue, useMemo, lazy, Suspense } from 'react'
 import { useUsers } from '@/lib/hooks/useUsers'
 import { useAuth } from '@/lib/hooks/useAuth'

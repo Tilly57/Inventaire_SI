@@ -1,3 +1,4 @@
+/** @fileoverview Vue d'impression de l'historique des prets */
 import { useEffect } from 'react'
 import type { Loan } from '@/lib/types/models.types'
 import { formatDate, formatFullName } from '@/lib/utils/formatters'

@@ -1,3 +1,4 @@
+/** @fileoverview Tableau des modeles d'equipements avec gestion et pagination */
 import { useState, memo, lazy, Suspense } from 'react'
 import type { AssetModel } from '@/lib/types/models.types'
 import { formatDate } from '@/lib/utils/formatters'

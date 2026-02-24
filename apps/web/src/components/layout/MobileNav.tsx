@@ -1,3 +1,4 @@
+/** @fileoverview Navigation mobile en panneau lateral (Sheet) */
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '@/lib/hooks/useAuth'

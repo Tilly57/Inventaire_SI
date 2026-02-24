@@ -1,3 +1,4 @@
+/** @fileoverview Tableau des employes avec tri, pagination et actions CRUD en ligne */
 import { useState, useMemo, useCallback, memo, lazy, Suspense } from 'react'
 import type { Employee } from '@/lib/types/models.types'
 import { formatDate, formatFullName } from '@/lib/utils/formatters'

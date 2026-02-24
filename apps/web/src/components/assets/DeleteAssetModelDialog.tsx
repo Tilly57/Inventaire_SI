@@ -1,3 +1,4 @@
+/** @fileoverview Dialogue de confirmation de suppression d'un modele d'equipement */
 import type { AssetModel } from '@/lib/types/models.types'
 import { useDeleteAssetModel } from '@/lib/hooks/useAssetModels'
 import {

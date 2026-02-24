@@ -1,3 +1,4 @@
+/** @fileoverview Page de gestion des employés avec import CSV, export et actions CRUD */
 import { useState, useEffect, useDeferredValue, useMemo, lazy, Suspense } from 'react'
 import { useEmployees, useDeleteEmployee } from '@/lib/hooks/useEmployees'
 import { EmployeesTable } from '@/components/employees/EmployeesTable'
