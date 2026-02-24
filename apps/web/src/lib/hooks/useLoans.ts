@@ -45,6 +45,7 @@ import type {
 } from '@/lib/types/models.types'
 import type { PaginationParams } from '@/lib/types/pagination.types'
 import { useToast } from '@/lib/hooks/use-toast'
+import { getErrorMessage } from '@/lib/utils/getErrorMessage'
 
 /**
  * Hook to fetch all loans
@@ -232,11 +233,11 @@ export function useCreateLoan() {
         description: 'Le prêt a été créé avec succès',
       })
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: 'destructive',
         title: 'Erreur',
-        description: error.response?.data?.error || 'Impossible de créer le prêt',
+        description: getErrorMessage(error, 'Impossible de créer le prêt'),
       })
     },
   })
@@ -297,11 +298,11 @@ export function useAddLoanLine() {
         description: 'La ligne a été ajoutée au prêt',
       })
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: 'destructive',
         title: 'Erreur',
-        description: error.response?.data?.error || 'Impossible d\'ajouter la ligne',
+        description: getErrorMessage(error, 'Impossible d\'ajouter la ligne'),
       })
     },
   })
@@ -360,11 +361,11 @@ export function useRemoveLoanLine() {
         description: 'La ligne a été retirée du prêt',
       })
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: 'destructive',
         title: 'Erreur',
-        description: error.response?.data?.error || 'Impossible de supprimer la ligne',
+        description: getErrorMessage(error, 'Impossible de supprimer la ligne'),
       })
     },
   })
@@ -423,11 +424,11 @@ export function useUploadPickupSignature() {
         description: 'La signature de retrait a été enregistrée',
       })
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: 'destructive',
         title: 'Erreur',
-        description: error.response?.data?.error || 'Impossible d\'enregistrer la signature',
+        description: getErrorMessage(error, 'Impossible d\'enregistrer la signature'),
       })
     },
   })
@@ -484,11 +485,11 @@ export function useUploadReturnSignature() {
         description: 'La signature de retour a été enregistrée',
       })
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: 'destructive',
         title: 'Erreur',
-        description: error.response?.data?.error || 'Impossible d\'enregistrer la signature',
+        description: getErrorMessage(error, 'Impossible d\'enregistrer la signature'),
       })
     },
   })
@@ -556,11 +557,11 @@ export function useCloseLoan() {
         description: 'Le prêt a été fermé avec succès',
       })
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: 'destructive',
         title: 'Erreur',
-        description: error.response?.data?.error || 'Impossible de fermer le prêt',
+        description: getErrorMessage(error, 'Impossible de fermer le prêt'),
       })
     },
   })
@@ -625,11 +626,11 @@ export function useDeleteLoan() {
         description: 'Le prêt a été supprimé avec succès',
       })
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: 'destructive',
         title: 'Erreur',
-        description: error.response?.data?.error || 'Impossible de supprimer le prêt',
+        description: getErrorMessage(error, 'Impossible de supprimer le prêt'),
       })
     },
   })
@@ -666,11 +667,11 @@ export function useBatchDeleteLoans() {
         description: result.message,
       })
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: 'destructive',
         title: 'Erreur',
-        description: error.response?.data?.error || 'Impossible de supprimer les prêts',
+        description: getErrorMessage(error, 'Impossible de supprimer les prêts'),
       })
     },
   })
@@ -703,11 +704,11 @@ export function useDeletePickupSignature() {
         description: 'La signature de retrait a été supprimée',
       })
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: 'destructive',
         title: 'Erreur',
-        description: error.response?.data?.error || 'Impossible de supprimer la signature',
+        description: getErrorMessage(error, 'Impossible de supprimer la signature'),
       })
     },
   })
@@ -740,11 +741,11 @@ export function useDeleteReturnSignature() {
         description: 'La signature de retour a été supprimée',
       })
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: 'destructive',
         title: 'Erreur',
-        description: error.response?.data?.error || 'Impossible de supprimer la signature',
+        description: getErrorMessage(error, 'Impossible de supprimer la signature'),
       })
     },
   })

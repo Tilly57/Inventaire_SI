@@ -31,6 +31,7 @@ import type {
   UpdateStockItemDto,
 } from '@/lib/types/models.types'
 import { useToast } from '@/lib/hooks/use-toast'
+import { getErrorMessage } from '@/lib/utils/getErrorMessage'
 
 /**
  * Hook to fetch all stock items
@@ -153,11 +154,11 @@ export function useCreateStockItem() {
         description: 'L\'article de stock a été créé avec succès',
       })
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: 'destructive',
         title: 'Erreur',
-        description: error.response?.data?.error || 'Impossible de créer l\'article',
+        description: getErrorMessage(error, 'Impossible de créer l\'article'),
       })
     },
   })
@@ -211,11 +212,11 @@ export function useUpdateStockItem() {
         description: 'L\'article de stock a été modifié avec succès',
       })
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: 'destructive',
         title: 'Erreur',
-        description: error.response?.data?.error || 'Impossible de modifier l\'article',
+        description: getErrorMessage(error, 'Impossible de modifier l\'article'),
       })
     },
   })
@@ -272,11 +273,11 @@ export function useDeleteStockItem() {
         description: 'L\'article de stock a été supprimé avec succès',
       })
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: 'destructive',
         title: 'Erreur',
-        description: error.response?.data?.error || 'Impossible de supprimer l\'article',
+        description: getErrorMessage(error, 'Impossible de supprimer l\'article'),
       })
     },
   })
