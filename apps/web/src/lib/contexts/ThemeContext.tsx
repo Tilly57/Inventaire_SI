@@ -15,9 +15,12 @@ const STORAGE_KEY = 'inventaire-si-theme'
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => {
-    // Load from localStorage or default to 'system'
-    const stored = localStorage.getItem(STORAGE_KEY)
-    return (stored as Theme) || 'system'
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY)
+      return (stored as Theme) || 'system'
+    } catch {
+      return 'system'
+    }
   })
 
   const [actualTheme, setActualTheme] = useState<'light' | 'dark'>('light')
@@ -59,7 +62,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme)
-    localStorage.setItem(STORAGE_KEY, newTheme)
+    try {
+      localStorage.setItem(STORAGE_KEY, newTheme)
+    } catch {
+      // Ignore — private browsing or storage full
+    }
   }
 
   return (
