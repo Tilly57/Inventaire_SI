@@ -78,6 +78,7 @@ export function useLoans() {
   return useQuery({
     queryKey: ['loans'],
     queryFn: getAllLoansApi,
+    staleTime: 30_000,
   })
 }
 
