@@ -87,3 +87,25 @@ certs/
 *.tmp
 *.temp
 .cache/
+nul
+
+# ===========================================
+# Audit & Session Reports (generated)
+# ===========================================
+AUDIT_*.md
+CLEANUP_*.md
+SESSION_SUMMARY_*.md
+SECURITY_FIXES_*.md
+FRONTEND_CSRF_UPDATE.md
+DEPLOIEMENT_TODO_CHECKLIST.md
+
+# ===========================================
+# Database Backups
+# ===========================================
+backups/
+
+# ===========================================
+# Coverage & Test Artifacts
+# ===========================================
+**/coverage-output.txt
+**/final-coverage.txt
