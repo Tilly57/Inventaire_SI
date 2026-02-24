@@ -21,7 +21,7 @@
  */
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import { register as registerService, login as loginService, getCurrentUser, logout as logoutService } from '../services/auth.service.js';
-import { generateAccessToken, verifyRefreshToken } from '../utils/jwt.js';
+import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../utils/jwt.js';
 
 /**
  * Register a new user
@@ -194,6 +194,16 @@ export const refresh = asyncHandler(async (req, res) => {
 
   // Generate fresh access token with updated user data
   const accessToken = generateAccessToken(user.id, user.email, user.role);
+
+  // Rotate refresh token (issue a new one to limit token reuse window)
+  const newRefreshToken = generateRefreshToken(user.id);
+
+  res.cookie('refreshToken', newRefreshToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+  });
 
   res.json({
     success: true,
