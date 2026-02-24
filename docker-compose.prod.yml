@@ -119,7 +119,7 @@ services:
     restart: unless-stopped
     # Port non exposé — accessible uniquement via le reverse proxy Nginx
     expose:
-      - "80"
+      - "8080"
     depends_on:
       - api
     networks:
@@ -152,6 +152,22 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  # Alertmanager (Alert Notifications)
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: inventaire_alertmanager
+    restart: unless-stopped
+    volumes:
+      - ./monitoring/alertmanager:/etc/alertmanager
+      - alertmanager_data:/alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+    expose:
+      - "9093"
+    networks:
+      - inventaire_network
+
   # Prometheus (Metrics)
   prometheus:
     image: prom/prometheus:v2.51.0
@@ -168,6 +184,8 @@ services:
       - '--web.console.templates=/usr/share/prometheus/consoles'
     expose:
       - "9090"
+    depends_on:
+      - alertmanager
     networks:
       - inventaire_network
 
@@ -220,4 +238,6 @@ volumes:
   loki_data:
     driver: local
   grafana_data:
+    driver: local
+  alertmanager_data:
     driver: local

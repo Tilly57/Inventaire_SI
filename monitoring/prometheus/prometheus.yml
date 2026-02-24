@@ -6,6 +6,12 @@ global:
     monitor: 'inventaire-si'
     environment: 'production'
 
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['alertmanager:9093']
+
 # Alerting rules
 rule_files:
   - 'alerts.yml'
