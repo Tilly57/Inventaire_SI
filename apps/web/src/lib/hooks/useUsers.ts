@@ -31,6 +31,7 @@ import type {
   ChangePasswordDto,
 } from '@/lib/types/models.types'
 import { useToast } from '@/lib/hooks/use-toast'
+import { getErrorMessage } from '@/lib/utils/getErrorMessage'
 
 /**
  * Hook to fetch all system users
@@ -137,12 +138,12 @@ export function useCreateUser() {
         description: 'L\'utilisateur a été créé avec succès',
       })
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       // Show error notification with API message
       toast({
         variant: 'destructive',
         title: 'Erreur',
-        description: error.response?.data?.error || 'Impossible de créer l\'utilisateur',
+        description: getErrorMessage(error, 'Impossible de créer l\'utilisateur'),
       })
     },
   })
@@ -185,11 +186,11 @@ export function useUpdateUser() {
         description: 'L\'utilisateur a été modifié avec succès',
       })
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: 'destructive',
         title: 'Erreur',
-        description: error.response?.data?.error || 'Impossible de modifier l\'utilisateur',
+        description: getErrorMessage(error, 'Impossible de modifier l\'utilisateur'),
       })
     },
   })
@@ -238,11 +239,11 @@ export function useDeleteUser() {
         description: 'L\'utilisateur a été supprimé avec succès',
       })
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: 'destructive',
         title: 'Erreur',
-        description: error.response?.data?.error || 'Impossible de supprimer l\'utilisateur',
+        description: getErrorMessage(error, 'Impossible de supprimer l\'utilisateur'),
       })
     },
   })
@@ -291,11 +292,11 @@ export function useChangePassword() {
         description: 'Le mot de passe a été modifié avec succès',
       })
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: 'destructive',
         title: 'Erreur',
-        description: error.response?.data?.error || 'Impossible de modifier le mot de passe',
+        description: getErrorMessage(error, 'Impossible de modifier le mot de passe'),
       })
     },
   })

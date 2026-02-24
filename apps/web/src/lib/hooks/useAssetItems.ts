@@ -33,6 +33,8 @@ import type {
   UpdateAssetItemDto,
 } from '@/lib/types/models.types'
 import { useToast } from '@/lib/hooks/use-toast'
+import { AxiosError } from 'axios'
+import { getErrorMessage } from '@/lib/utils/getErrorMessage'
 
 /**
  * Hook to fetch all asset items
@@ -158,11 +160,11 @@ export function useCreateAssetItem() {
         description: 'L\'équipement a été créé avec succès',
       })
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: 'destructive',
         title: 'Erreur',
-        description: error.response?.data?.error || 'Impossible de créer l\'équipement',
+        description: getErrorMessage(error, 'Impossible de créer l\'équipement'),
       })
     },
   })
@@ -218,11 +220,11 @@ export function useUpdateAssetItem() {
         description: 'L\'équipement a été modifié avec succès',
       })
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: 'destructive',
         title: 'Erreur',
-        description: error.response?.data?.error || 'Impossible de modifier l\'équipement',
+        description: getErrorMessage(error, 'Impossible de modifier l\'équipement'),
       })
     },
   })
@@ -285,11 +287,11 @@ export function useDeleteAssetItem() {
         description: 'L\'équipement a été supprimé avec succès',
       })
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: 'destructive',
         title: 'Erreur',
-        description: error.response?.data?.error || 'Impossible de supprimer l\'équipement',
+        description: getErrorMessage(error, 'Impossible de supprimer l\'équipement'),
       })
     },
   })
@@ -397,10 +399,11 @@ export function useCreateAssetItemsBulk() {
         description: `${data.length} équipement(s) créé(s) avec succès`,
       })
     },
-    onError: (error: any) => {
-      const message = error.response?.data?.error || 'Impossible de créer les équipements'
+    onError: (error: unknown) => {
+      const message = getErrorMessage(error, 'Impossible de créer les équipements')
+      const is409 = error instanceof AxiosError && error.response?.status === 409
 
-      if (error.response?.status === 409) {
+      if (is409) {
         toast({
           variant: 'destructive',
           title: 'Tags déjà existants',

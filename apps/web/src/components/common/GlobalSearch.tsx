@@ -113,8 +113,9 @@ export function GlobalSearch() {
           type="text"
           placeholder="Rechercher employé, équipement..."
           value={query}
+          maxLength={100}
           onChange={(e) => {
-            setQuery(e.target.value)
+            setQuery(e.target.value.slice(0, 100))
             setIsOpen(true)
             setActiveIndex(-1)
           }}

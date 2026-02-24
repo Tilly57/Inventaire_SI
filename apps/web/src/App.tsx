@@ -49,50 +49,48 @@ function App() {
           <AppInitializer>
             <Toaster />
             <BrowserRouter>
-        <Suspense fallback={<PageSkeleton />}>
-          <SentryRoutes>
-            {/* Public routes */}
-            <Route path="/login" element={<LoginPage />} />
+        <SentryRoutes>
+          {/* Public routes */}
+          <Route path="/login" element={<Suspense fallback={<PageSkeleton />}><LoginPage /></Suspense>} />
 
-            {/* Protected routes */}
-            <Route element={<ProtectedRoute />}>
-              <Route element={<AppLayout />}>
-                {/* Redirect root to dashboard */}
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          {/* Protected routes */}
+          <Route element={<ProtectedRoute />}>
+            <Route element={<AppLayout />}>
+              {/* Redirect root to dashboard */}
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-                {/* Dashboard - accessible to all roles */}
-                <Route path="/dashboard" element={<DashboardPage />} />
+              {/* Dashboard - accessible to all roles */}
+              <Route path="/dashboard" element={<ErrorBoundary><Suspense fallback={<PageSkeleton />}><DashboardPage /></Suspense></ErrorBoundary>} />
 
-                {/* Users - ADMIN only */}
-                <Route
-                  element={<ProtectedRoute allowedRoles={[UserRole.ADMIN]} />}
-                >
-                  <Route path="/users" element={<UsersListPage />} />
-                </Route>
+              {/* Users - ADMIN only */}
+              <Route
+                element={<ProtectedRoute allowedRoles={[UserRole.ADMIN]} />}
+              >
+                <Route path="/users" element={<ErrorBoundary><Suspense fallback={<PageSkeleton />}><UsersListPage /></Suspense></ErrorBoundary>} />
+              </Route>
 
-                {/* Employees, Assets, Stock, Loans - ADMIN and GESTIONNAIRE */}
-                <Route
-                  element={
-                    <ProtectedRoute
-                      allowedRoles={[UserRole.ADMIN, UserRole.GESTIONNAIRE]}
-                    />
-                  }
-                >
-                  <Route path="/employees" element={<EmployeesListPage />} />
-                  <Route path="/assets/models" element={<AssetModelsListPage />} />
-                  <Route path="/assets/items" element={<AssetItemsListPage />} />
-                  <Route path="/stock" element={<StockItemsListPage />} />
-                  <Route path="/loans" element={<LoansListPage />} />
-                  <Route path="/loans/:id" element={<LoanDetailsPage />} />
-                  <Route path="/audit-logs" element={<AuditLogsPage />} />
-                </Route>
+              {/* Employees, Assets, Stock, Loans - ADMIN and GESTIONNAIRE */}
+              <Route
+                element={
+                  <ProtectedRoute
+                    allowedRoles={[UserRole.ADMIN, UserRole.GESTIONNAIRE]}
+                  />
+                }
+              >
+                <Route path="/employees" element={<ErrorBoundary><Suspense fallback={<PageSkeleton />}><EmployeesListPage /></Suspense></ErrorBoundary>} />
+                <Route path="/assets/models" element={<ErrorBoundary><Suspense fallback={<PageSkeleton />}><AssetModelsListPage /></Suspense></ErrorBoundary>} />
+                <Route path="/assets/items" element={<ErrorBoundary><Suspense fallback={<PageSkeleton />}><AssetItemsListPage /></Suspense></ErrorBoundary>} />
+                <Route path="/stock" element={<ErrorBoundary><Suspense fallback={<PageSkeleton />}><StockItemsListPage /></Suspense></ErrorBoundary>} />
+                <Route path="/loans" element={<ErrorBoundary><Suspense fallback={<PageSkeleton />}><LoansListPage /></Suspense></ErrorBoundary>} />
+                <Route path="/loans/:id" element={<ErrorBoundary><Suspense fallback={<PageSkeleton />}><LoanDetailsPage /></Suspense></ErrorBoundary>} />
+                <Route path="/audit-logs" element={<ErrorBoundary><Suspense fallback={<PageSkeleton />}><AuditLogsPage /></Suspense></ErrorBoundary>} />
               </Route>
             </Route>
+          </Route>
 
-            {/* 404 - Catch all */}
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </SentryRoutes>
-        </Suspense>
+          {/* 404 - Catch all */}
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </SentryRoutes>
         </BrowserRouter>
           </AppInitializer>
         </QueryClientProvider>

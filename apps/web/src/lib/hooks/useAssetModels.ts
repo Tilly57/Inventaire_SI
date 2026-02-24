@@ -30,6 +30,7 @@ import type {
   UpdateAssetModelDto,
 } from '@/lib/types/models.types'
 import { useToast } from '@/lib/hooks/use-toast'
+import { getErrorMessage } from '@/lib/utils/getErrorMessage'
 
 /**
  * Hook to fetch all asset models
@@ -148,11 +149,11 @@ export function useCreateAssetModel() {
         description: 'Le modèle d\'équipement a été créé avec succès',
       })
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: 'destructive',
         title: 'Erreur',
-        description: error.response?.data?.error || 'Impossible de créer le modèle',
+        description: getErrorMessage(error, 'Impossible de créer le modèle'),
       })
     },
   })
@@ -203,11 +204,11 @@ export function useUpdateAssetModel() {
         description: 'Le modèle d\'équipement a été modifié avec succès',
       })
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: 'destructive',
         title: 'Erreur',
-        description: error.response?.data?.error || 'Impossible de modifier le modèle',
+        description: getErrorMessage(error, 'Impossible de modifier le modèle'),
       })
     },
   })
@@ -269,12 +270,12 @@ export function useDeleteAssetModel() {
         description: 'Le modèle d\'équipement a été supprimé avec succès',
       })
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       // Error message explains why deletion failed (e.g., has associated items)
       toast({
         variant: 'destructive',
         title: 'Erreur',
-        description: error.response?.data?.error || 'Impossible de supprimer le modèle',
+        description: getErrorMessage(error, 'Impossible de supprimer le modèle'),
       })
     },
   })
@@ -326,11 +327,11 @@ export function useBatchDeleteAssetModels() {
         description: `${result.modelsDeleted} modèle(s), ${result.assetItemsDeleted} équipement(s) et ${result.stockItemsDeleted} article(s) de stock supprimés`,
       })
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: 'destructive',
         title: 'Erreur',
-        description: error.response?.data?.error || 'Impossible de supprimer les modèles',
+        description: getErrorMessage(error, 'Impossible de supprimer les modèles'),
       })
     },
   })
