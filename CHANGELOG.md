@@ -3,6 +3,33 @@
 All notable changes to this project will be documented in this file.
 
 
+# Release v1.0.1 - 2026-02-24
+
+## Summary
+
+<!-- Add a brief summary of this release -->
+
+## Changes
+
+### ✨ Features
+
+
+### 🐛 Bug Fixes
+
+
+### 📚 Documentation
+- docs: mark Let's Encrypt as completed in ROADMAP
+
+### 🔧 Improvements
+
+
+### 📦 Dependencies
+
+
+### All Commits
+- 8afe9a5 docs: mark Let's Encrypt as completed in ROADMAP (Tilly57)
+
+
 # Release v1.0.0 - 2026-02-24
 
 ## Summary
