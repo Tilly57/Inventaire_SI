@@ -66,6 +66,7 @@ export function useAssetItems() {
   return useQuery({
     queryKey: ['assetItems'],
     queryFn: getAllAssetItemsApi,
+    staleTime: 30_000,
   })
 }
 

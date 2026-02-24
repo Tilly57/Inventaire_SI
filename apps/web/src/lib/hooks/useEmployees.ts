@@ -61,6 +61,7 @@ export function useEmployees() {
   return useQuery({
     queryKey: ['employees'],
     queryFn: getAllEmployeesApi,
+    staleTime: 30_000,
   })
 }
 

@@ -73,8 +73,7 @@ jobs:
       - name: Run API integration tests
         run: |
           cd apps/api
-          npx cross-env NODE_OPTIONS=--experimental-vm-modules jest --testPathPattern='integration' || echo "⚠️ Integration tests have known failures (auth tests need update)"
-        continue-on-error: true
+          npx cross-env NODE_OPTIONS=--experimental-vm-modules jest --testPathPattern='integration'
 
   # Job 2: Build Check (API)
   build:
