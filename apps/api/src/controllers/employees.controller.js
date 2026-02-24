@@ -65,8 +65,16 @@ export const getAllEmployees = asyncHandler(async (req, res) => {
       ...result
     });
   } else {
-    const employees = await employeesService.getAllEmployees();
-    sendSuccess(res, employees);
+    // Unpaginated query with hard cap (backward compat for export)
+    const result = await employeesService.getAllEmployeesPaginated({
+      search,
+      dept,
+      page: 1,
+      pageSize: 1000,
+      sortBy: sortBy || 'lastName',
+      sortOrder: sortOrder || 'asc'
+    });
+    sendSuccess(res, result.data);
   }
 });
 

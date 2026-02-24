@@ -154,7 +154,7 @@ router.post('/login', authLimiter, validate(loginSchema), login);
  *       401:
  *         description: Refresh token manquant ou invalide
  */
-router.post('/refresh', refresh);
+router.post('/refresh', authLimiter, refresh);
 
 /**
  * @swagger
@@ -175,7 +175,7 @@ router.post('/refresh', refresh);
  *                   type: string
  *                   example: Déconnexion réussie
  */
-router.post('/logout', logout);
+router.post('/logout', authLimiter, logout);
 
 /**
  * @swagger

@@ -350,22 +350,26 @@ export async function addLoanLine(loanId, data, req) {
 
   // Handle Stock Item (consumables like cables, adapters)
   if (data.stockItemId) {
-    const stockItem = await findOneOrFail('stockItem', { id: data.stockItemId }, {
-      errorMessage: 'Article de stock non trouvé'
-    });
-
     const quantity = data.quantity || 1;
 
-    // Verify sufficient quantity available (total - loaned)
-    const available = stockItem.quantity - (stockItem.loaned || 0);
-    if (available < quantity) {
-      throw new ValidationError(`Quantité insuffisante en stock (disponible: ${available})`);
-    }
+    // Use interactive transaction to ensure atomicity:
+    // Check availability AND create line AND update stock in one atomic operation
+    const loanLine = await prisma.$transaction(async (tx) => {
+      const stockItem = await tx.stockItem.findUnique({
+        where: { id: data.stockItemId }
+      });
 
-    // Use transaction to ensure atomicity:
-    // Both loan line creation AND stock update must succeed
-    const [loanLine] = await prisma.$transaction([
-      prisma.loanLine.create({
+      if (!stockItem) {
+        throw new ValidationError('Article de stock non trouvé');
+      }
+
+      // Verify sufficient quantity available (total - loaned)
+      const available = stockItem.quantity - (stockItem.loaned || 0);
+      if (available < quantity) {
+        throw new ValidationError(`Quantité insuffisante en stock (disponible: ${available})`);
+      }
+
+      const line = await tx.loanLine.create({
         data: {
           loanId,
           stockItemId: data.stockItemId,
@@ -374,14 +378,17 @@ export async function addLoanLine(loanId, data, req) {
         include: {
           stockItem: true
         }
-      }),
-      prisma.stockItem.update({
+      });
+
+      await tx.stockItem.update({
         where: { id: data.stockItemId },
         data: {
-          loaned: (stockItem.loaned || 0) + quantity  // Only increment loaned, quantity stays the same
+          loaned: (stockItem.loaned || 0) + quantity
         }
-      })
-    ]);
+      });
+
+      return line;
+    }, { isolationLevel: 'Serializable' });
 
     // Audit trail
     await logUpdate('Loan', loanId, req, {}, { action: 'ADD_STOCK_LINE', stockItemId: data.stockItemId, quantity });

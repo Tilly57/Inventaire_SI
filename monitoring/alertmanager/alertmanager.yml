@@ -20,11 +20,11 @@ route:
       repeat_interval: 1h
 
 receivers:
-  # Default receiver — webhook placeholder
-  # Replace with your actual notification endpoint (Slack, email, Teams, etc.)
+  # Default receiver — configure ALERTMANAGER_WEBHOOK_URL in production
+  # Supported: Slack, Teams, PagerDuty, or any webhook endpoint
   - name: 'default'
     webhook_configs:
-      - url: '${ALERTMANAGER_WEBHOOK_URL:-http://localhost:9095/webhook}'
+      - url: '${ALERTMANAGER_WEBHOOK_URL:?ALERTMANAGER_WEBHOOK_URL must be set}'
         send_resolved: true
 
 # Inhibition rules — suppress lower severity if critical is firing
