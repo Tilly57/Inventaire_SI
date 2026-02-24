@@ -94,6 +94,7 @@ export function useEmployee(id: string) {
   return useQuery({
     queryKey: ['employees', id],
     queryFn: () => getEmployeeApi(id),
+    staleTime: 30_000,
     enabled: !!id,
   })
 }

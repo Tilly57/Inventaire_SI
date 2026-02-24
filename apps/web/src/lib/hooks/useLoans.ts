@@ -177,6 +177,7 @@ export function useLoan(id: string) {
   return useQuery({
     queryKey: ['loans', id],
     queryFn: () => getLoanApi(id),
+    staleTime: 30_000,
     enabled: !!id,
   })
 }
