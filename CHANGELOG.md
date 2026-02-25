@@ -3,6 +3,36 @@
 All notable changes to this project will be documented in this file.
 
 
+# Release v1.0.6 - 2026-02-25
+
+## Summary
+
+<!-- Add a brief summary of this release -->
+
+## Changes
+
+### ✨ Features
+
+
+### 🐛 Bug Fixes
+- fix(e2e): add prisma seed config so npx prisma db seed works
+
+### 📚 Documentation
+
+
+### 🔧 Improvements
+
+
+### 📦 Dependencies
+
+
+### All Commits
+- 2b390be fix(e2e): add prisma seed config so npx prisma db seed works (Tilly57)
+- d452672 ci(e2e): add seed verification and user count diagnostic (Tilly57)
+- 8f40759 ci(e2e): improve diagnostic output to show login response body (Tilly57)
+- 07c53e4 ci(e2e): add API login diagnostic step before smoke tests (Tilly57)
+
+
 # Release v1.0.5 - 2026-02-25
 
 ## Summary
