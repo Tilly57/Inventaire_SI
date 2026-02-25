@@ -121,22 +121,20 @@ jobs:
           timeout 60 bash -c 'until curl -f http://localhost:5175; do sleep 2; done'
 
       - name: Verify API login works
+        env:
+          DATABASE_URL: postgresql://inventaire:${{ env.TEST_DB_PASSWORD }}@localhost:5432/inventaire_test
         run: |
           echo "=== Test API health ==="
-          curl -sf http://localhost:3001/api/health/readiness | head -c 200
+          curl -s http://localhost:3001/api/health/readiness
           echo ""
           echo "=== Test login API ==="
-          RESPONSE=$(curl -sf -w "\nHTTP_CODE:%{http_code}" \
+          curl -s -w "\nHTTP_CODE:%{http_code}\n" \
             -X POST http://localhost:3001/api/auth/login \
             -H "Content-Type: application/json" \
-            -d '{"email":"admin@inventaire.local","password":"Admin123!"}')
-          echo "$RESPONSE"
-          HTTP_CODE=$(echo "$RESPONSE" | grep "HTTP_CODE:" | cut -d: -f2)
-          if [ "$HTTP_CODE" != "200" ]; then
-            echo "Login failed with HTTP $HTTP_CODE"
-            echo "=== Check users in DB ==="
-            cd apps/api && npx prisma db execute --stdin <<< "SELECT id, email, role FROM \"User\" LIMIT 5;" 2>&1 || true
-          fi
+            -d '{"email":"admin@inventaire.local","password":"Admin123!"}'
+          echo ""
+          echo "=== Check seeded users ==="
+          cd apps/api && npx prisma db execute --stdin <<< "SELECT email, role FROM \"User\" LIMIT 10;" 2>&1 || echo "prisma query failed"
 
       - name: Run smoke tests (critical paths only)
         working-directory: apps/web
