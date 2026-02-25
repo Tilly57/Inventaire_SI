@@ -3,6 +3,33 @@
 All notable changes to this project will be documented in this file.
 
 
+# Release v1.0.8 - 2026-02-25
+
+## Summary
+
+<!-- Add a brief summary of this release -->
+
+## Changes
+
+### ✨ Features
+
+
+### 🐛 Bug Fixes
+- fix(e2e): remove asset item creation test (UI button disabled) and scope model dialog
+
+### 📚 Documentation
+
+
+### 🔧 Improvements
+
+
+### 📦 Dependencies
+
+
+### All Commits
+- e579c26 fix(e2e): remove asset item creation test (UI button disabled) and scope model dialog (Tilly57)
+
+
 # Release v1.0.7 - 2026-02-25
 
 ## Summary
