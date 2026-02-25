@@ -6,7 +6,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Search, Loader2, Layers, Check } from 'lucide-react'
+import { Search, Loader2, Layers } from 'lucide-react'
 import { autocompleteAssetModels, type AutocompleteAssetModel } from '@/lib/api/search.api'
 import { cn } from '@/lib/utils'
 
@@ -153,9 +153,6 @@ export function AssetModelAutocomplete({
                     </div>
                     <div className="text-xs text-gray-500 truncate">{model.type}</div>
                   </div>
-                  {value?.id === model.id && (
-                    <Check className="h-4 w-4 text-[#EE2722] flex-shrink-0" />
-                  )}
                 </button>
               ))}
             </div>

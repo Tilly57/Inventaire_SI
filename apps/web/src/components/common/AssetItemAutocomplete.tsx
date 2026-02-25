@@ -6,7 +6,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Search, Loader2, Package, Check } from 'lucide-react'
+import { Search, Loader2, Package } from 'lucide-react'
 import { autocompleteAssetItems, type AutocompleteAssetItem } from '@/lib/api/search.api'
 import { cn } from '@/lib/utils'
 
@@ -182,9 +182,6 @@ export function AssetItemAutocomplete({
                     </div>
                     <div className="mt-1">{getStatusBadge(item.status)}</div>
                   </div>
-                  {value?.id === item.id && (
-                    <Check className="h-4 w-4 text-[#EE2722] flex-shrink-0 mt-1" />
-                  )}
                 </button>
               ))}
             </div>

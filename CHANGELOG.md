@@ -3,6 +3,33 @@
 All notable changes to this project will be documented in this file.
 
 
+# Release v1.0.4 - 2026-02-25
+
+## Summary
+
+<!-- Add a brief summary of this release -->
+
+## Changes
+
+### ✨ Features
+
+
+### 🐛 Bug Fixes
+- fix(ci): resolve TypeScript build errors and deprecated Jest flag
+
+### 📚 Documentation
+
+
+### 🔧 Improvements
+
+
+### 📦 Dependencies
+
+
+### All Commits
+- c81dc4e fix(ci): resolve TypeScript build errors and deprecated Jest flag (Tilly57)
+
+
 # Release v1.0.3 - 2026-02-25
 
 ## Summary

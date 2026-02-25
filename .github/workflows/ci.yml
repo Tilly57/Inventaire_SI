@@ -68,12 +68,12 @@ jobs:
       - name: Run API unit tests
         run: |
           cd apps/api
-          npx cross-env NODE_OPTIONS=--experimental-vm-modules jest --testPathIgnorePatterns='integration'
+          npx cross-env NODE_OPTIONS=--experimental-vm-modules jest --testPathIgnorePatterns integration
 
       - name: Run API integration tests
         run: |
           cd apps/api
-          npx cross-env NODE_OPTIONS=--experimental-vm-modules jest --testPathPattern='integration'
+          npx cross-env NODE_OPTIONS=--experimental-vm-modules jest --testPathPatterns integration
 
   # Job 2: Build Check (API)
   build:
