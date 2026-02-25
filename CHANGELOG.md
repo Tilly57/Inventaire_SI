@@ -3,6 +3,33 @@
 All notable changes to this project will be documented in this file.
 
 
+# Release v1.0.5 - 2026-02-25
+
+## Summary
+
+<!-- Add a brief summary of this release -->
+
+## Changes
+
+### ✨ Features
+
+
+### 🐛 Bug Fixes
+- fix(test): align integration tests with password policy and schema
+
+### 📚 Documentation
+
+
+### 🔧 Improvements
+
+
+### 📦 Dependencies
+
+
+### All Commits
+- d733c39 fix(test): align integration tests with password policy and schema (Tilly57)
+
+
 # Release v1.0.4 - 2026-02-25
 
 ## Summary
