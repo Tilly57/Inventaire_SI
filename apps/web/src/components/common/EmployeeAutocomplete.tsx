@@ -6,7 +6,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Search, Loader2, User, Check } from 'lucide-react'
+import { Search, Loader2, User } from 'lucide-react'
 import { autocompleteEmployees, type AutocompleteEmployee } from '@/lib/api/search.api'
 import { cn } from '@/lib/utils'
 
@@ -155,9 +155,6 @@ export function EmployeeAutocomplete({
                       {employee.email} • {employee.dept}
                     </div>
                   </div>
-                  {value?.id === employee.id && (
-                    <Check className="h-4 w-4 text-[#EE2722] flex-shrink-0" />
-                  )}
                 </button>
               ))}
             </div>

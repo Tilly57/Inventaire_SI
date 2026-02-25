@@ -159,7 +159,6 @@ export function GlobalSearch() {
             <div className="p-4 text-center text-gray-500">Aucun résultat trouvé</div>
           ) : (
             (() => {
-              let idx = 0
               const empOffset = 0
               const itemOffset = data.employees.length
               const modelOffset = itemOffset + data.assetItems.length
