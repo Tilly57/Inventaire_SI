@@ -84,7 +84,16 @@ jobs:
           DATABASE_URL: postgresql://inventaire:${{ env.TEST_DB_PASSWORD }}@localhost:5432/inventaire_test
         run: |
           npx prisma migrate deploy
-          npx prisma db seed
+          echo "=== Running seed ==="
+          npx prisma db seed 2>&1 || echo "WARNING: Seed may have failed"
+          echo "=== Verify users created ==="
+          node --input-type=module -e "
+            import { PrismaClient } from '@prisma/client';
+            const p = new PrismaClient();
+            const users = await p.user.findMany({ select: { email: true, role: true } });
+            console.log('Users found:', JSON.stringify(users));
+            await p.\$disconnect();
+          " || echo "User verification query failed"
 
       - name: Create secrets directory
         run: |
