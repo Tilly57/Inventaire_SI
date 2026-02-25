@@ -120,6 +120,24 @@ jobs:
           # Wait for frontend to be ready
           timeout 60 bash -c 'until curl -f http://localhost:5175; do sleep 2; done'
 
+      - name: Verify API login works
+        run: |
+          echo "=== Test API health ==="
+          curl -sf http://localhost:3001/api/health/readiness | head -c 200
+          echo ""
+          echo "=== Test login API ==="
+          RESPONSE=$(curl -sf -w "\nHTTP_CODE:%{http_code}" \
+            -X POST http://localhost:3001/api/auth/login \
+            -H "Content-Type: application/json" \
+            -d '{"email":"admin@inventaire.local","password":"Admin123!"}')
+          echo "$RESPONSE"
+          HTTP_CODE=$(echo "$RESPONSE" | grep "HTTP_CODE:" | cut -d: -f2)
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "Login failed with HTTP $HTTP_CODE"
+            echo "=== Check users in DB ==="
+            cd apps/api && npx prisma db execute --stdin <<< "SELECT id, email, role FROM \"User\" LIMIT 5;" 2>&1 || true
+          fi
+
       - name: Run smoke tests (critical paths only)
         working-directory: apps/web
         env:
