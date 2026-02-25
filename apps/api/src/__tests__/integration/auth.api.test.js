@@ -37,9 +37,7 @@ describe('POST /api/auth/register', () => {
       .post('/api/auth/register')
       .send({
         email: 'newuser@example.com',
-        password: 'password123',
-        firstName: 'John',
-        lastName: 'Doe',
+        password: 'SecurePass123!',
       });
 
     expect(response.status).toBe(201);
@@ -56,9 +54,7 @@ describe('POST /api/auth/register', () => {
       .post('/api/auth/register')
       .send({
         email: 'test@example.com',
-        password: 'password123',
-        firstName: 'Test',
-        lastName: 'User',
+        password: 'SecurePass123!',
       });
 
     expect(response.status).toBe(201);
@@ -75,9 +71,7 @@ describe('POST /api/auth/register', () => {
   test('should return 409 if email already exists', async () => {
     const userData = {
       email: 'duplicate@example.com',
-      password: 'password123',
-      firstName: 'John',
-      lastName: 'Doe',
+      password: 'SecurePass123!',
     };
 
     // Create first user
@@ -96,9 +90,7 @@ describe('POST /api/auth/register', () => {
       .post('/api/auth/register')
       .send({
         email: 'invalid-email',
-        password: 'password123',
-        firstName: 'John',
-        lastName: 'Doe',
+        password: 'SecurePass123!',
       });
 
     expect(response.status).toBe(400);
@@ -122,9 +114,7 @@ describe('POST /api/auth/register', () => {
       .post('/api/auth/register')
       .send({
         email: 'first@example.com',
-        password: 'password123',
-        firstName: 'First',
-        lastName: 'User',
+        password: 'SecurePass123!',
       });
 
     expect(response.status).toBe(201);
@@ -137,9 +127,7 @@ describe('POST /api/auth/register', () => {
       .post('/api/auth/register')
       .send({
         email: 'first@example.com',
-        password: 'password123',
-        firstName: 'First',
-        lastName: 'User',
+        password: 'SecurePass123!',
       });
 
     // Create second user
@@ -147,9 +135,7 @@ describe('POST /api/auth/register', () => {
       .post('/api/auth/register')
       .send({
         email: 'second@example.com',
-        password: 'password123',
-        firstName: 'Second',
-        lastName: 'User',
+        password: 'SecurePass123!',
       });
 
     expect(response.status).toBe(201);
@@ -168,7 +154,7 @@ describe('POST /api/auth/login', () => {
 
   test('should login with correct credentials', async () => {
     const email = 'test@example.com';
-    const password = 'password123';
+    const password = 'SecurePass123!';
 
     // Register user first
     await request(app)
@@ -176,8 +162,6 @@ describe('POST /api/auth/login', () => {
       .send({
         email,
         password,
-        firstName: 'Test',
-        lastName: 'User',
       });
 
     // Login
@@ -195,15 +179,13 @@ describe('POST /api/auth/login', () => {
 
   test('should set cookies on login', async () => {
     const email = 'test@example.com';
-    const password = 'password123';
+    const password = 'SecurePass123!';
 
     await request(app)
       .post('/api/auth/register')
       .send({
         email,
         password,
-        firstName: 'Test',
-        lastName: 'User',
       });
 
     const response = await request(app)
@@ -227,14 +209,12 @@ describe('POST /api/auth/login', () => {
       .post('/api/auth/register')
       .send({
         email,
-        password: 'correct-password',
-        firstName: 'Test',
-        lastName: 'User',
+        password: 'CorrectPass123!',
       });
 
     const response = await request(app)
       .post('/api/auth/login')
-      .send({ email, password: 'wrong-password' });
+      .send({ email, password: 'WrongPass999!' });
 
     expect(response.status).toBe(401);
     expect(response.body.success).toBe(false);
@@ -246,7 +226,7 @@ describe('POST /api/auth/login', () => {
       .post('/api/auth/login')
       .send({
         email: 'nonexistent@example.com',
-        password: 'password123',
+        password: 'SecurePass123!',
       });
 
     expect(response.status).toBe(401);
@@ -281,16 +261,14 @@ describe('POST /api/auth/logout', () => {
       .post('/api/auth/register')
       .send({
         email: 'test@example.com',
-        password: 'password123',
-        firstName: 'Test',
-        lastName: 'User',
+        password: 'SecurePass123!',
       });
 
     const loginResponse = await request(app)
       .post('/api/auth/login')
       .send({
         email: 'test@example.com',
-        password: 'password123',
+        password: 'SecurePass123!',
       });
 
     const cookies = loginResponse.headers['set-cookie'];
