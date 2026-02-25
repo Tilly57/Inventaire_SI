@@ -3,6 +3,33 @@
 All notable changes to this project will be documented in this file.
 
 
+# Release v1.0.3 - 2026-02-25
+
+## Summary
+
+<!-- Add a brief summary of this release -->
+
+## Changes
+
+### ✨ Features
+
+
+### 🐛 Bug Fixes
+- fix(e2e): allow Playwright to reuse existing dev server in CI
+
+### 📚 Documentation
+
+
+### 🔧 Improvements
+
+
+### 📦 Dependencies
+
+
+### All Commits
+- 2ac2400 fix(e2e): allow Playwright to reuse existing dev server in CI (Tilly57)
+
+
 # Release v1.0.2 - 2026-02-24
 
 ## Summary
