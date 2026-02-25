@@ -36,6 +36,9 @@
     "xlsx": "^0.18.5",
     "zod": "^3.23.8"
   },
+  "prisma": {
+    "seed": "node src/seeds/seed.js"
+  },
   "devDependencies": {
     "@jest/globals": "^30.2.0",
     "@types/jest": "^30.0.0",
