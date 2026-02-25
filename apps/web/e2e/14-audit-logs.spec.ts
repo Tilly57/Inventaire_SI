@@ -19,7 +19,7 @@ test.describe('Audit Logs', () => {
       await navigateTo(page, '/audit-logs');
 
       // Page should load with heading
-      await expect(page.locator('h1, h2').first()).toContainText(/audit|journal|logs/i, { timeout: 5000 });
+      await expect(page.locator('main h1, main h2').first()).toContainText(/audit|journal|logs/i, { timeout: 5000 });
     });
 
     test('Non-admin should NOT access audit logs page', async ({ page }) => {
@@ -173,7 +173,7 @@ test.describe('Audit Logs', () => {
       await page.fill('input[name="firstName"]', 'AuditCreate');
       await page.fill('input[name="lastName"]', `Test${timestamp}`);
       await page.fill('input[name="email"]', createdEmployeeEmail);
-      await page.fill('input[name="department"]', 'Audit Testing');
+      await page.fill('input[name="dept"]', 'Audit Testing');
       await page.fill('input[name="phone"]', '+33612345678');
 
       await clickButton(page, 'Créer');
@@ -222,7 +222,7 @@ test.describe('Audit Logs', () => {
           await page.waitForTimeout(500);
 
           // Modify a field
-          await page.fill('input[name="department"]', 'Updated Department');
+          await page.fill('input[name="dept"]', 'Updated Department');
           await clickButton(page, 'Enregistrer');
           await page.waitForTimeout(1500);
         } else {
@@ -235,7 +235,7 @@ test.describe('Audit Logs', () => {
           if (await editBtn.isVisible({ timeout: 2000 })) {
             await editBtn.click();
             await page.waitForTimeout(500);
-            await page.fill('input[name="department"]', 'Updated Department');
+            await page.fill('input[name="dept"]', 'Updated Department');
             await clickButton(page, 'Enregistrer');
             await page.waitForTimeout(1500);
           }

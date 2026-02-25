@@ -62,21 +62,13 @@ test.describe('Critical Loan Workflow', () => {
     // Click create loan button
     await clickButton(page, 'Nouveau prêt');
 
-    // Wait for dialog/form
-    await page.waitForTimeout(500);
+    const loanDialog = page.locator('[role="dialog"]');
+    await loanDialog.waitFor();
 
-    // Select employee
-    const employeeSelect = page.locator('select[name="employeeId"], button[role="combobox"]').first();
-
-    if (await employeeSelect.evaluate(el => el.tagName) === 'SELECT') {
-      // Standard select
-      await employeeSelect.selectOption({ label: new RegExp(employee.email, 'i') });
-    } else {
-      // Combobox (shadcn/ui)
-      await employeeSelect.click();
-      await page.waitForTimeout(300);
-      await page.locator(`[role="option"]:has-text("${employee.email}")`).first().click();
-    }
+    // Select employee via Radix Select (scoped to dialog)
+    await loanDialog.locator('button[role="combobox"]').first().click();
+    await page.waitForTimeout(300);
+    await page.locator(`[role="option"]:has-text("${employee.email}")`).first().click();
 
     // Submit
     await clickButton(page, 'Créer');
@@ -90,7 +82,7 @@ test.describe('Critical Loan Workflow', () => {
     console.log(`Loan created: ${loanId}`);
 
     // Verify loan details page
-    await expect(page.locator('h1, h2')).toContainText(/détails.*prêt|prêt/i);
+    await expect(page.locator('main h1')).toContainText(/détails du prêt/i);
 
     // STEP 3: Add asset item to loan
     console.log('Step 5: Adding asset item to loan...');
@@ -107,34 +99,21 @@ test.describe('Critical Loan Workflow', () => {
       await page.waitForTimeout(300);
     }
 
-    // Select the asset item we created
-    const assetSelect = page.locator('select[name="assetItemId"], button[role="combobox"]');
-
-    if (await assetSelect.first().evaluate(el => el.tagName) === 'SELECT') {
-      // Standard select - find option with our asset tag
-      const options = await assetSelect.first().locator('option').allTextContents();
-      const targetIndex = options.findIndex(opt => opt.includes(assetItem.assetTag));
-
-      if (targetIndex >= 0) {
-        await assetSelect.first().selectOption({ index: targetIndex });
-      } else {
-        // Fallback: select first available
-        await assetSelect.first().selectOption({ index: 1 });
-      }
+    // Select the asset item we created (Radix Select)
+    const addItemDialog = page.locator('[role="dialog"]');
+    if (await addItemDialog.isVisible({ timeout: 3000 })) {
+      await addItemDialog.locator('button[role="combobox"]').first().click();
     } else {
-      // Combobox
-      await assetSelect.first().click();
-      await page.waitForTimeout(300);
+      await page.locator('button[role="combobox"]').first().click();
+    }
+    await page.waitForTimeout(300);
 
-      // Try to find our specific asset
-      const optionWithTag = page.locator(`[role="option"]:has-text("${assetItem.assetTag}")`);
-
-      if (await optionWithTag.isVisible({ timeout: 2000 })) {
-        await optionWithTag.first().click();
-      } else {
-        // Fallback: select first option
-        await page.locator('[role="option"]').first().click();
-      }
+    // Try to find our specific asset
+    const optionWithTag = page.locator(`[role="option"]:has-text("${assetItem.assetTag}")`);
+    if (await optionWithTag.isVisible({ timeout: 2000 })) {
+      await optionWithTag.first().click();
+    } else {
+      await page.locator('[role="option"]').first().click();
     }
 
     // Submit
@@ -144,7 +123,7 @@ test.describe('Critical Loan Workflow', () => {
     await page.waitForTimeout(2000);
 
     // Verify item appears in loan lines table
-    await expect(page.locator('table, tbody')).toContainText(assetItem.assetTag, { timeout: 10000 });
+    await expect(page.locator('table').first()).toContainText(assetItem.assetTag, { timeout: 10000 });
 
     console.log('Asset item added to loan');
 
@@ -254,7 +233,7 @@ test.describe('Critical Loan Workflow', () => {
     await navigateTo(page, '/loans');
 
     // Verify the loan appears in the list
-    await expect(page.locator('table, tbody')).toContainText(employee.lastName, { timeout: 10000 });
+    await expect(page.locator('table').first()).toContainText(employee.lastName, { timeout: 10000 });
   });
 
   test('Can view loan history', async ({ page }) => {
@@ -271,15 +250,12 @@ test.describe('Critical Loan Workflow', () => {
     await clickButton(page, 'Nouveau prêt');
     await page.waitForTimeout(500);
 
-    const employeeSelect = page.locator('select[name="employeeId"], button[role="combobox"]').first();
+    const historyDialog = page.locator('[role="dialog"]');
+    await historyDialog.waitFor();
 
-    if (await employeeSelect.evaluate(el => el.tagName) === 'SELECT') {
-      await employeeSelect.selectOption({ label: new RegExp(employee.email, 'i') });
-    } else {
-      await employeeSelect.click();
-      await page.waitForTimeout(300);
-      await page.locator(`[role="option"]:has-text("${employee.email}")`).first().click();
-    }
+    await historyDialog.locator('button[role="combobox"]').first().click();
+    await page.waitForTimeout(300);
+    await page.locator(`[role="option"]:has-text("${employee.email}")`).first().click();
 
     await clickButton(page, 'Créer');
     await page.waitForURL(/\/loans\//, { timeout: 15000 });
@@ -296,7 +272,7 @@ test.describe('Critical Loan Workflow', () => {
 
     // Verify details page loaded
     await expect(page).toHaveURL(/\/loans\/[a-z0-9]+/);
-    await expect(page.locator('h1, h2')).toContainText(/détails|prêt/i);
+    await expect(page.locator('main h1')).toContainText(/détails du prêt/i);
 
     // Verify employee info visible
     await expect(page.locator('body')).toContainText(employee.lastName);
@@ -321,7 +297,7 @@ test.describe('Critical Loan Workflow', () => {
         await page.waitForTimeout(1000);
 
         // Verify filtering worked
-        await expect(page.locator('table, tbody')).toBeVisible();
+        await expect(page.locator('table').first()).toBeVisible();
       }
     }
   });
