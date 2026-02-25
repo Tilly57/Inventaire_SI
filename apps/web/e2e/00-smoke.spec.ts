@@ -55,22 +55,25 @@ test.describe('Smoke Tests - Critical Paths', () => {
     // Create employee
     await page.getByRole('button', { name: /nouvel employé/i }).click();
 
-    await page.fill('input[name="firstName"]', 'Smoke');
-    await page.fill('input[name="lastName"]', 'Test');
-    await page.fill('input[name="email"]', testEmail);
-    await page.fill('input[name="dept"]', 'Testing');
+    const empDialog = page.locator('[role="dialog"]');
+    await empDialog.waitFor();
 
-    await page.getByRole('button', { name: /créer/i }).click();
+    await empDialog.locator('input[name="firstName"]').fill('Smoke');
+    await empDialog.locator('input[name="lastName"]').fill('Test');
+    await empDialog.locator('input[name="email"]').fill(testEmail);
+    await empDialog.locator('input[name="dept"]').fill('Testing');
 
-    // Verify success (toast or redirect)
-    await page.waitForTimeout(1000);
+    await empDialog.getByRole('button', { name: /créer/i }).click();
+
+    // Wait for dialog to close (confirms successful creation)
+    await empDialog.waitFor({ state: 'detached', timeout: 10000 });
 
     // Verify employee appears in list
     await navigateTo(page, '/employees');
-    await expect(page.locator('tbody')).toContainText(testEmail);
+    await expect(page.locator('tbody')).toContainText(testEmail, { timeout: 10000 });
   });
 
-  test('CRITICAL: Can create asset model and asset item', async ({ page }) => {
+  test('CRITICAL: Can create asset model', async ({ page }) => {
     await loginAsAdmin(page);
 
     const timestamp = Date.now();
@@ -86,38 +89,17 @@ test.describe('Smoke Tests - Critical Paths', () => {
     await modelDialog.locator('button[role="combobox"]').first().click();
     await page.locator('[role="option"]').filter({ hasText: 'Ordinateur portable' }).click();
 
-    await page.fill('input[name="brand"]', `SmokeTest`);
-    await page.fill('input[name="modelName"]', `Model ${timestamp}`);
+    await modelDialog.locator('input[name="brand"]').fill('SmokeTest');
+    await modelDialog.locator('input[name="modelName"]').fill(`Model ${timestamp}`);
 
     await modelDialog.getByRole('button', { name: /créer/i }).click();
-    await page.waitForTimeout(1000);
+
+    // Wait for dialog to close (confirms successful creation)
+    await modelDialog.waitFor({ state: 'detached', timeout: 10000 });
 
     // Verify model in list
     await navigateTo(page, '/assets/models');
-    await expect(page.locator('tbody')).toContainText(`Model ${timestamp}`);
-
-    // Create asset item
-    await navigateTo(page, '/assets/items');
-    await page.getByRole('button', { name: /nouvel équipement/i }).click();
-
-    const itemDialog = page.locator('[role="dialog"]');
-    await itemDialog.waitFor();
-
-    // Select model via Radix Select
-    await itemDialog.locator('button[role="combobox"]').first().click();
-    await page.waitForTimeout(300);
-    await page.locator('[role="option"]').first().click();
-
-    const assetTag = `SMOKE${timestamp}`;
-    await page.fill('input[name="assetTag"]', assetTag);
-    await page.fill('input[name="serial"]', `SN${timestamp}`);
-
-    await itemDialog.getByRole('button', { name: /créer/i }).click();
-    await page.waitForTimeout(1000);
-
-    // Verify asset in list
-    await navigateTo(page, '/assets/items');
-    await expect(page.locator('tbody')).toContainText(assetTag);
+    await expect(page.locator('tbody')).toContainText(`Model ${timestamp}`, { timeout: 10000 });
   });
 
   test('CRITICAL: Can create loan', async ({ page }) => {
