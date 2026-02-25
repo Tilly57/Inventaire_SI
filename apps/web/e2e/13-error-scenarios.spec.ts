@@ -95,7 +95,7 @@ test.describe('Error Scenarios', () => {
       await page.fill('input[name="firstName"]', 'Test');
       await page.fill('input[name="lastName"]', 'Invalid');
       await page.fill('input[name="email"]', 'not-an-email');
-      await page.fill('input[name="department"]', 'Testing');
+      await page.fill('input[name="dept"]', 'Testing');
 
       await clickButton(page, 'Créer');
 
@@ -115,7 +115,7 @@ test.describe('Error Scenarios', () => {
 
       // Fill fields but skip model selection
       await page.fill('input[name="assetTag"]', `ERRTEST${Date.now()}`);
-      await page.fill('input[name="serialNumber"]', `SN${Date.now()}`);
+      await page.fill('input[name="serial"]', `SN${Date.now()}`);
 
       await clickButton(page, 'Créer');
 
@@ -253,7 +253,7 @@ test.describe('Error Scenarios', () => {
       await page.goto('/employees', { timeout: 30000 });
 
       // Should still show the page
-      await expect(page.locator('h1, h2').first()).toBeVisible({ timeout: 15000 });
+      await expect(page.locator('main h1, main h2').first()).toBeVisible({ timeout: 15000 });
 
       // Reset network
       await cdpSession.send('Network.emulateNetworkConditions', {
@@ -300,8 +300,7 @@ test.describe('Error Scenarios', () => {
       await page.fill('input[name="firstName"]', 'First');
       await page.fill('input[name="lastName"]', 'Duplicate');
       await page.fill('input[name="email"]', email);
-      await page.fill('input[name="department"]', 'Testing');
-      await page.fill('input[name="phone"]', '+33612345678');
+      await page.fill('input[name="dept"]', 'Testing');
       await clickButton(page, 'Créer');
       await page.waitForTimeout(1500);
 
@@ -311,8 +310,7 @@ test.describe('Error Scenarios', () => {
       await page.fill('input[name="firstName"]', 'Second');
       await page.fill('input[name="lastName"]', 'Duplicate');
       await page.fill('input[name="email"]', email);
-      await page.fill('input[name="department"]', 'Testing');
-      await page.fill('input[name="phone"]', '+33612345679');
+      await page.fill('input[name="dept"]', 'Testing');
       await clickButton(page, 'Créer');
 
       // Should show error about duplicate email

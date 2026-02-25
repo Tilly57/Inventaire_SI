@@ -17,7 +17,7 @@ test.describe('Smoke Tests - Critical Paths', () => {
 
     // Verify dashboard loads
     await expect(page).toHaveURL(/\/dashboard/);
-    await expect(page.locator('h1, h2')).toContainText(/tableau de bord/i);
+    await expect(page.locator('main h1')).toContainText(/tableau de bord/i);
 
     // Verify key metrics are visible
     const metrics = page.locator('[class*="card"]').first();
@@ -39,7 +39,7 @@ test.describe('Smoke Tests - Critical Paths', () => {
 
     for (const section of sections) {
       await navigateTo(page, section.path);
-      await expect(page.locator('h1, h2').first()).toContainText(section.heading);
+      await expect(page.locator('main h1, main h2').first()).toContainText(section.heading);
     }
   });
 
@@ -58,8 +58,7 @@ test.describe('Smoke Tests - Critical Paths', () => {
     await page.fill('input[name="firstName"]', 'Smoke');
     await page.fill('input[name="lastName"]', 'Test');
     await page.fill('input[name="email"]', testEmail);
-    await page.fill('input[name="department"]', 'Testing');
-    await page.fill('input[name="phone"]', '+33612345678');
+    await page.fill('input[name="dept"]', 'Testing');
 
     await page.getByRole('button', { name: /créer/i }).click();
 
@@ -80,11 +79,17 @@ test.describe('Smoke Tests - Critical Paths', () => {
     await navigateTo(page, '/assets/models');
     await page.getByRole('button', { name: /nouveau modèle/i }).click();
 
-    await page.selectOption('select[name="type"]', 'LAPTOP');
+    const modelDialog = page.locator('[role="dialog"]');
+    await modelDialog.waitFor();
+
+    // Select type via Radix Select
+    await modelDialog.locator('button[role="combobox"]').first().click();
+    await page.locator('[role="option"]').filter({ hasText: 'Ordinateur portable' }).click();
+
     await page.fill('input[name="brand"]', `SmokeTest`);
     await page.fill('input[name="modelName"]', `Model ${timestamp}`);
 
-    await page.getByRole('button', { name: /créer/i }).click();
+    await modelDialog.getByRole('button', { name: /créer/i }).click();
     await page.waitForTimeout(1000);
 
     // Verify model in list
@@ -95,24 +100,19 @@ test.describe('Smoke Tests - Critical Paths', () => {
     await navigateTo(page, '/assets/items');
     await page.getByRole('button', { name: /nouvel équipement/i }).click();
 
-    // Select the model we just created
-    const modelSelect = page.locator('select[name="assetModelId"], button[role="combobox"]').first();
+    const itemDialog = page.locator('[role="dialog"]');
+    await itemDialog.waitFor();
 
-    if (await modelSelect.evaluate(el => el.tagName) === 'SELECT') {
-      await modelSelect.selectOption({ index: 1 });
-    } else {
-      await modelSelect.click();
-      await page.waitForTimeout(300);
-      await page.locator('[role="option"]').first().click();
-    }
+    // Select model via Radix Select
+    await itemDialog.locator('button[role="combobox"]').first().click();
+    await page.waitForTimeout(300);
+    await page.locator('[role="option"]').first().click();
 
     const assetTag = `SMOKE${timestamp}`;
     await page.fill('input[name="assetTag"]', assetTag);
-    await page.fill('input[name="serialNumber"]', `SN${timestamp}`);
-    await page.fill('input[name="purchaseDate"]', '2024-01-01');
-    await page.fill('input[name="purchasePrice"]', '1000');
+    await page.fill('input[name="serial"]', `SN${timestamp}`);
 
-    await page.getByRole('button', { name: /créer/i }).click();
+    await itemDialog.getByRole('button', { name: /créer/i }).click();
     await page.waitForTimeout(1000);
 
     // Verify asset in list
@@ -129,24 +129,21 @@ test.describe('Smoke Tests - Critical Paths', () => {
     // Create loan
     await page.getByRole('button', { name: /nouveau prêt/i }).click();
 
-    // Select first employee
-    const employeeSelect = page.locator('select[name="employeeId"], button[role="combobox"]').first();
+    const loanDialog = page.locator('[role="dialog"]');
+    await loanDialog.waitFor();
 
-    if (await employeeSelect.evaluate(el => el.tagName) === 'SELECT') {
-      await employeeSelect.selectOption({ index: 1 });
-    } else {
-      await employeeSelect.click();
-      await page.waitForTimeout(300);
-      await page.locator('[role="option"]').first().click();
-    }
+    // Select first employee via Radix Select (scoped to dialog to avoid status filter)
+    await loanDialog.locator('button[role="combobox"]').first().click();
+    await page.waitForTimeout(300);
+    await page.locator('[role="option"]').first().click();
 
-    await page.getByRole('button', { name: /créer/i }).click();
+    await loanDialog.getByRole('button', { name: /créer/i }).click();
 
     // Verify redirect to loan details
     await page.waitForURL(/\/loans\/[a-z0-9]+/, { timeout: 15000 });
 
     // Verify we're on loan details page
-    await expect(page.locator('h1, h2')).toContainText(/détails.*prêt|prêt.*détails/i);
+    await expect(page.locator('main h1')).toContainText(/détails du prêt/i);
   });
 
   test('CRITICAL: Can export data', async ({ page }) => {
@@ -220,7 +217,7 @@ test.describe('Smoke Tests - Critical Paths', () => {
       await page.waitForTimeout(500);
 
       // Verify table updates (may be empty, just check it responds)
-      await expect(page.locator('table, tbody')).toBeVisible();
+      await expect(page.locator('table').first()).toBeVisible();
     }
   });
 
