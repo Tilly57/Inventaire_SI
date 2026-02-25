@@ -17,8 +17,7 @@ export async function createTestEmployee(page: Page, suffix: string = '') {
     firstName: `Test${suffix}`,
     lastName: `Employee${suffix}`,
     email: `test.employee${suffix}.${timestamp}@test.local`,
-    department: `Department ${timestamp}`,
-    phone: `+33612345678`,
+    dept: `Department ${timestamp}`,
   };
 
   await navigateTo(page, '/employees');
@@ -28,8 +27,7 @@ export async function createTestEmployee(page: Page, suffix: string = '') {
   await page.fill('input[name="firstName"]', employeeData.firstName);
   await page.fill('input[name="lastName"]', employeeData.lastName);
   await page.fill('input[name="email"]', employeeData.email);
-  await page.fill('input[name="department"]', employeeData.department);
-  await page.fill('input[name="phone"]', employeeData.phone);
+  await page.fill('input[name="dept"]', employeeData.dept);
 
   // Submit
   await clickButton(page, 'Créer');
@@ -47,20 +45,23 @@ export async function createTestEmployee(page: Page, suffix: string = '') {
 export async function createTestAssetModel(page: Page, suffix: string = '') {
   const timestamp = Date.now();
   const modelData = {
-    type: 'LAPTOP',
+    type: 'Ordinateur portable',
     brand: `TestBrand${suffix}`,
     modelName: `Model ${timestamp}`,
-    description: `Test model created at ${new Date().toISOString()}`,
   };
 
   await navigateTo(page, '/assets/models');
   await clickButton(page, 'Nouveau modèle');
 
-  // Fill form
-  await page.selectOption('select[name="type"]', modelData.type);
+  const dialog = page.locator('[role="dialog"]');
+  await dialog.waitFor();
+
+  // Select type via Radix Select
+  await dialog.locator('button[role="combobox"]').first().click();
+  await page.locator('[role="option"]').filter({ hasText: modelData.type }).click();
+
   await page.fill('input[name="brand"]', modelData.brand);
   await page.fill('input[name="modelName"]', modelData.modelName);
-  await page.fill('textarea[name="description"]', modelData.description);
 
   // Submit
   await clickButton(page, 'Créer');
@@ -79,41 +80,23 @@ export async function createTestAssetItem(page: Page, suffix: string = '') {
   const timestamp = Date.now();
   const itemData = {
     assetTag: `TAG${timestamp}${suffix}`,
-    serialNumber: `SN${timestamp}${suffix}`,
-    purchaseDate: '2024-01-01',
-    purchasePrice: '1000',
-    status: 'EN_STOCK',
-    condition: 'GOOD',
+    serial: `SN${timestamp}${suffix}`,
   };
 
   await navigateTo(page, '/assets/items');
   await clickButton(page, 'Nouvel équipement');
 
-  // Select first available model
-  const modelSelect = page.locator('select[name="assetModelId"], button[role="combobox"]').first();
-  if (await modelSelect.evaluate(el => el.tagName) === 'SELECT') {
-    // Standard select
-    await modelSelect.selectOption({ index: 1 }); // First option after placeholder
-  } else {
-    // Combobox (shadcn/ui)
-    await modelSelect.click();
-    await page.waitForTimeout(300);
-    await page.locator('[role="option"]').first().click();
-  }
+  const dialog = page.locator('[role="dialog"]');
+  await dialog.waitFor();
+
+  // Select first available model via Radix Select
+  await dialog.locator('button[role="combobox"]').first().click();
+  await page.waitForTimeout(300);
+  await page.locator('[role="option"]').first().click();
 
   // Fill form
   await page.fill('input[name="assetTag"]', itemData.assetTag);
-  await page.fill('input[name="serialNumber"]', itemData.serialNumber);
-  await page.fill('input[name="purchaseDate"]', itemData.purchaseDate);
-  await page.fill('input[name="purchasePrice"]', itemData.purchasePrice);
-
-  // Select status and condition if needed
-  if (await page.locator('select[name="status"]').isVisible()) {
-    await page.selectOption('select[name="status"]', itemData.status);
-  }
-  if (await page.locator('select[name="condition"]').isVisible()) {
-    await page.selectOption('select[name="condition"]', itemData.condition);
-  }
+  await page.fill('input[name="serial"]', itemData.serial);
 
   // Submit
   await clickButton(page, 'Créer');
@@ -164,26 +147,17 @@ export async function createTestLoan(page: Page, employeeEmail?: string): Promis
   await navigateTo(page, '/loans');
   await clickButton(page, 'Nouveau prêt');
 
-  // Select employee
-  const employeeSelect = page.locator('select[name="employeeId"], button[role="combobox"]').first();
+  const dialog = page.locator('[role="dialog"]');
+  await dialog.waitFor();
 
-  if (await employeeSelect.evaluate(el => el.tagName) === 'SELECT') {
-    // Standard select
-    if (employeeEmail) {
-      await employeeSelect.selectOption({ label: new RegExp(employeeEmail, 'i') });
-    } else {
-      await employeeSelect.selectOption({ index: 1 });
-    }
+  // Select employee via Radix Select (scoped to dialog)
+  await dialog.locator('button[role="combobox"]').first().click();
+  await page.waitForTimeout(300);
+
+  if (employeeEmail) {
+    await page.locator(`[role="option"]:has-text("${employeeEmail}")`).first().click();
   } else {
-    // Combobox (shadcn/ui)
-    await employeeSelect.click();
-    await page.waitForTimeout(300);
-
-    if (employeeEmail) {
-      await page.locator(`[role="option"]:has-text("${employeeEmail}")`).first().click();
-    } else {
-      await page.locator('[role="option"]').first().click();
-    }
+    await page.locator('[role="option"]').first().click();
   }
 
   // Submit
