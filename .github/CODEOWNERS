@@ -1,0 +1,21 @@
+# CODEOWNERS — Inventaire SI
+# These owners are automatically requested for review on PRs.
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owner for everything
+* @Tilly57
+
+# Backend (API, database, infrastructure)
+apps/api/ @Tilly57
+docker-compose*.yml @Tilly57
+scripts/ @Tilly57
+
+# Frontend
+apps/web/ @Tilly57
+
+# CI/CD — require explicit approval for pipeline changes
+.github/ @Tilly57
+
+# Security-sensitive files
+apps/api/src/config/ @Tilly57
+apps/api/src/middleware/auth* @Tilly57
