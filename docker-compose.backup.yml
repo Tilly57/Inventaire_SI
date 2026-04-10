@@ -17,7 +17,7 @@ services:
     container_name: inventaire_si-backup
     environment:
       - NODE_ENV=production
-      - DB_CONTAINER=inventaire_si-db-1
+      - DB_CONTAINER=inventaire_postgres
       - DB_NAME=${POSTGRES_DB}
       - DB_USER=${POSTGRES_USER}
       - BACKUP_RETENTION_DAYS=${BACKUP_RETENTION_DAYS:-30}
@@ -32,7 +32,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     working_dir: /app
     depends_on:
-      - db
+      - postgres
     restart: unless-stopped
     # Use crond for scheduling (Alpine Linux)
     entrypoint: ["/bin/sh", "-c"]

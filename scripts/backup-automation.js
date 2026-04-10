@@ -130,7 +130,7 @@ async function createBackup(backupName) {
       await execAsync(`${dumpCommand} > "${backupPath}"`);
     } else {
       // Linux/Mac: use shell redirection
-      await execAsync(`${dumpCommand} > "${backupPath}"`, { shell: '/bin/bash' });
+      await execAsync(`${dumpCommand} > "${backupPath}"`, { shell: '/bin/sh' });
     }
 
     // Verify backup file exists and has content
