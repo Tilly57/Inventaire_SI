@@ -3,6 +3,33 @@
 All notable changes to this project will be documented in this file.
 
 
+# Release v1.0.10 - 2026-04-10
+
+## Summary
+
+<!-- Add a brief summary of this release -->
+
+## Changes
+
+### ✨ Features
+- feat(deploy): add auto-deployment service with git polling
+
+### 🐛 Bug Fixes
+
+
+### 📚 Documentation
+
+
+### 🔧 Improvements
+
+
+### 📦 Dependencies
+
+
+### All Commits
+- 9385046 feat(deploy): add auto-deployment service with git polling (Tilly57)
+
+
 # Release v1.0.9 - 2026-04-10
 
 ## Summary
