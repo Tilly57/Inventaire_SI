@@ -70,7 +70,7 @@ test.describe('Smoke Tests - Critical Paths', () => {
 
     // Verify employee appears in list (use search to find across pages)
     await navigateTo(page, '/employees');
-    await page.getByPlaceholder(/rechercher/i).fill('Smoke Test');
+    await page.getByPlaceholder(/rechercher par nom/i).fill('Smoke Test');
     await expect(page.locator('tbody')).toContainText(testEmail, { timeout: 10000 });
   });
 
