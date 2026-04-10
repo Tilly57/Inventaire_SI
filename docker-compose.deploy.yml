@@ -20,6 +20,11 @@ services:
       - DEPLOY_BRANCH=production
       - DEPLOY_COMPOSE_FILE=docker-compose.prod.yml
       - POLL_INTERVAL=${DEPLOY_POLL_INTERVAL:-120}
+      - HEALTH_CHECK_RETRIES=${HEALTH_CHECK_RETRIES:-6}
+      - HEALTH_CHECK_INTERVAL=${HEALTH_CHECK_INTERVAL:-10}
+      - DB_CONTAINER=inventaire_postgres
+      - DB_USER=${POSTGRES_USER:-inventaire_user}
+      - DB_NAME=${POSTGRES_DB:-inventaire}
       - TZ=${TZ:-Europe/Paris}
     volumes:
       # Mount the project directory (read-write for git pull)

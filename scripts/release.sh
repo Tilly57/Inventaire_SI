@@ -379,13 +379,107 @@ create_github_release() {
     fi
 }
 
+# ──────────────────────────────────────────────
+# Pre-flight Checks (Safety Gates)
+# ──────────────────────────────────────────────
+
+# Check current branch is main or staging
+check_branch() {
+    local current=$(git rev-parse --abbrev-ref HEAD)
+    if [[ "$current" != "main" && "$current" != "staging" ]]; then
+        print_error "Releases must be started from 'main' or 'staging' branch."
+        print_error "Current branch: $current"
+        print_info "Switch to main first: git checkout main"
+        exit 1
+    fi
+    print_success "On branch: $current"
+}
+
+# Check that the version tag doesn't already exist
+check_tag_not_exists() {
+    local version=$1
+    if git tag -l "v${version}" | grep -q "v${version}"; then
+        print_error "Tag v${version} already exists!"
+        print_info "Use a different version or delete the tag first."
+        exit 1
+    fi
+    print_success "Tag v${version} is available"
+}
+
+# Check CI status on current branch (via GitHub CLI)
+check_ci_status() {
+    if ! command -v gh &> /dev/null; then
+        print_warning "GitHub CLI (gh) not found. Skipping CI status check."
+        return 0
+    fi
+
+    print_info "Checking CI status on current commit..."
+    local sha=$(git rev-parse HEAD)
+    local status=$(gh run list --commit "$sha" --json conclusion --jq '.[0].conclusion' 2>/dev/null || echo "unknown")
+
+    if [[ "$status" == "failure" ]]; then
+        print_error "CI is FAILING on the current commit!"
+        print_error "Fix CI before creating a release."
+        print_info "View details: gh run list --commit $sha"
+        exit 1
+    elif [[ "$status" == "success" ]]; then
+        print_success "CI passed on current commit"
+    else
+        print_warning "CI status: ${status:-unknown}. Proceeding anyway."
+    fi
+}
+
+# Check that local branch is up-to-date with remote
+check_up_to_date() {
+    local branch=$(git rev-parse --abbrev-ref HEAD)
+    git fetch origin "$branch" 2>/dev/null
+
+    local local_hash=$(git rev-parse HEAD)
+    local remote_hash=$(git rev-parse "origin/$branch" 2>/dev/null || echo "")
+
+    if [[ -n "$remote_hash" && "$local_hash" != "$remote_hash" ]]; then
+        print_error "Local branch is not up-to-date with origin/$branch."
+        print_info "Run: git pull origin $branch"
+        exit 1
+    fi
+    print_success "Branch is up-to-date with remote"
+}
+
+# Verify builds pass locally (quick check)
+check_local_build() {
+    print_info "Quick build verification..."
+
+    # Check API Prisma schema
+    if [[ -f "apps/api/package.json" ]]; then
+        (cd apps/api && npx prisma validate 2>/dev/null) || {
+            print_error "Prisma schema validation failed!"
+            exit 1
+        }
+        print_success "Prisma schema valid"
+    fi
+
+    # Check frontend TypeScript
+    if [[ -f "apps/web/package.json" ]]; then
+        (cd apps/web && npx tsc -b --noEmit 2>/dev/null) || {
+            print_warning "TypeScript errors detected (non-blocking)"
+        }
+    fi
+}
+
 # Main workflow
 main() {
     print_header
 
-    # Pre-flight checks
+    # ── Pre-flight checks ──
+    echo ""
+    print_info "Running pre-flight checks..."
+    echo ""
+
     check_git_repo
+    check_branch
     check_clean_working_tree
+    check_up_to_date
+    check_ci_status
 
     # Get current version
     local current_version=$(get_current_version)
@@ -399,10 +493,20 @@ main() {
     # Calculate new version
     local new_version=$(increment_version "$current_version" "$bump_type")
 
+    # Check tag availability
+    check_tag_not_exists "$new_version"
+
+    # Local build check
+    check_local_build
+
     echo ""
-    print_info "Current version: ${current_version}"
-    print_info "New version:     ${new_version}"
-    print_info "Bump type:       ${bump_type}"
+    print_info "╔═══════════════════════════════════════╗"
+    print_info "║  Release Summary                      ║"
+    print_info "╠═══════════════════════════════════════╣"
+    print_info "║  Current: ${current_version}                        ║"
+    print_info "║  New:     ${new_version}                        ║"
+    print_info "║  Type:    ${bump_type}                          ║"
+    print_info "╚═══════════════════════════════════════╝"
     echo ""
 
     read -p "Proceed with release? (y/N): " confirm
@@ -459,22 +563,22 @@ main() {
         git checkout main
 
         echo ""
-        print_success "Release v${new_version} completed successfully! 🎉"
+        print_success "Release v${new_version} completed successfully!"
         echo ""
         print_info "Summary:"
         print_info "  - Release branch: release/${new_version}"
-        print_info "  - Staging: merged ✓"
-        print_info "  - Main: merged ✓"
-        print_info "  - Production: merged ✓"
-        print_info "  - Tag: v${new_version} ✓"
+        print_info "  - Staging: merged"
+        print_info "  - Main: merged"
+        print_info "  - Production: merged"
+        print_info "  - Tag: v${new_version}"
         print_info "  - Release notes: ${notes_file}"
     else
         echo ""
-        print_success "Release branch created and merged to staging! 🚀"
+        print_success "Release branch created and merged to staging!"
         echo ""
         print_info "Summary:"
         print_info "  - Release branch: release/${new_version}"
-        print_info "  - Staging: merged ✓"
+        print_info "  - Staging: merged"
         print_info "  - Main: pending"
         print_info "  - Production: pending"
         echo ""

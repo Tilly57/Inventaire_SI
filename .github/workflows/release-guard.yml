@@ -1,0 +1,116 @@
+name: Release Guard
+
+# Validates releases and protects production branches
+on:
+  push:
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [main, production]
+
+permissions:
+  contents: read
+
+jobs:
+  # ──────────────────────────────────────────
+  # Validate release tags
+  # ──────────────────────────────────────────
+  validate-tag:
+    name: Validate Release Tag
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate tag format
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          echo "Tag: $TAG"
+
+          # Must match vX.Y.Z
+          if ! echo "$TAG" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "ERROR: Tag '$TAG' does not match format vX.Y.Z"
+            exit 1
+          fi
+
+          echo "Tag format is valid"
+
+      - name: Verify VERSION file matches tag
+        run: |
+          TAG="${GITHUB_REF#refs/tags/v}"
+          VERSION=$(cat VERSION 2>/dev/null || echo "")
+
+          if [ "$VERSION" != "$TAG" ]; then
+            echo "ERROR: VERSION file ($VERSION) does not match tag (v$TAG)"
+            exit 1
+          fi
+
+          echo "VERSION file matches tag: $TAG"
+
+      - name: Verify CHANGELOG updated
+        run: |
+          TAG="${GITHUB_REF#refs/tags/v}"
+
+          if ! grep -q "$TAG" CHANGELOG.md 2>/dev/null; then
+            echo "WARNING: Version $TAG not found in CHANGELOG.md"
+          else
+            echo "CHANGELOG.md contains entry for $TAG"
+          fi
+
+  # ──────────────────────────────────────────
+  # Protect production merges
+  # ──────────────────────────────────────────
+  protect-production:
+    name: Production Merge Guard
+    if: github.event_name == 'pull_request' && github.base_ref == 'production'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify source branch
+        run: |
+          SOURCE="${{ github.head_ref }}"
+          echo "Source branch: $SOURCE"
+
+          # Production can only receive merges from main
+          if [ "$SOURCE" != "main" ]; then
+            echo "ERROR: Production branch can only be updated from 'main'."
+            echo "Source branch '$SOURCE' is not allowed."
+            exit 1
+          fi
+
+          echo "Source branch is valid (main -> production)"
+
+      - name: Verify tag exists
+        run: |
+          # The HEAD of main should have a version tag
+          VERSION=$(cat VERSION 2>/dev/null || echo "")
+          if [ -z "$VERSION" ]; then
+            echo "ERROR: No VERSION file found"
+            exit 1
+          fi
+
+          echo "Deploying version: $VERSION"
+
+  # ──────────────────────────────────────────
+  # Protect main branch merges
+  # ──────────────────────────────────────────
+  protect-main:
+    name: Main Merge Guard
+    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify source branch
+        run: |
+          SOURCE="${{ github.head_ref }}"
+          echo "Source branch: $SOURCE"
+
+          # Main can receive merges from staging or release/* branches
+          if echo "$SOURCE" | grep -qE '^(staging|release/.+)$'; then
+            echo "Source branch is valid: $SOURCE -> main"
+          else
+            echo "WARNING: Merging '$SOURCE' directly to main."
+            echo "Recommended workflow: feature -> staging -> main"
+          fi

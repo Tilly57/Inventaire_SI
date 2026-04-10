@@ -84,7 +84,7 @@ services:
       - api_uploads:/app/uploads
       - api_logs:/app/logs
     healthcheck:
-      test: ["CMD-SHELL", "wget --quiet --tries=1 --timeout=5 --spider http://localhost:3001/api/health || exit 1"]
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --timeout=5 --spider http://127.0.0.1:3001/api/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
