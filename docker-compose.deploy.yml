@@ -1,0 +1,61 @@
+# Auto-deployment service for Inventaire SI
+#
+# Polls the git remote every 2 minutes for changes
+# on the production branch. If changes detected,
+# pulls and rebuilds Docker services automatically.
+#
+# Usage:
+#   docker compose -f docker-compose.prod.yml -f docker-compose.deploy.yml up -d auto-deploy
+#
+# Logs:
+#   docker logs -f inventaire_auto_deploy
+
+services:
+  auto-deploy:
+    image: docker:cli
+    container_name: inventaire_auto_deploy
+    restart: unless-stopped
+    environment:
+      - DEPLOY_REPO_DIR=/repo
+      - DEPLOY_BRANCH=production
+      - DEPLOY_COMPOSE_FILE=docker-compose.prod.yml
+      - POLL_INTERVAL=${DEPLOY_POLL_INTERVAL:-120}
+      - TZ=${TZ:-Europe/Paris}
+    volumes:
+      # Mount the project directory (read-write for git pull)
+      - /mnt/c/inventaire_SI:/repo
+      # Mount Docker socket to control other containers
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Mount deploy script
+      - ./scripts/auto-deploy.sh:/scripts/auto-deploy.sh:ro
+    working_dir: /repo
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        # Install git
+        apk add --no-cache git > /dev/null 2>&1
+
+        # Configure git safe directory
+        git config --global --add safe.directory /repo
+
+        echo "[auto-deploy] Starting auto-deployment service"
+        echo "[auto-deploy] Branch: $${DEPLOY_BRANCH}"
+        echo "[auto-deploy] Poll interval: $${POLL_INTERVAL}s"
+        echo "[auto-deploy] Repo: $${DEPLOY_REPO_DIR}"
+
+        # Poll loop
+        while true; do
+          sh /scripts/auto-deploy.sh || echo "[auto-deploy] Check failed, will retry..."
+          sleep $${POLL_INTERVAL}
+        done
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 32M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
