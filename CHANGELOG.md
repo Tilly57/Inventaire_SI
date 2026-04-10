@@ -3,6 +3,34 @@
 All notable changes to this project will be documented in this file.
 
 
+# Release v1.0.9 - 2026-04-10
+
+## Summary
+
+<!-- Add a brief summary of this release -->
+
+## Changes
+
+### ✨ Features
+
+
+### 🐛 Bug Fixes
+- fix(deploy): fix nginx PID path, backup container name and shell compatibility
+
+### 📚 Documentation
+
+
+### 🔧 Improvements
+
+
+### 📦 Dependencies
+- chore: remove obsolete docs, unused configs and dead code
+
+### All Commits
+- 55e938a chore: remove obsolete docs, unused configs and dead code (Tilly57)
+- 3048061 fix(deploy): fix nginx PID path, backup container name and shell compatibility (Tilly57)
+
+
 # Release v1.0.8 - 2026-02-25
 
 ## Summary
