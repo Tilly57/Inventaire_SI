@@ -68,8 +68,9 @@ test.describe('Smoke Tests - Critical Paths', () => {
     // Wait for dialog to close (confirms successful creation)
     await empDialog.waitFor({ state: 'detached', timeout: 10000 });
 
-    // Verify employee appears in list
+n    // Verify employee appears in list (use search to find across pages)
     await navigateTo(page, '/employees');
+    await page.getByPlaceholder(/rechercher/i).fill('Smoke Test');
     await expect(page.locator('tbody')).toContainText(testEmail, { timeout: 10000 });
   });
 
