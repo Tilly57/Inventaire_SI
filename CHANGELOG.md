@@ -3,6 +3,34 @@
 All notable changes to this project will be documented in this file.
 
 
+# Release v1.1.0 - 2026-04-10
+
+## Summary
+
+<!-- Add a brief summary of this release -->
+
+## Changes
+
+### ✨ Features
+- feat(ci): professional CI/CD pipeline with quality gates and rollback
+
+### 🐛 Bug Fixes
+- fix(e2e): use search filter in employee creation test
+
+### 📚 Documentation
+
+
+### 🔧 Improvements
+
+
+### 📦 Dependencies
+
+
+### All Commits
+- 70b3b7f feat(ci): professional CI/CD pipeline with quality gates and rollback (Tilly57)
+- cf91243 fix(e2e): use search filter in employee creation test (Tilly57)
+
+
 # Release v1.0.10 - 2026-04-10
 
 ## Summary
