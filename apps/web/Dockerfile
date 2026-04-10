@@ -46,7 +46,8 @@ COPY --from=builder /app/dist /usr/share/nginx/html
 
 # Configure nginx to run as non-root
 RUN sed -i 's|/var/run/nginx.pid|/tmp/nginx.pid|' /etc/nginx/nginx.conf && \
-    chown -R nginx:nginx /var/cache/nginx /var/log/nginx /usr/share/nginx/html && \
+    sed -i 's|/run/nginx.pid|/tmp/nginx.pid|' /etc/nginx/nginx.conf && \
+    chown -R nginx:nginx /var/cache/nginx /var/log/nginx /usr/share/nginx/html /tmp && \
     chmod -R 755 /var/cache/nginx /var/log/nginx
 
 USER nginx
