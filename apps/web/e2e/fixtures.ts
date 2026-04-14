@@ -5,7 +5,7 @@
  */
 
 import { Page } from '@playwright/test';
-import { clickButton, navigateTo } from './helpers';
+import { clickButton, navigateTo, waitForToast } from './helpers';
 
 /**
  * Create a test employee
@@ -87,26 +87,55 @@ export async function createTestAssetItem(page: Page, suffix: string = '') {
   };
 
   // Use page.evaluate to run fetch inside the browser where auth is configured
+  // Access token is stored in-memory only (not localStorage) for XSS protection,
+  // so we first call /auth/refresh to get a fresh token via the httpOnly refresh cookie
   const result = await page.evaluate(async ({ assetTag, serial }) => {
-    // Get the API base URL from the app's constants (injected at build time)
     const apiUrl = (window as Record<string, unknown>).__VITE_API_URL__ as string
       || document.querySelector('meta[name="api-url"]')?.getAttribute('content')
       || 'http://localhost:3001/api';
 
-    // Try to get access token from zustand auth store
+    // Step 1: Get a fresh access token via refresh token cookie
+    // Also need CSRF token (Double Submit Cookie pattern)
     let accessToken = '';
     try {
-      const authStorage = localStorage.getItem('auth-storage');
-      if (authStorage) {
-        const parsed = JSON.parse(authStorage);
-        accessToken = parsed?.state?.accessToken || '';
+      // Read XSRF-TOKEN from cookies for CSRF validation
+      const xsrfToken = document.cookie
+        .split('; ')
+        .find(c => c.startsWith('XSRF-TOKEN='))
+        ?.split('=')[1] || '';
+
+      const refreshHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (xsrfToken) refreshHeaders['X-XSRF-TOKEN'] = decodeURIComponent(xsrfToken);
+
+      const refreshRes = await fetch(`${apiUrl}/auth/refresh`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: refreshHeaders,
+      });
+      if (refreshRes.ok) {
+        const refreshData = await refreshRes.json();
+        accessToken = refreshData?.data?.accessToken || refreshData?.accessToken || '';
       }
-    } catch { /* ignore */ }
+      if (!accessToken) {
+        return { error: `Token refresh failed: ${refreshRes.status} ${await refreshRes.text().catch(() => '')}` };
+      }
+    } catch (e) {
+      return { error: `Token refresh error: ${(e as Error).message}` };
+    }
 
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`;
+    // Read CSRF token for state-changing requests
+    const csrfToken = document.cookie
+      .split('; ')
+      .find(c => c.startsWith('XSRF-TOKEN='))
+      ?.split('=')[1] || '';
 
-    // Step 1: Get a model ID
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${accessToken}`,
+    };
+    if (csrfToken) headers['X-XSRF-TOKEN'] = decodeURIComponent(csrfToken);
+
+    // Step 2: Get a model ID
     const modelsRes = await fetch(`${apiUrl}/asset-models?limit=1`, {
       headers,
       credentials: 'include',
@@ -120,7 +149,7 @@ export async function createTestAssetItem(page: Page, suffix: string = '') {
       return { error: `No models found in response: ${JSON.stringify(modelsData).slice(0, 200)}` };
     }
 
-    // Step 2: Create the asset item
+    // Step 3: Create the asset item
     const createRes = await fetch(`${apiUrl}/asset-items`, {
       method: 'POST',
       headers,
