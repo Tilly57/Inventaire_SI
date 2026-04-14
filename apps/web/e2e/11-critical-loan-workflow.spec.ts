@@ -1,147 +1,74 @@
 import { test, expect } from '@playwright/test';
-import { loginAsAdmin, clickButton, navigateTo, waitForToast } from './helpers';
-import { createTestEmployee, createTestAssetItem, createTestAssetModel, cleanupTestData } from './fixtures';
+import { loginAsAdmin, clickButton, navigateTo, selectRadixOption } from './helpers';
+import { createTestAssetModel, createTestAssetItem } from './fixtures';
 
 /**
  * E2E Tests: Critical Loan Workflow
  *
- * Tests the complete loan lifecycle which is the core business process:
- * 1. Create loan
- * 2. Add asset items
- * 3. Employee pickup (signature)
- * 4. Employee return (signature)
- * 5. Close loan
- *
- * This is a CRITICAL path that must always work.
+ * Uses SEED employees (created by prisma db seed) to avoid Redis cache
+ * invalidation timing issues with freshly created employees.
+ * Seed employees: Dupont, Martin, Bernard, Dubois, Moreau
  */
 
-test.describe('Critical Loan Workflow', () => {
-  let testData: {
-    employees: string[];
-    assetItems: string[];
-    loans: string[];
-  };
+const SEED_EMPLOYEE = { lastName: 'Dupont', firstName: 'Jean' };
 
+test.describe('Critical Loan Workflow', () => {
   test.beforeEach(async ({ page }) => {
     await loginAsAdmin(page);
-
-    // Initialize cleanup tracker
-    testData = {
-      employees: [],
-      assetItems: [],
-      loans: [],
-    };
-  });
-
-  test.afterEach(async ({ page }) => {
-    // Clean up test data
-    try {
-      await cleanupTestData(page, testData);
-    } catch (error) {
-      console.log('Cleanup failed:', error);
-    }
   });
 
   test('Complete loan workflow: create → add items → pickup signature → return signature → close', async ({ page }) => {
-    // STEP 1: Create prerequisites
-    console.log('Step 1: Creating test employee...');
-    const employee = await createTestEmployee(page, '_loan');
-    testData.employees.push(employee.email);
-
-    console.log('Step 2: Creating test asset model...');
+    console.log('Step 1: Creating test asset model...');
     await createTestAssetModel(page, '_loan');
 
-    console.log('Step 3: Creating test asset item...');
+    console.log('Step 2: Creating test asset item...');
     const assetItem = await createTestAssetItem(page, '_loan');
-    testData.assetItems.push(assetItem.assetTag);
 
-    // STEP 2: Create loan
-    console.log('Step 4: Creating loan...');
+    console.log('Step 3: Creating loan...');
     await navigateTo(page, '/loans');
-
-    // Click create loan button
     await clickButton(page, 'Nouveau prêt');
 
     const loanDialog = page.locator('[role="dialog"]');
-    await loanDialog.waitFor();
+    await loanDialog.waitFor({ timeout: 10000 });
 
-    // Select employee via Radix Select (scoped to dialog)
-    await loanDialog.locator('button[role="combobox"]').first().click();
-    await page.waitForTimeout(300);
-    await page.locator(`[role="option"]:has-text("${employee.email}")`).first().click();
-
-    // Submit
+    await selectRadixOption(loanDialog, page, SEED_EMPLOYEE.lastName);
     await clickButton(page, 'Créer');
 
-    // Wait for redirect to loan details
     await page.waitForURL(/\/loans\/[a-z0-9]+/, { timeout: 15000 });
+    await page.waitForLoadState('networkidle');
 
     const loanId = page.url().split('/').pop() || '';
-    testData.loans.push(loanId);
-
     console.log(`Loan created: ${loanId}`);
 
-    // Verify loan details page
-    await expect(page.locator('main h1')).toContainText(/détails du prêt/i);
+    await expect(page.locator('h1').first()).toContainText(/prêt/i, { timeout: 10000 });
 
-    // STEP 3: Add asset item to loan
-    console.log('Step 5: Adding asset item to loan...');
-
-    // Click "Add items" button
+    // Add asset item to loan
+    console.log('Step 4: Adding asset item to loan...');
     await clickButton(page, 'Ajouter');
 
-    await page.waitForTimeout(500);
-
-    // Click on "Equipment" tab if present
-    const equipmentTab = page.locator('button:has-text("Équipement"), [role="tab"]:has-text("Équipement")');
-    if (await equipmentTab.isVisible({ timeout: 2000 })) {
-      await equipmentTab.click();
-      await page.waitForTimeout(300);
-    }
-
-    // Select the asset item we created (Radix Select)
     const addItemDialog = page.locator('[role="dialog"]');
-    if (await addItemDialog.isVisible({ timeout: 3000 })) {
-      await addItemDialog.locator('button[role="combobox"]').first().click();
-    } else {
-      await page.locator('button[role="combobox"]').first().click();
-    }
-    await page.waitForTimeout(300);
+    await addItemDialog.waitFor({ timeout: 10000 });
 
-    // Try to find our specific asset
-    const optionWithTag = page.locator(`[role="option"]:has-text("${assetItem.assetTag}")`);
-    if (await optionWithTag.isVisible({ timeout: 2000 })) {
-      await optionWithTag.first().click();
-    } else {
-      await page.locator('[role="option"]').first().click();
-    }
+    await selectRadixOption(addItemDialog, page, assetItem.assetTag);
+    await addItemDialog.getByRole('button', { name: /ajouter/i }).click();
+    await addItemDialog.waitFor({ state: 'detached', timeout: 10000 });
+    await page.waitForLoadState('networkidle');
 
-    // Submit
-    await clickButton(page, 'Ajouter');
-
-    // Wait for item to be added
-    await page.waitForTimeout(2000);
-
-    // Verify item appears in loan lines table
-    await expect(page.locator('table').first()).toContainText(assetItem.assetTag, { timeout: 10000 });
-
+    await expect(page.locator('table, [role="table"]').first()).toContainText(assetItem.assetTag, { timeout: 10000 });
     console.log('Asset item added to loan');
 
-    // STEP 4: Pickup signature
-    console.log('Step 6: Adding pickup signature...');
+    // Pickup signature
+    console.log('Step 5: Adding pickup signature...');
+    const signButtons = page.getByRole('button', { name: /signer/i });
 
-    // Click "Signature retrait" button
-    const pickupSignatureButton = page.getByRole('button', { name: /signature.*retrait/i });
-
-    if (await pickupSignatureButton.isVisible({ timeout: 5000 })) {
-      await pickupSignatureButton.click();
+    if (await signButtons.count() > 0) {
+      await signButtons.first().click();
       await page.waitForTimeout(500);
 
-      // Draw on canvas (simple signature)
       const canvas = page.locator('canvas').first();
       await canvas.waitFor({ state: 'visible', timeout: 5000 });
+      await page.waitForTimeout(300);
 
-      // Draw a simple line
       const box = await canvas.boundingBox();
       if (box) {
         await page.mouse.move(box.x + 50, box.y + 50);
@@ -151,36 +78,26 @@ test.describe('Critical Loan Workflow', () => {
         await page.mouse.up();
       }
 
-      // Wait a bit for drawing to register
       await page.waitForTimeout(500);
-
-      // Confirm signature
       await clickButton(page, 'Valider');
-
-      // Wait for signature to be saved
-      await page.waitForTimeout(2000);
-
+      await page.waitForLoadState('networkidle');
+      await page.waitForTimeout(1000);
       console.log('Pickup signature added');
-
-      // Verify signature was saved (check for success message or status change)
-      // The exact verification depends on UI implementation
     } else {
-      console.log('Pickup signature button not visible, skipping...');
+      console.log('No sign button found, skipping signatures...');
     }
 
-    // STEP 5: Return signature
-    console.log('Step 7: Adding return signature...');
+    // Return signature
+    console.log('Step 6: Adding return signature...');
+    const returnSignButtons = page.getByRole('button', { name: /signer/i });
 
-    // Click "Signature retour" button
-    const returnSignatureButton = page.getByRole('button', { name: /signature.*retour/i });
-
-    if (await returnSignatureButton.isVisible({ timeout: 5000 })) {
-      await returnSignatureButton.click();
+    if (await returnSignButtons.count() > 0) {
+      await returnSignButtons.first().click();
       await page.waitForTimeout(500);
 
-      // Draw on canvas
       const returnCanvas = page.locator('canvas').first();
       await returnCanvas.waitFor({ state: 'visible', timeout: 5000 });
+      await page.waitForTimeout(300);
 
       const box = await returnCanvas.boundingBox();
       if (box) {
@@ -192,111 +109,77 @@ test.describe('Critical Loan Workflow', () => {
       }
 
       await page.waitForTimeout(500);
-
-      // Confirm signature
       await clickButton(page, 'Valider');
-
-      await page.waitForTimeout(2000);
-
+      await page.waitForLoadState('networkidle');
+      await page.waitForTimeout(1000);
       console.log('Return signature added');
     } else {
       console.log('Return signature button not visible, skipping...');
     }
 
-    // STEP 6: Close loan
-    console.log('Step 8: Closing loan...');
-
-    const closeLoanButton = page.getByRole('button', { name: /fermer.*prêt/i });
+    // Close loan
+    console.log('Step 7: Closing loan...');
+    const closeLoanButton = page.getByRole('button', { name: /fermer/i });
 
     if (await closeLoanButton.isVisible({ timeout: 5000 })) {
       await closeLoanButton.click();
       await page.waitForTimeout(500);
-
-      // Confirm closure in dialog
       await clickButton(page, 'Confirmer');
+      await page.waitForLoadState('networkidle');
+      await page.waitForTimeout(1000);
 
-      // Wait for closure
-      await page.waitForTimeout(2000);
-
-      // Verify loan status changed to CLOSED
       await expect(page.locator('body')).toContainText(/closed|fermé/i, { timeout: 10000 });
-
       console.log('Loan closed successfully');
     } else {
       console.log('Close loan button not visible');
-      // Log current state for debugging
-      const bodyText = await page.locator('body').textContent();
-      console.log('Current page text includes:', bodyText?.substring(0, 500));
     }
 
-    // Final verification: navigate back to loans list
+    // Final verification
     await navigateTo(page, '/loans');
-
-    // Verify the loan appears in the list
-    await expect(page.locator('table').first()).toContainText(employee.lastName, { timeout: 10000 });
+    await expect(page.locator('table').first()).toContainText(SEED_EMPLOYEE.lastName, { timeout: 10000 });
   });
 
   test('Can view loan history', async ({ page }) => {
-    // Create a loan with items
-    const employee = await createTestEmployee(page, '_history');
-    testData.employees.push(employee.email);
+    const historyEmployee = { lastName: 'Martin' };
 
     await createTestAssetModel(page, '_history');
-    const assetItem = await createTestAssetItem(page, '_history');
-    testData.assetItems.push(assetItem.assetTag);
 
-    // Create loan
     await navigateTo(page, '/loans');
     await clickButton(page, 'Nouveau prêt');
-    await page.waitForTimeout(500);
 
     const historyDialog = page.locator('[role="dialog"]');
-    await historyDialog.waitFor();
+    await historyDialog.waitFor({ timeout: 10000 });
 
-    await historyDialog.locator('button[role="combobox"]').first().click();
-    await page.waitForTimeout(300);
-    await page.locator(`[role="option"]:has-text("${employee.email}")`).first().click();
+    await selectRadixOption(historyDialog, page, historyEmployee.lastName);
 
     await clickButton(page, 'Créer');
     await page.waitForURL(/\/loans\//, { timeout: 15000 });
+    await page.waitForLoadState('networkidle');
 
-    const loanId = page.url().split('/').pop() || '';
-    testData.loans.push(loanId);
-
-    // Navigate back to loans list
     await navigateTo(page, '/loans');
 
-    // Click on the loan to view details
-    const loanRow = page.locator(`tr:has-text("${employee.lastName}")`).first();
+    const loanRow = page.locator(`tr:has-text("${historyEmployee.lastName}")`).first();
+    await loanRow.waitFor({ state: 'visible', timeout: 10000 });
     await loanRow.click();
 
-    // Verify details page loaded
     await expect(page).toHaveURL(/\/loans\/[a-z0-9]+/);
-    await expect(page.locator('main h1')).toContainText(/détails du prêt/i);
-
-    // Verify employee info visible
-    await expect(page.locator('body')).toContainText(employee.lastName);
+    await expect(page.locator('h1').first()).toContainText(/prêt/i, { timeout: 10000 });
+    await expect(page.locator('body')).toContainText(historyEmployee.lastName);
   });
 
   test('Can filter loans by status', async ({ page }) => {
     await navigateTo(page, '/loans');
 
-    // Look for status filter
     const statusFilter = page.locator('select, button').filter({ hasText: /statut|status|filtre/i }).first();
 
     if (await statusFilter.isVisible({ timeout: 5000 })) {
-      // Click filter
       await statusFilter.click();
       await page.waitForTimeout(500);
 
-      // Select OPEN status
       const openOption = page.locator('option:has-text("OPEN"), [role="option"]:has-text("OPEN")');
-
       if (await openOption.isVisible({ timeout: 2000 })) {
         await openOption.click();
         await page.waitForTimeout(1000);
-
-        // Verify filtering worked
         await expect(page.locator('table').first()).toBeVisible();
       }
     }

@@ -119,3 +119,50 @@ export async function selectOption(page: Page, label: string, option: string) {
   const select = page.locator(`select:near(:text("${label}"))`).first();
   await select.selectOption(option);
 }
+
+/**
+ * Select a Radix Select option containing the given text.
+ * Handles the async data loading by waiting for options to appear.
+ * @param scope - The parent locator (dialog, page) containing the combobox trigger
+ * @param page - The page (needed for portal-rendered options)
+ * @param text - Text to match in the option (substring match)
+ * @param triggerIndex - Which combobox trigger to click (default 0)
+ */
+export async function selectRadixOption(
+  scope: ReturnType<Page['locator']>,
+  page: Page,
+  text: string,
+  triggerIndex = 0,
+) {
+  const trigger = scope.locator('button[role="combobox"]').nth(triggerIndex);
+  await trigger.waitFor({ state: 'visible', timeout: 10000 });
+
+  // Retry loop: open dropdown, wait for matching option
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await trigger.click();
+
+    // Wait for any option to appear (data loaded)
+    try {
+      await page.locator('[role="option"]').first().waitFor({ state: 'visible', timeout: 8000 });
+    } catch {
+      // No options appeared — close and retry
+      await page.keyboard.press('Escape');
+      await page.waitForTimeout(1000);
+      continue;
+    }
+
+    // Find the matching option
+    const option = page.locator('[role="option"]').filter({ hasText: text });
+    try {
+      await option.first().waitFor({ state: 'visible', timeout: 3000 });
+      await option.first().click();
+      return;
+    } catch {
+      // Option not found — close, wait for cache refresh, retry
+      await page.keyboard.press('Escape');
+      await page.waitForTimeout(1000);
+    }
+  }
+
+  throw new Error(`selectRadixOption: could not find option containing "${text}" after 3 attempts`);
+}

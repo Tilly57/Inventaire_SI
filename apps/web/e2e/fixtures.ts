@@ -5,7 +5,7 @@
  */
 
 import { Page } from '@playwright/test';
-import { clickButton, navigateTo } from './helpers';
+import { clickButton, navigateTo, waitForToast, selectRadixOption } from './helpers';
 
 /**
  * Create a test employee
@@ -76,8 +76,8 @@ export async function createTestAssetModel(page: Page, suffix: string = '') {
 }
 
 /**
- * Create a test asset item via API
- * The UI button may be disabled, so we use the API directly
+ * Create a test asset item via browser fetch (uses the app's auth context)
+ * The UI button may be disabled, so we call the API from the browser context
  */
 export async function createTestAssetItem(page: Page, suffix: string = '') {
   const timestamp = Date.now();
@@ -86,48 +86,89 @@ export async function createTestAssetItem(page: Page, suffix: string = '') {
     serial: `SN${timestamp}${suffix}`,
   };
 
-  // Get auth token from localStorage
-  const token = await page.evaluate(() => {
-    // Try common storage patterns for auth tokens
-    const authStorage = localStorage.getItem('auth-storage');
-    if (authStorage) {
-      try {
-        const parsed = JSON.parse(authStorage);
-        return parsed?.state?.accessToken || null;
-      } catch { return null; }
+  // Use page.evaluate to run fetch inside the browser where auth is configured
+  // Access token is stored in-memory only (not localStorage) for XSS protection,
+  // so we first call /auth/refresh to get a fresh token via the httpOnly refresh cookie
+  const result = await page.evaluate(async ({ assetTag, serial }) => {
+    const apiUrl = (window as Record<string, unknown>).__VITE_API_URL__ as string
+      || document.querySelector('meta[name="api-url"]')?.getAttribute('content')
+      || 'http://localhost:3001/api';
+
+    // Step 1: Get a fresh access token via refresh token cookie
+    // Also need CSRF token (Double Submit Cookie pattern)
+    let accessToken = '';
+    try {
+      // Read XSRF-TOKEN from cookies for CSRF validation
+      const xsrfToken = document.cookie
+        .split('; ')
+        .find(c => c.startsWith('XSRF-TOKEN='))
+        ?.split('=')[1] || '';
+
+      const refreshHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (xsrfToken) refreshHeaders['X-XSRF-TOKEN'] = decodeURIComponent(xsrfToken);
+
+      const refreshRes = await fetch(`${apiUrl}/auth/refresh`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: refreshHeaders,
+      });
+      if (refreshRes.ok) {
+        const refreshData = await refreshRes.json();
+        accessToken = refreshData?.data?.accessToken || refreshData?.accessToken || '';
+      }
+      if (!accessToken) {
+        return { error: `Token refresh failed: ${refreshRes.status} ${await refreshRes.text().catch(() => '')}` };
+      }
+    } catch (e) {
+      return { error: `Token refresh error: ${(e as Error).message}` };
     }
-    return localStorage.getItem('accessToken') || null;
-  });
 
-  // API base URL — in CI: http://localhost:3001/api, in prod: /api via proxy
-  const apiBaseUrl = process.env.VITE_API_URL || 'http://localhost:3001/api';
+    // Read CSRF token for state-changing requests
+    const csrfToken = document.cookie
+      .split('; ')
+      .find(c => c.startsWith('XSRF-TOKEN='))
+      ?.split('=')[1] || '';
 
-  // Use request context (cookies) instead of Authorization header for CSRF compat
-  // First, get a model ID to associate with
-  const modelsResponse = await page.request.get(`${apiBaseUrl}/asset-models?limit=1`, {
-    headers: token ? { 'Authorization': `Bearer ${token}` } : {},
-  });
-  const modelsData = await modelsResponse.json();
-  const modelId = modelsData?.data?.[0]?.id || modelsData?.[0]?.id;
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${accessToken}`,
+    };
+    if (csrfToken) headers['X-XSRF-TOKEN'] = decodeURIComponent(csrfToken);
 
-  if (!modelId) {
-    throw new Error('No asset model found — create one first');
-  }
+    // Step 2: Get a model ID
+    const modelsRes = await fetch(`${apiUrl}/asset-models?limit=1`, {
+      headers,
+      credentials: 'include',
+    });
+    if (!modelsRes.ok) {
+      return { error: `GET models failed: ${modelsRes.status} ${await modelsRes.text()}` };
+    }
+    const modelsData = await modelsRes.json();
+    const modelId = modelsData?.data?.[0]?.id || modelsData?.[0]?.id;
+    if (!modelId) {
+      return { error: `No models found in response: ${JSON.stringify(modelsData).slice(0, 200)}` };
+    }
 
-  // Create asset item via API
-  const createResponse = await page.request.post(`${apiBaseUrl}/asset-items`, {
-    headers: token ? { 'Authorization': `Bearer ${token}` } : {},
-    data: {
-      assetModelId: modelId,
-      assetTag: itemData.assetTag,
-      serialNumber: itemData.serial,
-      status: 'EN_STOCK',
-    },
-  });
+    // Step 3: Create the asset item
+    const createRes = await fetch(`${apiUrl}/asset-items`, {
+      method: 'POST',
+      headers,
+      credentials: 'include',
+      body: JSON.stringify({
+        assetModelId: modelId,
+        assetTag,
+        serialNumber: serial,
+        status: 'EN_STOCK',
+      }),
+    });
+    if (!createRes.ok) {
+      return { error: `POST asset-items failed: ${createRes.status} ${await createRes.text()}` };
+    }
+    return { success: true };
+  }, { assetTag: itemData.assetTag, serial: itemData.serial });
 
-  if (!createResponse.ok()) {
-    const err = await createResponse.text();
-    throw new Error(`Failed to create asset item: ${createResponse.status()} ${err}`);
+  if (result.error) {
+    throw new Error(`createTestAssetItem: ${result.error}`);
   }
 
   return itemData;
@@ -172,21 +213,19 @@ export async function createTestStockItem(page: Page, suffix: string = '') {
  * Create a test loan (without items)
  * Returns loan ID from URL
  */
-export async function createTestLoan(page: Page, employeeEmail?: string): Promise<string> {
+export async function createTestLoan(page: Page, employeeSearchText?: string): Promise<string> {
   await navigateTo(page, '/loans');
   await clickButton(page, 'Nouveau prêt');
 
   const dialog = page.locator('[role="dialog"]');
-  await dialog.waitFor();
+  await dialog.waitFor({ timeout: 10000 });
 
-  // Select employee via Radix Select (scoped to dialog)
-  await dialog.locator('button[role="combobox"]').first().click();
-  await page.waitForTimeout(300);
-
-  if (employeeEmail) {
-    await page.locator(`[role="option"]:has-text("${employeeEmail}")`).first().click();
+  // Select employee — use robust helper that waits for data to load
+  if (employeeSearchText) {
+    await selectRadixOption(dialog, page, employeeSearchText);
   } else {
-    await page.locator('[role="option"]').first().click();
+    // Select first available employee
+    await selectRadixOption(dialog, page, '');
   }
 
   // Submit
