@@ -76,8 +76,8 @@ export async function createTestAssetModel(page: Page, suffix: string = '') {
 }
 
 /**
- * Create a test asset item via API
- * The UI button may be disabled, so we use the API directly
+ * Create a test asset item via browser fetch (uses the app's auth context)
+ * The UI button may be disabled, so we call the API from the browser context
  */
 export async function createTestAssetItem(page: Page, suffix: string = '') {
   const timestamp = Date.now();
@@ -86,48 +86,60 @@ export async function createTestAssetItem(page: Page, suffix: string = '') {
     serial: `SN${timestamp}${suffix}`,
   };
 
-  // Get auth token from localStorage
-  const token = await page.evaluate(() => {
-    // Try common storage patterns for auth tokens
-    const authStorage = localStorage.getItem('auth-storage');
-    if (authStorage) {
-      try {
+  // Use page.evaluate to run fetch inside the browser where auth is configured
+  const result = await page.evaluate(async ({ assetTag, serial }) => {
+    // Get the API base URL from the app's constants (injected at build time)
+    const apiUrl = (window as Record<string, unknown>).__VITE_API_URL__ as string
+      || document.querySelector('meta[name="api-url"]')?.getAttribute('content')
+      || 'http://localhost:3001/api';
+
+    // Try to get access token from zustand auth store
+    let accessToken = '';
+    try {
+      const authStorage = localStorage.getItem('auth-storage');
+      if (authStorage) {
         const parsed = JSON.parse(authStorage);
-        return parsed?.state?.accessToken || null;
-      } catch { return null; }
+        accessToken = parsed?.state?.accessToken || '';
+      }
+    } catch { /* ignore */ }
+
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`;
+
+    // Step 1: Get a model ID
+    const modelsRes = await fetch(`${apiUrl}/asset-models?limit=1`, {
+      headers,
+      credentials: 'include',
+    });
+    if (!modelsRes.ok) {
+      return { error: `GET models failed: ${modelsRes.status} ${await modelsRes.text()}` };
     }
-    return localStorage.getItem('accessToken') || null;
-  });
+    const modelsData = await modelsRes.json();
+    const modelId = modelsData?.data?.[0]?.id || modelsData?.[0]?.id;
+    if (!modelId) {
+      return { error: `No models found in response: ${JSON.stringify(modelsData).slice(0, 200)}` };
+    }
 
-  // API base URL — in CI: http://localhost:3001/api, in prod: /api via proxy
-  const apiBaseUrl = process.env.VITE_API_URL || 'http://localhost:3001/api';
+    // Step 2: Create the asset item
+    const createRes = await fetch(`${apiUrl}/asset-items`, {
+      method: 'POST',
+      headers,
+      credentials: 'include',
+      body: JSON.stringify({
+        assetModelId: modelId,
+        assetTag,
+        serialNumber: serial,
+        status: 'EN_STOCK',
+      }),
+    });
+    if (!createRes.ok) {
+      return { error: `POST asset-items failed: ${createRes.status} ${await createRes.text()}` };
+    }
+    return { success: true };
+  }, { assetTag: itemData.assetTag, serial: itemData.serial });
 
-  // Use request context (cookies) instead of Authorization header for CSRF compat
-  // First, get a model ID to associate with
-  const modelsResponse = await page.request.get(`${apiBaseUrl}/asset-models?limit=1`, {
-    headers: token ? { 'Authorization': `Bearer ${token}` } : {},
-  });
-  const modelsData = await modelsResponse.json();
-  const modelId = modelsData?.data?.[0]?.id || modelsData?.[0]?.id;
-
-  if (!modelId) {
-    throw new Error('No asset model found — create one first');
-  }
-
-  // Create asset item via API
-  const createResponse = await page.request.post(`${apiBaseUrl}/asset-items`, {
-    headers: token ? { 'Authorization': `Bearer ${token}` } : {},
-    data: {
-      assetModelId: modelId,
-      assetTag: itemData.assetTag,
-      serialNumber: itemData.serial,
-      status: 'EN_STOCK',
-    },
-  });
-
-  if (!createResponse.ok()) {
-    const err = await createResponse.text();
-    throw new Error(`Failed to create asset item: ${createResponse.status()} ${err}`);
+  if (result.error) {
+    throw new Error(`createTestAssetItem: ${result.error}`);
   }
 
   return itemData;
