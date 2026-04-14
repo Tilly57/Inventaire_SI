@@ -66,7 +66,7 @@ function AddLoanLineDialogComponent({ loanId, open, onClose }: AddLoanLineDialog
     try {
       await addLine.mutateAsync({ loanId, data: { assetItemId: data.assetItemId } })
       onClose()
-    } catch (error) {
+    } catch (_error) {
       // Error handled by mutation hook
     }
   }, [addLine, loanId, onClose])

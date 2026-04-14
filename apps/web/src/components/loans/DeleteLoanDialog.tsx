@@ -27,7 +27,7 @@ export function DeleteLoanDialog({ loan, open, onClose }: DeleteLoanDialogProps)
     try {
       await deleteLoan.mutateAsync(loan.id)
       onClose()
-    } catch (error) {
+    } catch (_error) {
       // Error handled by mutation hook
     }
   }

@@ -26,7 +26,7 @@ export function DeleteAssetModelDialog({ model, open, onClose }: DeleteAssetMode
     try {
       await deleteModel.mutateAsync(model.id)
       onClose()
-    } catch (error) {
+    } catch (_error) {
       // Error handled by mutation hook
     }
   }

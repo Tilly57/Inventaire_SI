@@ -85,7 +85,7 @@ export function StockItemFormDialog({ item, open, onClose }: StockItemFormDialog
         notes: '',
       })
       onClose()
-    } catch (error) {
+    } catch (_error) {
       // Error handled by mutation hooks
     }
   }

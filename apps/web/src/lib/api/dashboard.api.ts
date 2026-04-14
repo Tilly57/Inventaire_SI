@@ -95,7 +95,7 @@ export async function getDashboardStatsApi(): Promise<DashboardStats> {
       loanedAssets,
       outOfServiceAssets,
     }
-  } catch (error) {
+  } catch (_error) {
     // Return default values if endpoints fail
     // This prevents dashboard from breaking on API errors
     return {
@@ -136,7 +136,7 @@ export async function getRecentLoansApi(): Promise<Loan[]> {
     return loans
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       .slice(0, 5)
-  } catch (error) {
+  } catch (_error) {
     // Return empty array on error to prevent dashboard crash
     return []
   }
@@ -225,7 +225,7 @@ export async function getLowStockItemsApi(): Promise<LowStockAlertItem[]> {
     })
 
     return alerts
-  } catch (error) {
+  } catch (_error) {
     // Return empty array on error to prevent dashboard crash
     return []
   }
@@ -253,7 +253,7 @@ export async function getOutOfServiceItemsApi(): Promise<AssetItem[]> {
 
     // Filter only HS (Hors Service) items
     return assetItems.filter(item => item.status === 'HS')
-  } catch (error) {
+  } catch (_error) {
     // Return empty array on error to prevent dashboard crash
     return []
   }
@@ -301,7 +301,7 @@ export async function getEquipmentByTypeApi(): Promise<EquipmentByType[]> {
 
     // Sort by count descending
     return result.sort((a, b) => b.count - a.count)
-  } catch (error) {
+  } catch (_error) {
     // Return empty array on error to prevent dashboard crash
     return []
   }
