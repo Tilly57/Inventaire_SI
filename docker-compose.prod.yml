@@ -201,8 +201,10 @@ services:
       - '--storage.tsdb.retention.time=30d'
       - '--web.console.libraries=/usr/share/prometheus/console_libraries'
       - '--web.console.templates=/usr/share/prometheus/consoles'
-    ports:
-      - "9090:9090"
+      - '--web.external-url=/prometheus/'
+      - '--web.route-prefix=/prometheus/'
+    expose:
+      - "9090"
     depends_on:
       - alertmanager
     networks:
@@ -228,11 +230,13 @@ services:
     environment:
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:?GRAFANA_PASSWORD must be set}
       GF_INSTALL_PLUGINS: grafana-piechart-panel 1.6.4
+      GF_SERVER_ROOT_URL: https://www.tillyinventaire.ti/grafana/
+      GF_SERVER_SERVE_FROM_SUB_PATH: "true"
     volumes:
       - grafana_data:/var/lib/grafana
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
-    ports:
-      - "3002:3000"
+    expose:
+      - "3000"
     depends_on:
       - prometheus
       - loki
