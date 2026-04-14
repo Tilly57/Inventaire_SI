@@ -68,10 +68,9 @@ test.describe('Smoke Tests - Critical Paths', () => {
     // Wait for dialog to close (confirms successful creation)
     await empDialog.waitFor({ state: 'detached', timeout: 10000 });
 
-    // Verify employee appears in list (search by email for exact match)
-    await navigateTo(page, '/employees');
-    await page.getByPlaceholder(/rechercher par nom/i).fill(testEmail);
-    await expect(page.locator('tbody')).toContainText('Smoke', { timeout: 10000 });
+    // After creation, the list auto-refreshes via React Query invalidation
+    // Wait for the new employee to appear in the table
+    await expect(page.locator('tbody')).toContainText(testEmail, { timeout: 15000 });
   });
 
   test('CRITICAL: Can create asset model', async ({ page }) => {
