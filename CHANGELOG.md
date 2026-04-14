@@ -3,6 +3,33 @@
 All notable changes to this project will be documented in this file.
 
 
+# Release v1.1.2 - 2026-04-14
+
+## Summary
+
+<!-- Add a brief summary of this release -->
+
+## Changes
+
+### ✨ Features
+
+
+### 🐛 Bug Fixes
+- fix(e2e): fix broken fixtures — wrong toast selectors, disabled button, unscoped inputs
+
+### 📚 Documentation
+
+
+### 🔧 Improvements
+
+
+### 📦 Dependencies
+
+
+### All Commits
+- b0828b1 fix(e2e): fix broken fixtures — wrong toast selectors, disabled button, unscoped inputs (Tilly57)
+
+
 # Release v1.1.1 - 2026-04-14
 
 ## Summary
