@@ -3,6 +3,33 @@
 All notable changes to this project will be documented in this file.
 
 
+# Release v1.1.5 - 2026-04-14
+
+## Summary
+
+<!-- Add a brief summary of this release -->
+
+## Changes
+
+### ✨ Features
+
+
+### 🐛 Bug Fixes
+- fix(e2e): use main locator instead of h1 which matches header logo
+
+### 📚 Documentation
+
+
+### 🔧 Improvements
+
+
+### 📦 Dependencies
+
+
+### All Commits
+- d43be06 fix(e2e): use main locator instead of h1 which matches header logo (Tilly57)
+
+
 # Release v1.1.4 - 2026-04-14
 
 ## Summary

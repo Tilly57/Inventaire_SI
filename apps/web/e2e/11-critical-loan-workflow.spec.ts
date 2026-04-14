@@ -40,7 +40,7 @@ test.describe('Critical Loan Workflow', () => {
     const loanId = page.url().split('/').pop() || '';
     console.log(`Loan created: ${loanId}`);
 
-    await expect(page.locator('h1').first()).toContainText(/prêt/i, { timeout: 10000 });
+    await expect(page.locator('main')).toContainText(/prêt/i, { timeout: 10000 });
 
     // Add asset item to loan
     console.log('Step 4: Adding asset item to loan...');
@@ -163,7 +163,7 @@ test.describe('Critical Loan Workflow', () => {
     await loanRow.click();
 
     await expect(page).toHaveURL(/\/loans\/[a-z0-9]+/);
-    await expect(page.locator('h1').first()).toContainText(/prêt/i, { timeout: 10000 });
+    await expect(page.locator('main')).toContainText(/prêt/i, { timeout: 10000 });
     await expect(page.locator('body')).toContainText(historyEmployee.lastName);
   });
 
