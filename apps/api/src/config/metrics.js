@@ -96,5 +96,52 @@ export const dbErrors = new promClient.Counter({
   registers: [register],
 });
 
+/**
+ * Refresh business metrics from database
+ * Called periodically to keep gauges up-to-date
+ */
+export async function refreshBusinessMetrics() {
+  try {
+    const { default: prisma } = await import('./database.js');
+
+    // Employees count
+    const empCount = await prisma.employee.count();
+    employeesTotal.set(empCount);
+
+    // Loans by status
+    const loanCounts = await prisma.loan.groupBy({
+      by: ['status'],
+      _count: true,
+    });
+    // Reset to 0 first, then set actual values
+    loansTotal.set({ status: 'OPEN' }, 0);
+    loansTotal.set({ status: 'CLOSED' }, 0);
+    for (const lc of loanCounts) {
+      loansTotal.set({ status: lc.status }, lc._count);
+    }
+
+    // Assets by status
+    const assetCounts = await prisma.assetItem.groupBy({
+      by: ['status'],
+      _count: true,
+    });
+    assetsTotal.set({ status: 'EN_STOCK' }, 0);
+    assetsTotal.set({ status: 'PRETE' }, 0);
+    assetsTotal.set({ status: 'HS' }, 0);
+    assetsTotal.set({ status: 'REPARATION' }, 0);
+    for (const ac of assetCounts) {
+      assetsTotal.set({ status: ac.status }, ac._count);
+    }
+  } catch (err) {
+    // Silently ignore — metrics will show 0 until next refresh
+    console.error('[metrics] Failed to refresh business metrics:', err.message);
+  }
+}
+
+// Refresh business metrics every 30 seconds
+setInterval(refreshBusinessMetrics, 30_000);
+// Initial refresh after 5 seconds (wait for DB connection)
+setTimeout(refreshBusinessMetrics, 5_000);
+
 // Exporter le registre
 export default register;
