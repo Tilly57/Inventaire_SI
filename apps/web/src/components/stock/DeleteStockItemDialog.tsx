@@ -25,7 +25,7 @@ export function DeleteStockItemDialog({ item, open, onClose }: DeleteStockItemDi
     try {
       await deleteItem.mutateAsync(item.id)
       onClose()
-    } catch (error) {
+    } catch (_error) {
       // Error handled by mutation hook
     }
   }

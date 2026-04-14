@@ -75,7 +75,7 @@ function LoanFormDialogComponent({ open, onClose, onSuccess }: LoanFormDialogPro
       if (onSuccess && loan.id) {
         onSuccess(loan.id)
       }
-    } catch (error) {
+    } catch (_error) {
       // Error handled by mutation hook
     }
   }, [createLoan, queryClient, onClose, onSuccess])

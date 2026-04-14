@@ -147,7 +147,7 @@ export function AssetItemFormDialog({ item, open, onClose }: AssetItemFormDialog
 
       form.reset()
       onClose()
-    } catch (error) {
+    } catch (_error) {
       // Errors handled by mutation hooks
     }
   }

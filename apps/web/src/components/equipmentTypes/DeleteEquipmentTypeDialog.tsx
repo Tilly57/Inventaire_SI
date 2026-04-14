@@ -37,7 +37,7 @@ export function DeleteEquipmentTypeDialog({
     try {
       await deleteMutation.mutateAsync(equipmentType.id);
       onClose();
-    } catch (error) {
+    } catch (_error) {
       // Error handling is done in the mutation hook
     }
   };

@@ -71,7 +71,7 @@ export function EmployeeFormDialog({ employee, open, onClose }: EmployeeFormDial
         await createEmployee.mutateAsync(data as CreateEmployeeFormData)
       }
       onClose()
-    } catch (error) {
+    } catch (_error) {
       // Error handled by mutation hooks
     }
   }

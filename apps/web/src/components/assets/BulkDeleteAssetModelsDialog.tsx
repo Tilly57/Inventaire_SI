@@ -32,7 +32,7 @@ export function BulkDeleteAssetModelsDialog({
     try {
       await batchDelete.mutateAsync(models.map(m => m.id))
       onClose()
-    } catch (error) {
+    } catch (_error) {
       // Error handled by mutation hook
     }
   }

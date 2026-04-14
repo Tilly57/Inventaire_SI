@@ -26,7 +26,7 @@ export function DeleteAssetItemDialog({ item, open, onClose }: DeleteAssetItemDi
     try {
       await deleteItem.mutateAsync(item.id)
       onClose()
-    } catch (error) {
+    } catch (_error) {
       // Error handled by mutation hook
     }
   }
