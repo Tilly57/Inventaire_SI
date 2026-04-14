@@ -171,7 +171,7 @@ services:
     networks:
       - inventaire_network
 
-  # Alertmanager (Alert Notifications)
+  # Alertmanager (Alert Notifications via Email)
   alertmanager:
     image: prom/alertmanager:v0.27.0
     container_name: inventaire_alertmanager
@@ -182,6 +182,13 @@ services:
     command:
       - '--config.file=/etc/alertmanager/alertmanager.yml'
       - '--storage.path=/alertmanager'
+    environment:
+      # SMTP — configurer dans .env pour activer les notifications email
+      SMTP_HOST: ${SMTP_HOST:-localhost}
+      SMTP_PORT: ${SMTP_PORT:-25}
+      SMTP_FROM: ${SMTP_FROM:-alertes@tillyinventaire.ti}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
     expose:
       - "9093"
     networks:
@@ -210,19 +217,35 @@ services:
     networks:
       - inventaire_network
 
-  # Loki (Logs)
+  # Loki (Log Aggregation)
   loki:
     image: grafana/loki:2.9.7
     container_name: inventaire_loki
     restart: unless-stopped
+    command: -config.file=/etc/loki/loki-config.yml
     expose:
       - "3100"
     volumes:
       - loki_data:/loki
+      - ./monitoring/loki/loki-config.yml:/etc/loki/loki-config.yml:ro
     networks:
       - inventaire_network
 
-  # Grafana (Dashboards)
+  # Promtail (Log Collection → Loki)
+  promtail:
+    image: grafana/promtail:2.9.7
+    container_name: inventaire_promtail
+    restart: unless-stopped
+    volumes:
+      - ./monitoring/promtail-config.yml:/etc/promtail/config.yml:ro
+      - api_logs:/var/log/api:ro
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+    networks:
+      - inventaire_network
+
+  # Grafana (Dashboards & Visualization)
   grafana:
     image: grafana/grafana:10.4.2
     container_name: inventaire_grafana
@@ -232,9 +255,12 @@ services:
       GF_INSTALL_PLUGINS: grafana-piechart-panel 1.6.4
       GF_SERVER_ROOT_URL: https://www.tillyinventaire.ti/grafana/
       GF_SERVER_SERVE_FROM_SUB_PATH: "true"
+      GF_ALERTING_ENABLED: "true"
+      GF_UNIFIED_ALERTING_ENABLED: "true"
     volumes:
       - grafana_data:/var/lib/grafana
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
     expose:
       - "3000"
     depends_on:
