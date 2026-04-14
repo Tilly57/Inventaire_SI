@@ -27,7 +27,11 @@ DB_USER="${DB_USER:-inventaire_user}"
 DB_NAME="${DB_NAME:-inventaire}"
 BACKUP_DIR="${BACKUP_DIR:-/repo/backups/pre-deploy}"
 PROJECT_NAME="${COMPOSE_PROJECT_NAME:-inventaire_si}"
-COMPOSE_CMD="docker compose -p $PROJECT_NAME -f $COMPOSE_FILE"
+# HOST_REPO_DIR is the path on the Docker HOST filesystem
+# Docker compose needs this so bind-mount volume paths resolve correctly
+# (relative paths in compose files are resolved relative to project-directory)
+HOST_REPO_DIR="${HOST_REPO_DIR:-$REPO_DIR}"
+COMPOSE_CMD="docker compose -p $PROJECT_NAME --project-directory $HOST_REPO_DIR -f $HOST_REPO_DIR/$COMPOSE_FILE"
 
 log_info()  { echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) ${LOG_PREFIX} [INFO]  $1"; }
 log_error() { echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) ${LOG_PREFIX} [ERROR] $1" >&2; }
