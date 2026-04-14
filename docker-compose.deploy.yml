@@ -19,6 +19,10 @@ services:
       - DEPLOY_REPO_DIR=/repo
       - DEPLOY_BRANCH=production
       - DEPLOY_COMPOSE_FILE=docker-compose.prod.yml
+      # HOST_REPO_DIR is the path on the Docker host (not inside this container)
+      # Docker compose must use this path so bind mount volumes resolve correctly
+      - HOST_REPO_DIR=${HOST_REPO_DIR:-/mnt/c/inventaire_SI}
+      - COMPOSE_PROJECT_NAME=inventaire_si
       - POLL_INTERVAL=${DEPLOY_POLL_INTERVAL:-120}
       - HEALTH_CHECK_RETRIES=${HEALTH_CHECK_RETRIES:-6}
       - HEALTH_CHECK_INTERVAL=${HEALTH_CHECK_INTERVAL:-10}
