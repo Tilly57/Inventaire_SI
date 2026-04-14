@@ -5,7 +5,7 @@
  */
 
 import { Page } from '@playwright/test';
-import { clickButton, navigateTo, waitForToast } from './helpers';
+import { clickButton, navigateTo, waitForToast, selectRadixOption } from './helpers';
 
 /**
  * Create a test employee
@@ -213,21 +213,19 @@ export async function createTestStockItem(page: Page, suffix: string = '') {
  * Create a test loan (without items)
  * Returns loan ID from URL
  */
-export async function createTestLoan(page: Page, employeeEmail?: string): Promise<string> {
+export async function createTestLoan(page: Page, employeeSearchText?: string): Promise<string> {
   await navigateTo(page, '/loans');
   await clickButton(page, 'Nouveau prêt');
 
   const dialog = page.locator('[role="dialog"]');
-  await dialog.waitFor();
+  await dialog.waitFor({ timeout: 10000 });
 
-  // Select employee via Radix Select (scoped to dialog)
-  await dialog.locator('button[role="combobox"]').first().click();
-  await page.waitForTimeout(300);
-
-  if (employeeEmail) {
-    await page.locator(`[role="option"]:has-text("${employeeEmail}")`).first().click();
+  // Select employee — use robust helper that waits for data to load
+  if (employeeSearchText) {
+    await selectRadixOption(dialog, page, employeeSearchText);
   } else {
-    await page.locator('[role="option"]').first().click();
+    // Select first available employee
+    await selectRadixOption(dialog, page, '');
   }
 
   // Submit
