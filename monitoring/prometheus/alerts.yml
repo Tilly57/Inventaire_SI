@@ -40,7 +40,7 @@ groups:
     rules:
       # High memory usage (>512MB)
       - alert: HighMemoryUsage
-        expr: process_resident_memory_bytes{job="inventaire-api"} > 536870912
+        expr: inventaire_api_process_resident_memory_bytes{job="inventaire-api"} > 536870912
         for: 10m
         labels:
           severity: warning
@@ -50,7 +50,7 @@ groups:
 
       # Event loop lag (>100ms)
       - alert: EventLoopLag
-        expr: nodejs_eventloop_lag_seconds{job="inventaire-api"} > 0.1
+        expr: inventaire_api_nodejs_eventloop_lag_seconds{job="inventaire-api"} > 0.1
         for: 5m
         labels:
           severity: warning
@@ -61,8 +61,8 @@ groups:
       # Too many open file descriptors (>80%)
       - alert: HighOpenFileDescriptors
         expr: |
-          process_open_fds{job="inventaire-api"}
-          / process_max_fds{job="inventaire-api"} > 0.8
+          inventaire_api_process_open_fds{job="inventaire-api"}
+          / inventaire_api_process_max_fds{job="inventaire-api"} > 0.8
         for: 5m
         labels:
           severity: warning
