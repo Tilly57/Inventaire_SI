@@ -255,7 +255,7 @@ services:
       GF_INSTALL_PLUGINS: grafana-piechart-panel 1.6.4
       GF_SERVER_ROOT_URL: https://www.tillyinventaire.ti/grafana/
       GF_SERVER_SERVE_FROM_SUB_PATH: "true"
-      GF_ALERTING_ENABLED: "true"
+      GF_ALERTING_ENABLED: "false"
       GF_UNIFIED_ALERTING_ENABLED: "true"
     volumes:
       - grafana_data:/var/lib/grafana
