@@ -1,26 +1,6 @@
 groups:
-  - name: inventaire-api
+  - name: api-availability
     rules:
-      # High error rate (>5% of requests returning 5xx over 5 minutes)
-      - alert: HighErrorRate
-        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) > 0.05
-        for: 5m
-        labels:
-          severity: critical
-        annotations:
-          summary: "High API error rate ({{ $value | humanizePercentage }})"
-          description: "More than 5% of API requests are returning 5xx errors."
-
-      # Slow API responses (P95 > 2s over 5 minutes)
-      - alert: SlowApiResponses
-        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 2
-        for: 5m
-        labels:
-          severity: warning
-        annotations:
-          summary: "Slow API response time (P95: {{ $value | humanizeDuration }})"
-          description: "95th percentile API response time exceeds 2 seconds."
-
       # API service down
       - alert: ApiDown
         expr: up{job="inventaire-api"} == 0
@@ -28,30 +8,45 @@ groups:
         labels:
           severity: critical
         annotations:
-          summary: "Inventaire API is down"
-          description: "The API service has been unreachable for more than 1 minute."
+          summary: "API Inventaire SI est DOWN"
+          description: "Le service API est inaccessible depuis plus d'1 minute."
+
+      # High error rate (>5% of requests returning 5xx)
+      - alert: HighErrorRate
+        expr: |
+          (sum(rate(http_requests_total{job="inventaire-api",status_code=~"5.."}[5m]))
+          / sum(rate(http_requests_total{job="inventaire-api"}[5m]))) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Taux d'erreurs 5xx élevé ({{ $value | humanizePercentage }})"
+          description: "Plus de 5% des requêtes API retournent des erreurs 5xx."
+
+      # Slow API responses (P95 > 2s)
+      - alert: SlowApiResponses
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(http_request_duration_seconds_bucket{job="inventaire-api"}[5m])) by (le)
+          ) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Latence API élevée (P95: {{ $value | humanizeDuration }})"
+          description: "Le 95e percentile de latence dépasse 2 secondes."
 
   - name: infrastructure
     rules:
-      # High memory usage on Node.js process (>512MB)
+      # High memory usage (>512MB)
       - alert: HighMemoryUsage
         expr: process_resident_memory_bytes{job="inventaire-api"} > 536870912
         for: 10m
         labels:
           severity: warning
         annotations:
-          summary: "High memory usage ({{ $value | humanize1024 }}B)"
-          description: "Node.js process is using more than 512MB of memory."
-
-      # Too many open file descriptors
-      - alert: HighOpenFileDescriptors
-        expr: process_open_fds{job="inventaire-api"} / process_max_fds{job="inventaire-api"} > 0.8
-        for: 5m
-        labels:
-          severity: warning
-        annotations:
-          summary: "High file descriptor usage ({{ $value | humanizePercentage }})"
-          description: "More than 80% of file descriptors are in use."
+          summary: "Mémoire élevée ({{ $value | humanize1024 }}B)"
+          description: "Le processus Node.js utilise plus de 512MB de mémoire."
 
       # Event loop lag (>100ms)
       - alert: EventLoopLag
@@ -60,5 +55,56 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "High event loop lag ({{ $value | humanizeDuration }})"
-          description: "Node.js event loop lag exceeds 100ms, indicating blocking operations."
+          summary: "Event loop lag élevé ({{ $value | humanizeDuration }})"
+          description: "Le lag de l'event loop dépasse 100ms — opérations bloquantes détectées."
+
+      # Too many open file descriptors (>80%)
+      - alert: HighOpenFileDescriptors
+        expr: |
+          process_open_fds{job="inventaire-api"}
+          / process_max_fds{job="inventaire-api"} > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Descripteurs de fichiers élevés ({{ $value | humanizePercentage }})"
+          description: "Plus de 80% des descripteurs de fichiers sont utilisés."
+
+  - name: database
+    rules:
+      # Slow DB queries (P95 > 1s)
+      - alert: SlowDatabaseQueries
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(db_query_duration_seconds_bucket{job="inventaire-api"}[5m])) by (le, operation)
+          ) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Requêtes DB lentes ({{ $labels.operation }} P95: {{ $value | humanizeDuration }})"
+          description: "Les requêtes {{ $labels.operation }} prennent plus d'1 seconde au P95."
+
+      # DB errors increasing
+      - alert: DatabaseErrors
+        expr: sum(rate(db_errors_total{job="inventaire-api"}[5m])) > 0.1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Erreurs base de données détectées"
+          description: "Le taux d'erreurs DB est supérieur à 0.1/s depuis 5 minutes."
+
+  - name: business
+    rules:
+      # No API traffic for 10 minutes during business hours (8h-19h)
+      - alert: NoTraffic
+        expr: |
+          sum(rate(http_requests_total{job="inventaire-api"}[10m])) == 0
+          and ON() hour() >= 8 <= 19
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Aucun trafic API détecté"
+          description: "Aucune requête API depuis 10 minutes pendant les heures ouvrées."

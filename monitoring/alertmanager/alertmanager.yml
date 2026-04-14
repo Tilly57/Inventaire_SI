@@ -1,31 +1,34 @@
 # Alertmanager Configuration - Inventaire SI
-# Documentation: https://prometheus.io/docs/alerting/latest/configuration/
+#
+# Pour activer les emails, configurer les variables SMTP dans .env :
+#   SMTP_HOST, SMTP_PORT, SMTP_FROM, SMTP_USERNAME, SMTP_PASSWORD
+#
+# Si SMTP non configuré, Alertmanager démarre mais les alertes
+# sont uniquement visibles dans l'UI Alertmanager.
 
 global:
   resolve_timeout: 5m
 
-# Route tree — all alerts go to default receiver
+# Route tree
 route:
   group_by: ['alertname', 'severity']
   group_wait: 30s
   group_interval: 5m
   repeat_interval: 4h
-  receiver: 'default'
+  receiver: 'null'
 
   routes:
     # Critical alerts: shorter repeat interval
     - match:
         severity: critical
-      receiver: 'default'
+      receiver: 'null'
       repeat_interval: 1h
+      group_wait: 10s
 
 receivers:
-  # Default receiver — configure ALERTMANAGER_WEBHOOK_URL in production
-  # Supported: Slack, Teams, PagerDuty, or any webhook endpoint
-  - name: 'default'
-    webhook_configs:
-      - url: '${ALERTMANAGER_WEBHOOK_URL:?ALERTMANAGER_WEBHOOK_URL must be set}'
-        send_resolved: true
+  # Null receiver — logs alerts but doesn't send notifications
+  # Replace with email/slack config when SMTP is available
+  - name: 'null'
 
 # Inhibition rules — suppress lower severity if critical is firing
 inhibit_rules:
