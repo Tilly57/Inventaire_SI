@@ -26,6 +26,8 @@ DB_CONTAINER="${DB_CONTAINER:-inventaire_postgres}"
 DB_USER="${DB_USER:-inventaire_user}"
 DB_NAME="${DB_NAME:-inventaire}"
 BACKUP_DIR="${BACKUP_DIR:-/repo/backups/pre-deploy}"
+PROJECT_NAME="${COMPOSE_PROJECT_NAME:-inventaire_si}"
+COMPOSE_CMD="docker compose -p $PROJECT_NAME -f $COMPOSE_FILE"
 
 log_info()  { echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) ${LOG_PREFIX} [INFO]  $1"; }
 log_error() { echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) ${LOG_PREFIX} [ERROR] $1" >&2; }
@@ -85,7 +87,7 @@ git pull origin "$BRANCH" 2>&1
 
 # ── Step 3: Rebuild and restart services ──
 log_info "Rebuilding Docker services..."
-docker compose -f "$COMPOSE_FILE" up -d --build 2>&1
+$COMPOSE_CMD up -d --build --force-recreate 2>&1
 
 # ── Step 4: Health check with retries ──
 log_info "Waiting for services to be healthy (max ${HEALTH_CHECK_RETRIES} checks, ${HEALTH_CHECK_INTERVAL}s interval)..."
@@ -98,8 +100,8 @@ while [ "$ATTEMPT" -lt "$HEALTH_CHECK_RETRIES" ]; do
     sleep "$HEALTH_CHECK_INTERVAL"
 
     # Check for unhealthy containers
-    UNHEALTHY=$(docker compose -f "$COMPOSE_FILE" ps --format json 2>/dev/null | grep -c '"unhealthy"' || true)
-    STARTING=$(docker compose -f "$COMPOSE_FILE" ps --format json 2>/dev/null | grep -c '"starting"' || true)
+    UNHEALTHY=$($COMPOSE_CMD ps --format json 2>/dev/null | grep -c '"unhealthy"' || true)
+    STARTING=$($COMPOSE_CMD ps --format json 2>/dev/null | grep -c '"starting"' || true)
 
     if [ "$UNHEALTHY" -eq 0 ] && [ "$STARTING" -eq 0 ]; then
         ALL_HEALTHY=true
@@ -111,23 +113,23 @@ done
 
 if [ "$ALL_HEALTHY" = true ]; then
     log_ok "All services healthy! Deployment successful at ${REMOTE_HASH:0:8}"
-    docker compose -f "$COMPOSE_FILE" ps 2>&1
+    $COMPOSE_CMD ps 2>&1
     exit 0
 fi
 
 # ── Step 5: Rollback on failure ──
 log_error "Services are NOT healthy after $HEALTH_CHECK_RETRIES checks!"
 log_error "Current service status:"
-docker compose -f "$COMPOSE_FILE" ps 2>&1
+$COMPOSE_CMD ps 2>&1
 
 log_error "Unhealthy container logs:"
-docker compose -f "$COMPOSE_FILE" ps --format json 2>/dev/null | \
+$COMPOSE_CMD ps --format json 2>/dev/null | \
     grep '"unhealthy"' | \
     while IFS= read -r line; do
         SVC=$(echo "$line" | grep -o '"Service":"[^"]*"' | cut -d'"' -f4)
         if [ -n "$SVC" ]; then
             log_error "--- $SVC logs (last 20 lines) ---"
-            docker compose -f "$COMPOSE_FILE" logs --tail=20 "$SVC" 2>&1
+            $COMPOSE_CMD logs --tail=20 "$SVC" 2>&1
         fi
     done
 
@@ -137,11 +139,11 @@ git reset --hard "$LOCAL_HASH" 2>&1
 
 # Rebuild with previous version
 log_warn "Rebuilding with previous version..."
-docker compose -f "$COMPOSE_FILE" up -d --build 2>&1
+$COMPOSE_CMD up -d --build --force-recreate 2>&1
 
 # Verify rollback
 sleep 15
-UNHEALTHY_AFTER=$(docker compose -f "$COMPOSE_FILE" ps --format json 2>/dev/null | grep -c '"unhealthy"' || true)
+UNHEALTHY_AFTER=$($COMPOSE_CMD ps --format json 2>/dev/null | grep -c '"unhealthy"' || true)
 if [ "$UNHEALTHY_AFTER" -eq 0 ]; then
     log_ok "Rollback successful. Running on ${LOCAL_HASH:0:8}"
 else
