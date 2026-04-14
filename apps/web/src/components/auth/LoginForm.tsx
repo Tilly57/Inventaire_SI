@@ -49,7 +49,7 @@ export function LoginForm() {
       } else {
         setError(result.error || 'Erreur lors de la connexion')
       }
-    } catch (err) {
+    } catch (_err) {
       setError('Une erreur inattendue s\'est produite')
     } finally {
       setIsSubmitting(false)

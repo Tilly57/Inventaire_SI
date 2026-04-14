@@ -27,7 +27,7 @@ export function DeleteEmployeeDialog({ employee, open, onClose }: DeleteEmployee
     try {
       await deleteEmployee.mutateAsync(employee.id)
       onClose()
-    } catch (error) {
+    } catch (_error) {
       // Error handled by mutation hook
     }
   }

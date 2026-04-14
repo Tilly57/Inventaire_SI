@@ -26,7 +26,7 @@ export function DeleteUserDialog({ user, open, onClose }: DeleteUserDialogProps)
     try {
       await deleteUser.mutateAsync(user.id)
       onClose()
-    } catch (error) {
+    } catch (_error) {
       // Error handled by mutation hook
     }
   }

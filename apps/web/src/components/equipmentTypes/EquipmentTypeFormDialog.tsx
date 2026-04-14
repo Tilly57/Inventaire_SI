@@ -78,7 +78,7 @@ export function EquipmentTypeFormDialog({
         await createMutation.mutateAsync(data);
       }
       handleClose();
-    } catch (error) {
+    } catch (_error) {
       // Error handling is done in the mutation hooks
     }
   };

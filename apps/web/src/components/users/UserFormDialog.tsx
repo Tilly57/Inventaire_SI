@@ -78,7 +78,7 @@ export function UserFormDialog({ user, open, onClose }: UserFormDialogProps) {
         await createUser.mutateAsync(data as CreateUserFormData)
       }
       onClose()
-    } catch (error) {
+    } catch (_error) {
       // Error handled by mutation hooks
     }
   }

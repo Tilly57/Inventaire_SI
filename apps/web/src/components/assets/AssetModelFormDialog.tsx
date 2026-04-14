@@ -81,7 +81,7 @@ export function AssetModelFormDialog({ model, open, onClose }: AssetModelFormDia
       }
       form.reset()
       onClose()
-    } catch (error) {
+    } catch (_error) {
       // Error handled by mutation hooks
     }
   }
