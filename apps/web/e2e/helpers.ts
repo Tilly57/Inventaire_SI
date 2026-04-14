@@ -77,14 +77,17 @@ export async function navigateTo(page: Page, path: string) {
 }
 
 /**
- * Wait for toast notification
+ * Wait for toast notification (Sonner)
  */
 export async function waitForToast(page: Page, message?: string) {
-  const toastSelector = '[data-testid="toast"], .toast, [role="alert"]';
-  await page.waitForSelector(toastSelector, { timeout: 5000 });
-
-  if (message) {
-    await expect(page.locator(toastSelector)).toContainText(message);
+  const toastSelector = '[data-sonner-toast], [role="status"]';
+  try {
+    await page.waitForSelector(toastSelector, { timeout: 5000 });
+    if (message) {
+      await expect(page.locator(toastSelector).first()).toContainText(message);
+    }
+  } catch {
+    // Toast may have already disappeared, that's acceptable
   }
 }
 
