@@ -5,7 +5,7 @@
  */
 
 import { Page } from '@playwright/test';
-import { clickButton, navigateTo, fillField, waitForToast } from './helpers';
+import { clickButton, navigateTo } from './helpers';
 
 /**
  * Create a test employee
@@ -23,17 +23,20 @@ export async function createTestEmployee(page: Page, suffix: string = '') {
   await navigateTo(page, '/employees');
   await clickButton(page, 'Nouvel employé');
 
-  // Fill form
-  await page.fill('input[name="firstName"]', employeeData.firstName);
-  await page.fill('input[name="lastName"]', employeeData.lastName);
-  await page.fill('input[name="email"]', employeeData.email);
-  await page.fill('input[name="dept"]', employeeData.dept);
+  const dialog = page.locator('[role="dialog"]');
+  await dialog.waitFor();
+
+  // Fill form (scoped to dialog)
+  await dialog.locator('input[name="firstName"]').fill(employeeData.firstName);
+  await dialog.locator('input[name="lastName"]').fill(employeeData.lastName);
+  await dialog.locator('input[name="email"]').fill(employeeData.email);
+  await dialog.locator('input[name="dept"]').fill(employeeData.dept);
 
   // Submit
-  await clickButton(page, 'Créer');
+  await dialog.getByRole('button', { name: /créer/i }).click();
 
-  // Wait for success
-  await waitForToast(page);
+  // Wait for dialog to close — confirms API success
+  await dialog.waitFor({ state: 'detached', timeout: 10000 });
 
   return employeeData;
 }
@@ -60,21 +63,21 @@ export async function createTestAssetModel(page: Page, suffix: string = '') {
   await dialog.locator('button[role="combobox"]').first().click();
   await page.locator('[role="option"]').filter({ hasText: modelData.type }).click();
 
-  await page.fill('input[name="brand"]', modelData.brand);
-  await page.fill('input[name="modelName"]', modelData.modelName);
+  await dialog.locator('input[name="brand"]').fill(modelData.brand);
+  await dialog.locator('input[name="modelName"]').fill(modelData.modelName);
 
   // Submit
-  await clickButton(page, 'Créer');
+  await dialog.getByRole('button', { name: /créer/i }).click();
 
-  // Wait for success
-  await waitForToast(page);
+  // Wait for dialog to close — confirms API success
+  await dialog.waitFor({ state: 'detached', timeout: 10000 });
 
   return modelData;
 }
 
 /**
- * Create a test asset item
- * Requires an asset model to exist
+ * Create a test asset item via API
+ * The UI button may be disabled, so we use the API directly
  */
 export async function createTestAssetItem(page: Page, suffix: string = '') {
   const timestamp = Date.now();
@@ -83,26 +86,49 @@ export async function createTestAssetItem(page: Page, suffix: string = '') {
     serial: `SN${timestamp}${suffix}`,
   };
 
-  await navigateTo(page, '/assets/items');
-  await clickButton(page, 'Nouvel équipement');
+  // Get auth token from localStorage
+  const token = await page.evaluate(() => {
+    // Try common storage patterns for auth tokens
+    const authStorage = localStorage.getItem('auth-storage');
+    if (authStorage) {
+      try {
+        const parsed = JSON.parse(authStorage);
+        return parsed?.state?.accessToken || null;
+      } catch { return null; }
+    }
+    return localStorage.getItem('accessToken') || null;
+  });
 
-  const dialog = page.locator('[role="dialog"]');
-  await dialog.waitFor();
+  // API base URL — in CI: http://localhost:3001/api, in prod: /api via proxy
+  const apiBaseUrl = process.env.VITE_API_URL || 'http://localhost:3001/api';
 
-  // Select first available model via Radix Select
-  await dialog.locator('button[role="combobox"]').first().click();
-  await page.waitForTimeout(300);
-  await page.locator('[role="option"]').first().click();
+  // Use request context (cookies) instead of Authorization header for CSRF compat
+  // First, get a model ID to associate with
+  const modelsResponse = await page.request.get(`${apiBaseUrl}/asset-models?limit=1`, {
+    headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+  });
+  const modelsData = await modelsResponse.json();
+  const modelId = modelsData?.data?.[0]?.id || modelsData?.[0]?.id;
 
-  // Fill form
-  await page.fill('input[name="assetTag"]', itemData.assetTag);
-  await page.fill('input[name="serial"]', itemData.serial);
+  if (!modelId) {
+    throw new Error('No asset model found — create one first');
+  }
 
-  // Submit
-  await clickButton(page, 'Créer');
+  // Create asset item via API
+  const createResponse = await page.request.post(`${apiBaseUrl}/asset-items`, {
+    headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+    data: {
+      assetModelId: modelId,
+      assetTag: itemData.assetTag,
+      serialNumber: itemData.serial,
+      status: 'EN_STOCK',
+    },
+  });
 
-  // Wait for success
-  await waitForToast(page);
+  if (!createResponse.ok()) {
+    const err = await createResponse.text();
+    throw new Error(`Failed to create asset item: ${createResponse.status()} ${err}`);
+  }
 
   return itemData;
 }
@@ -123,18 +149,21 @@ export async function createTestStockItem(page: Page, suffix: string = '') {
   await navigateTo(page, '/stock');
   await clickButton(page, 'Nouvel article');
 
-  // Fill form
-  await page.fill('input[name="name"]', stockData.name);
-  await page.fill('textarea[name="description"]', stockData.description);
-  await page.fill('input[name="quantity"]', stockData.quantity);
-  await page.fill('input[name="minQuantity"]', stockData.minQuantity);
-  await page.fill('input[name="location"]', stockData.location);
+  const dialog = page.locator('[role="dialog"]');
+  await dialog.waitFor();
+
+  // Fill form (scoped to dialog)
+  await dialog.locator('input[name="name"]').fill(stockData.name);
+  await dialog.locator('textarea[name="description"]').fill(stockData.description);
+  await dialog.locator('input[name="quantity"]').fill(stockData.quantity);
+  await dialog.locator('input[name="minQuantity"]').fill(stockData.minQuantity);
+  await dialog.locator('input[name="location"]').fill(stockData.location);
 
   // Submit
-  await clickButton(page, 'Créer');
+  await dialog.getByRole('button', { name: /créer/i }).click();
 
-  // Wait for success
-  await waitForToast(page);
+  // Wait for dialog to close — confirms API success
+  await dialog.waitFor({ state: 'detached', timeout: 10000 });
 
   return stockData;
 }
