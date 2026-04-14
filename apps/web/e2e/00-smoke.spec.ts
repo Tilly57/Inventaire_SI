@@ -68,10 +68,10 @@ test.describe('Smoke Tests - Critical Paths', () => {
     // Wait for dialog to close (confirms successful creation)
     await empDialog.waitFor({ state: 'detached', timeout: 10000 });
 
-    // Verify employee appears in list (use search to find across pages)
+    // Verify employee appears in list (search by email for exact match)
     await navigateTo(page, '/employees');
-    await page.getByPlaceholder(/rechercher par nom/i).fill('Smoke Test');
-    await expect(page.locator('tbody')).toContainText(testEmail, { timeout: 10000 });
+    await page.getByPlaceholder(/rechercher par nom/i).fill(testEmail);
+    await expect(page.locator('tbody')).toContainText('Smoke', { timeout: 10000 });
   });
 
   test('CRITICAL: Can create asset model', async ({ page }) => {
