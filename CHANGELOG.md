@@ -3,6 +3,38 @@
 All notable changes to this project will be documented in this file.
 
 
+# Release v1.1.6 - 2026-04-17
+
+## Summary
+
+<!-- Add a brief summary of this release -->
+
+## Changes
+
+### ✨ Features
+
+
+### 🐛 Bug Fixes
+- fix(ui): remove Portal from SelectContent to fix dropdown in dialogs
+- fix(e2e): use main locator instead of h1 which matches header logo
+
+### 📚 Documentation
+
+
+### 🔧 Improvements
+
+
+### 📦 Dependencies
+- chore(release): merge release/1.1.5 to staging
+- chore(release): bump version to 1.1.5
+
+### All Commits
+- 54ca80e fix(ui): remove Portal from SelectContent to fix dropdown in dialogs (Tilly57)
+- 5b078f2 chore(release): merge release/1.1.5 to staging (Tilly57)
+- 438ee23 chore(release): bump version to 1.1.5 (Tilly57)
+- d43be06 fix(e2e): use main locator instead of h1 which matches header logo (Tilly57)
+
+
 # Release v1.1.5 - 2026-04-14
 
 ## Summary
