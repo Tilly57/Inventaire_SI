@@ -5,18 +5,18 @@ import { z } from 'zod';
 
 export const createAssetItemSchema = z.object({
   assetModelId: z.string().min(1, 'ID du modèle requis'),
-  assetTag: z.string().optional().nullable(),
-  serial: z.string().optional().nullable(),
+  assetTag: z.string().max(100, 'Le tag ne peut pas dépasser 100 caractères').optional().nullable(),
+  serial: z.string().max(100, 'Le numéro de série ne peut pas dépasser 100 caractères').optional().nullable(),
   status: z.enum(['EN_STOCK', 'PRETE', 'HS', 'REPARATION']).optional(),
-  notes: z.string().optional().nullable()
+  notes: z.string().max(1000, 'Les notes ne peuvent pas dépasser 1000 caractères').optional().nullable()
 });
 
 export const updateAssetItemSchema = z.object({
   assetModelId: z.string().min(1, 'ID du modèle requis').optional(),
-  assetTag: z.string().optional().nullable(),
-  serial: z.string().optional().nullable(),
+  assetTag: z.string().max(100, 'Le tag ne peut pas dépasser 100 caractères').optional().nullable(),
+  serial: z.string().max(100, 'Le numéro de série ne peut pas dépasser 100 caractères').optional().nullable(),
   status: z.enum(['EN_STOCK', 'PRETE', 'HS', 'REPARATION']).optional(),
-  notes: z.string().optional().nullable()
+  notes: z.string().max(1000, 'Les notes ne peuvent pas dépasser 1000 caractères').optional().nullable()
 });
 
 export const updateStatusSchema = z.object({

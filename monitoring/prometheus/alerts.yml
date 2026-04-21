@@ -101,7 +101,7 @@ groups:
       - alert: NoTraffic
         expr: |
           sum(rate(http_requests_total{job="inventaire-api"}[10m])) == 0
-          and ON() hour() >= 8 <= 19
+          and ON() (hour() >= 8 and hour() <= 19)
         for: 10m
         labels:
           severity: warning

@@ -4,7 +4,7 @@
 import { z } from 'zod';
 
 export const createLoanSchema = z.object({
-  employeeId: z.string().min(1, 'ID de l\'employé requis')
+  employeeId: z.string().min(1, 'ID de l\'employé requis').max(30, 'ID invalide')
 });
 
 export const addLoanLineSchema = z.object({
