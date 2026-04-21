@@ -10,7 +10,7 @@
  * - Request queueing during token refresh to prevent race conditions
  */
 
-import axios, { AxiosError } from 'axios'
+import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import { API_URL } from '@/lib/utils/constants'
 import { setUserContext } from '@/lib/sentry'
 
@@ -174,11 +174,11 @@ apiClient.interceptors.response.use(
     return response
   },
   async (error: AxiosError) => {
-    const originalRequest = error.config as any
+    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean }
 
     // Handle 401 Unauthorized errors (expired token or CSRF failure)
     if (error.response?.status === 401 && !originalRequest._retry) {
-      const errorMessage = (error.response?.data as any)?.error || ''
+      const errorMessage = (error.response?.data as Record<string, string>)?.error || ''
 
       // Check if this is a CSRF token error
       if (errorMessage.includes('CSRF')) {
