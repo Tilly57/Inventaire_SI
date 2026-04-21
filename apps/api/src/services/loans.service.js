@@ -59,6 +59,7 @@ export async function getAllLoans(filters = {}) {
   const loans = await prisma.loan.findMany({
     where,
     orderBy: { openedAt: 'desc' },
+    take: 500,
     include: {
       employee: true,  // Include full employee details
       createdBy: {     // Include user who created the loan

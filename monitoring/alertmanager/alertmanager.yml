@@ -1,13 +1,13 @@
 # Alertmanager Configuration - Inventaire SI
 #
-# Pour activer les emails, configurer les variables SMTP dans .env :
-#   SMTP_HOST, SMTP_PORT, SMTP_FROM, SMTP_USERNAME, SMTP_PASSWORD
-#
-# Si SMTP non configuré, Alertmanager démarre mais les alertes
-# sont uniquement visibles dans l'UI Alertmanager.
+# Notifications email configurees via variables d'environnement SMTP
+# dans docker-compose.prod.yml (SMTP_HOST, SMTP_PORT, SMTP_FROM, etc.)
 
 global:
-  resolve_timeout: 5m
+  resolve_timeout: 3m
+  smtp_smarthost: 'localhost:25'
+  smtp_from: 'alertes@tillyinventaire.ti'
+  smtp_require_tls: false
 
 # Route tree
 route:
@@ -15,20 +15,24 @@ route:
   group_wait: 30s
   group_interval: 5m
   repeat_interval: 4h
-  receiver: 'null'
+  receiver: 'email-alerts'
 
   routes:
     # Critical alerts: shorter repeat interval
     - match:
         severity: critical
-      receiver: 'null'
+      receiver: 'email-alerts'
       repeat_interval: 1h
       group_wait: 10s
 
 receivers:
-  # Null receiver — logs alerts but doesn't send notifications
-  # Replace with email/slack config when SMTP is available
-  - name: 'null'
+  # Email alerts — envoie aux administrateurs
+  - name: 'email-alerts'
+    email_configs:
+      - to: 'admin@tillyinventaire.ti'
+        send_resolved: true
+        headers:
+          subject: '[Inventaire SI] {{ .GroupLabels.alertname }} - {{ .GroupLabels.severity }}'
 
 # Inhibition rules — suppress lower severity if critical is firing
 inhibit_rules:

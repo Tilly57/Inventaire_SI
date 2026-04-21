@@ -3,6 +3,33 @@
 All notable changes to this project will be documented in this file.
 
 
+# Release v1.3.0 - 2026-04-21
+
+## Summary
+
+<!-- Add a brief summary of this release -->
+
+## Changes
+
+### ✨ Features
+
+
+### 🐛 Bug Fixes
+
+
+### 📚 Documentation
+
+
+### 🔧 Improvements
+
+
+### 📦 Dependencies
+
+
+### All Commits
+
+
+
 # Release v1.2.1 - 2026-04-21
 
 ## Summary

@@ -41,8 +41,10 @@ services:
       - jwt_access_secret
       - jwt_refresh_secret
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_started
+      redis:
+        condition: service_healthy
     ports:
       - "3001:3001"
     volumes:

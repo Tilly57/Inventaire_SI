@@ -13,7 +13,7 @@
 # Designed to run inside a Docker container.
 ###########################################
 
-set -e
+set -eo pipefail
 
 # Configuration
 REPO_DIR="${DEPLOY_REPO_DIR:-/repo}"
@@ -73,11 +73,11 @@ log_info "Creating pre-deploy database backup..."
 mkdir -p "$BACKUP_DIR"
 BACKUP_FILE="$BACKUP_DIR/pre-deploy_$(date +%Y%m%d_%H%M%S).sql.gz"
 
-if docker exec "$DB_CONTAINER" pg_dump -U "$DB_USER" "$DB_NAME" 2>/dev/null | gzip > "$BACKUP_FILE"; then
+if docker exec "$DB_CONTAINER" pg_dump -U "$DB_USER" "$DB_NAME" 2>/dev/null | gzip > "$BACKUP_FILE" && [ -s "$BACKUP_FILE" ]; then
     BACKUP_SIZE=$(ls -lh "$BACKUP_FILE" 2>/dev/null | awk '{print $5}')
     log_ok "Database backup created: $BACKUP_FILE ($BACKUP_SIZE)"
 else
-    log_warn "Database backup failed (non-blocking). Continuing deployment..."
+    log_warn "DATABASE BACKUP FAILED — proceeding with caution"
     rm -f "$BACKUP_FILE"
     BACKUP_FILE=""
 fi
