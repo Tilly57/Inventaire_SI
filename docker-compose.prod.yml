@@ -67,7 +67,7 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set in production}
-      CORS_ORIGIN: ${CORS_ORIGIN:-https://www.TillyInventaire.ti,https://www.tillyinventaire.ti,https://192.168.1.225}
+      CORS_ORIGIN: ${CORS_ORIGIN:-https://www.TillyInventaire.ti,https://www.tillyinventaire.ti,https://192.168.1.225,https://192.168.1.226}
       # Sentry — monitoring erreurs et performances (backend)
       SENTRY_DSN: ${SENTRY_DSN:-}
       SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-production}

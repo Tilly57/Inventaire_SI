@@ -3,6 +3,55 @@
 All notable changes to this project will be documented in this file.
 
 
+# Release v1.2.0 - 2026-04-21
+
+## Summary
+
+<!-- Add a brief summary of this release -->
+
+## Changes
+
+### ✨ Features
+- feat(infra): prepare config for Hyper-V VM migration
+- feat(infra): add WSL startup script for persistent server access
+- feat(infra): add WSL2 port forwarding script for server access
+
+### 🐛 Bug Fixes
+- fix(ui): remove Portal from SelectContent to fix dropdown in dialogs
+- fix(e2e): use main locator instead of h1 which matches header logo
+
+### 📚 Documentation
+
+
+### 🔧 Improvements
+
+
+### 📦 Dependencies
+- chore(release): merge release/1.1.8 to staging
+- chore(release): bump version to 1.1.8
+- chore(release): merge release/1.1.7 to staging
+- chore(release): bump version to 1.1.7
+- chore(release): merge release/1.1.6 to staging
+- chore(release): bump version to 1.1.6
+- chore(release): merge release/1.1.5 to staging
+- chore(release): bump version to 1.1.5
+
+### All Commits
+- 0a843d9 feat(infra): prepare config for Hyper-V VM migration (Tilly57)
+- d1d6aa6 chore(release): merge release/1.1.8 to staging (Tilly57)
+- 8b61fea chore(release): bump version to 1.1.8 (Tilly57)
+- 8dd53a7 feat(infra): add WSL startup script for persistent server access (Tilly57)
+- 014c24f chore(release): merge release/1.1.7 to staging (Tilly57)
+- 0d957ea chore(release): bump version to 1.1.7 (Tilly57)
+- 8e6b63b feat(infra): add WSL2 port forwarding script for server access (Tilly57)
+- 41b9469 chore(release): merge release/1.1.6 to staging (Tilly57)
+- 68e84a3 chore(release): bump version to 1.1.6 (Tilly57)
+- 54ca80e fix(ui): remove Portal from SelectContent to fix dropdown in dialogs (Tilly57)
+- 5b078f2 chore(release): merge release/1.1.5 to staging (Tilly57)
+- 438ee23 chore(release): bump version to 1.1.5 (Tilly57)
+- d43be06 fix(e2e): use main locator instead of h1 which matches header logo (Tilly57)
+
+
 # Release v1.1.8 - 2026-04-20
 
 ## Summary

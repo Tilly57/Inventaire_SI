@@ -21,7 +21,7 @@ services:
       - DEPLOY_COMPOSE_FILE=docker-compose.prod.yml
       # HOST_REPO_DIR is the path on the Docker host (not inside this container)
       # Docker compose must use this path so bind mount volumes resolve correctly
-      - HOST_REPO_DIR=${HOST_REPO_DIR:-/mnt/c/inventaire_SI}
+      - HOST_REPO_DIR=${HOST_REPO_DIR:-/opt/inventaire}
       - COMPOSE_PROJECT_NAME=inventaire_si
       - POLL_INTERVAL=${DEPLOY_POLL_INTERVAL:-120}
       - HEALTH_CHECK_RETRIES=${HEALTH_CHECK_RETRIES:-6}
@@ -32,11 +32,11 @@ services:
       - TZ=${TZ:-Europe/Paris}
     volumes:
       # Mount the project directory (read-write for git pull)
-      - /mnt/c/inventaire_SI:/repo
+      - ${HOST_REPO_DIR:-/opt/inventaire}:/repo
       # Mount Docker socket to control other containers
       - /var/run/docker.sock:/var/run/docker.sock
       # Mount deploy script
-      - ./scripts/auto-deploy.sh:/scripts/auto-deploy.sh:ro
+      - ${HOST_REPO_DIR:-/opt/inventaire}/scripts/auto-deploy.sh:/scripts/auto-deploy.sh:ro
     working_dir: /repo
     entrypoint: ["/bin/sh", "-c"]
     command:
