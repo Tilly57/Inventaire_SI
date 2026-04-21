@@ -1,7 +1,8 @@
 /**
  * Equipment Types routes
  *
- * All routes require ADMIN role
+ * GET routes: all authenticated users (needed for asset model forms)
+ * Write routes: ADMIN only
  */
 import express from 'express';
 import {
@@ -21,9 +22,8 @@ import {
 
 const router = express.Router();
 
-// Apply authentication and ADMIN role to all routes
+// All routes require authentication
 router.use(requireAuth);
-router.use(requireAdmin);
 
 // GET /api/equipment-types - Get all equipment types
 router.get('/', getAllTypes);
@@ -31,13 +31,13 @@ router.get('/', getAllTypes);
 // GET /api/equipment-types/:id - Get equipment type by ID
 router.get('/:id', getTypeById);
 
-// POST /api/equipment-types - Create new equipment type
-router.post('/', validate(createEquipmentTypeSchema), createType);
+// Write operations require ADMIN role
+router.post('/', requireAdmin, validate(createEquipmentTypeSchema), createType);
 
 // PATCH /api/equipment-types/:id - Update equipment type
-router.patch('/:id', validate(updateEquipmentTypeSchema), updateType);
+router.patch('/:id', requireAdmin, validate(updateEquipmentTypeSchema), updateType);
 
 // DELETE /api/equipment-types/:id - Delete equipment type
-router.delete('/:id', deleteType);
+router.delete('/:id', requireAdmin, deleteType);
 
 export default router;
