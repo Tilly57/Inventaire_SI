@@ -173,23 +173,26 @@ jobs:
 
       - name: Audit API dependencies
         run: cd apps/api && npm audit --audit-level=high
-        continue-on-error: true
 
       - name: Audit Web dependencies
         run: cd apps/web && npm audit --audit-level=high
-        continue-on-error: true
 
       - name: Check for secrets in code
         run: |
-          # Fail if hardcoded secrets are found
           FOUND=0
-          for pattern in "password\s*[:=]\s*['\"][^'\"]*['\"]" "CHANGEME" "secret_key_here"; do
+          for pattern in "password\s*[:=]\s*['\"][^'\"]*['\"]" "CHANGEME" "secret_key_here" "sk-[a-zA-Z0-9]{20,}" "AKIA[0-9A-Z]{16}"; do
             if grep -rni "$pattern" apps/ --include="*.ts" --include="*.js" --include="*.tsx" \
               --exclude-dir=node_modules --exclude-dir=dist --exclude="*.test.*" --exclude="*.spec.*" | \
-              grep -v "process.env" | grep -v "example" | grep -v "placeholder" | head -5; then
-              echo "WARNING: Potential hardcoded secret found for pattern: $pattern"
+              grep -v "process.env" | grep -v "import.meta.env" | grep -v "example" | grep -v "placeholder" | \
+              grep -v "validator" | grep -v "schema" | head -5; then
+              echo "FAILED: Potential hardcoded secret found for pattern: $pattern"
+              FOUND=1
             fi
           done
+          if [ "$FOUND" = "1" ]; then
+            echo "Security check failed: hardcoded secrets detected"
+            exit 1
+          fi
 
   # ──────────────────────────────────────────
   # Quality Gate - All checks must pass
@@ -224,10 +227,7 @@ jobs:
               echo "  ⏭️  $JOB (skipped)"
             else
               echo "  ❌ $JOB ($STATUS)"
-              # Security audit est un warning, pas bloquant
-              if [ "$JOB" != "security" ]; then
-                FAILED=1
-              fi
+              FAILED=1
             fi
           done
 

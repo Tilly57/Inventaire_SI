@@ -178,6 +178,7 @@ model LoanLine {
   @@index([stockItemId])
   @@index([loanId, assetItemId])
   @@index([loanId, stockItemId])
+  @@index([addedAt])
 }
 
 model AuditLog {
