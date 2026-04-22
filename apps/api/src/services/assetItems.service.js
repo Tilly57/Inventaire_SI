@@ -260,7 +260,6 @@ export async function createAssetItem(data, req) {
   // Invalidate cache - Phase 3.2
   await invalidateEntity('asset_items');
   await invalidateEntity('asset_models'); // Update model counts
-  await invalidateEntity('asset_models'); // Update model counts
 
   return assetItem;
 }
