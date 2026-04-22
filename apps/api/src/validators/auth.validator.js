@@ -34,8 +34,7 @@ export const passwordSchema = z
 
 export const registerSchema = z.object({
   email: z.string().email('Email invalide'),
-  password: passwordSchema,
-  role: z.enum(['ADMIN', 'GESTIONNAIRE', 'LECTURE']).optional()
+  password: passwordSchema
 });
 
 export const loginSchema = z.object({

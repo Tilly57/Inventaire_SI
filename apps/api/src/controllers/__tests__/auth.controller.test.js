@@ -86,10 +86,11 @@ describe('auth.controller', () => {
     };
 
     it('should register a new user successfully', async () => {
+      // Audit C1: controller must not forward a client-supplied role to the service.
       req.body = {
         email: 'newuser@test.com',
         password: 'SecurePass123!',
-        role: 'GESTIONNAIRE'
+        role: 'ADMIN'
       };
 
       mockRegister.mockResolvedValue(mockTokens);
@@ -98,8 +99,7 @@ describe('auth.controller', () => {
 
       expect(mockRegister).toHaveBeenCalledWith(
         'newuser@test.com',
-        'SecurePass123!',
-        'GESTIONNAIRE'
+        'SecurePass123!'
       );
       expect(res.cookie).toHaveBeenCalledWith(
         'refreshToken',

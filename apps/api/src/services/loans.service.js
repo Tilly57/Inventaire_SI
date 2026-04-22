@@ -850,13 +850,14 @@ export async function batchDeleteLoans(loanIds, userId) {
         );
       }
 
-      // Restore stock item quantity and decrement loaned
+      // Release the loaned units. `quantity` (physical stock on hand) must NOT
+      // change here — addLoanLine only bumps `loaned`, so reverting a loan only
+      // needs to mirror that by decrementing `loaned`.
       if (line.stockItemId) {
         updates.push(
           prisma.stockItem.update({
             where: { id: line.stockItemId },
             data: {
-              quantity: { increment: line.quantity },
               loaned: { decrement: line.quantity }
             }
           })
@@ -907,19 +908,7 @@ export async function deletePickupSignature(loanId) {
     throw new ValidationError('Impossible de modifier un prêt supprimé');
   }
 
-  // Delete signature file if it exists
-  if (loan.pickupSignatureUrl) {
-    const signaturesDir = process.env.SIGNATURES_DIR || path.join(__dirname, '../../uploads/signatures');
-    const filename = path.basename(loan.pickupSignatureUrl);
-    const filepath = path.join(signaturesDir, filename);
-
-    try {
-      await fs.unlink(filepath);
-    } catch (err) {
-      // File might not exist, ignore error
-      logger.warn(`Could not delete signature file: ${filepath}`);
-    }
-  }
+  await deleteSignatureFile(loan.pickupSignatureUrl);
 
   const updatedLoan = await prisma.loan.update({
     where: { id: loanId },
@@ -960,19 +949,7 @@ export async function deleteReturnSignature(loanId) {
     throw new ValidationError('Impossible de modifier un prêt supprimé');
   }
 
-  // Delete signature file if it exists
-  if (loan.returnSignatureUrl) {
-    const signaturesDir = process.env.SIGNATURES_DIR || path.join(__dirname, '../../uploads/signatures');
-    const filename = path.basename(loan.returnSignatureUrl);
-    const filepath = path.join(signaturesDir, filename);
-
-    try {
-      await fs.unlink(filepath);
-    } catch (err) {
-      // File might not exist, ignore error
-      logger.warn(`Could not delete signature file: ${filepath}`);
-    }
-  }
+  await deleteSignatureFile(loan.returnSignatureUrl);
 
   const updatedLoan = await prisma.loan.update({
     where: { id: loanId },

@@ -553,7 +553,7 @@ describe('loans.controller', () => {
 
     it('should delete loan successfully', async () => {
       req.params = { id: 'loan-123' };
-      req.user = { id: 'user-123' };
+      req.user = { userId: 'user-123' };
       mockDeleteLoan.mockResolvedValue(mockResult);
 
       await deleteLoan(req, res);
@@ -568,7 +568,7 @@ describe('loans.controller', () => {
 
     it('should handle loan not found error', async () => {
       req.params = { id: 'non-existent' };
-      req.user = { id: 'user-123' };
+      req.user = { userId: 'user-123' };
       const error = new Error('Loan not found');
       mockDeleteLoan.mockRejectedValue(error);
 
@@ -577,7 +577,7 @@ describe('loans.controller', () => {
 
     it('should handle cannot delete loan with signatures error', async () => {
       req.params = { id: 'loan-123' };
-      req.user = { id: 'user-123' };
+      req.user = { userId: 'user-123' };
       const error = new Error('Cannot delete loan with signatures');
       mockDeleteLoan.mockRejectedValue(error);
 
@@ -593,7 +593,7 @@ describe('loans.controller', () => {
 
     it('should batch delete loans successfully', async () => {
       req.body = { loanIds: ['loan-1', 'loan-2', 'loan-3', 'loan-4', 'loan-5'] };
-      req.user = { id: 'user-123' };
+      req.user = { userId: 'user-123' };
       mockBatchDeleteLoans.mockResolvedValue(mockResult);
 
       await batchDeleteLoans(req, res);
@@ -611,7 +611,7 @@ describe('loans.controller', () => {
 
     it('should handle empty loanIds array', async () => {
       req.body = { loanIds: [] };
-      req.user = { id: 'user-123' };
+      req.user = { userId: 'user-123' };
       const error = new Error('loanIds array cannot be empty');
       mockBatchDeleteLoans.mockRejectedValue(error);
 
@@ -620,7 +620,7 @@ describe('loans.controller', () => {
 
     it('should handle invalid loan IDs', async () => {
       req.body = { loanIds: ['invalid-id'] };
-      req.user = { id: 'user-123' };
+      req.user = { userId: 'user-123' };
       const error = new Error('No loans found with provided IDs');
       mockBatchDeleteLoans.mockRejectedValue(error);
 

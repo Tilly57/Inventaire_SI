@@ -46,7 +46,7 @@ export const logAction = async (action, tableName, recordId, req, values = {}) =
   if (!req?.user) return;
 
   await createAuditLog({
-    userId: req.user.id,
+    userId: req.user.userId,
     action: action.toUpperCase(),
     tableName,
     recordId,
