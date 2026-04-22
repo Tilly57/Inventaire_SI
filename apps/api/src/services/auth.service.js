@@ -21,27 +21,24 @@ import { blacklistToken } from './cache.service.js';
  * Register a new user in the system
  *
  * Special behavior: The first user created is automatically assigned ADMIN role.
- * Subsequent users receive the role specified in the parameter.
+ * Subsequent users are always GESTIONNAIRE. The role cannot be passed from the
+ * public endpoint — admin-only user creation will live on a separate endpoint.
  *
  * @param {string} email - User email address (must be unique)
  * @param {string} password - Plain text password (will be hashed)
- * @param {string} [role=ROLES.GESTIONNAIRE] - User role (ADMIN, GESTIONNAIRE, or LECTURE)
  * @returns {Promise<Object>} Object containing accessToken, refreshToken, and user data
  * @throws {ConflictError} If email is already registered
- *
- * @example
- * const { accessToken, refreshToken, user } = await register('admin@example.com', 'password123', ROLES.ADMIN);
  */
-export async function register(email, password, role = ROLES.GESTIONNAIRE) {
+export async function register(email, password) {
   // Check if user already exists
   const existingUser = await prisma.user.findUnique({ where: { email } });
   if (existingUser) {
     throw new ConflictError('Un utilisateur avec cet email existe déjà');
   }
 
-  // Auto-promote first user to ADMIN for initial setup
+  // Auto-promote first user to ADMIN for initial setup, all others are GESTIONNAIRE
   const userCount = await prisma.user.count();
-  const userRole = userCount === 0 ? ROLES.ADMIN : role;
+  const userRole = userCount === 0 ? ROLES.ADMIN : ROLES.GESTIONNAIRE;
 
   // Hash password using bcrypt with configured salt rounds
   const passwordHash = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);

@@ -187,17 +187,6 @@ describe('Authentication Validators - Phase 2', () => {
     it('should accept valid registration data', () => {
       const validData = {
         email: 'user@example.com',
-        password: 'SecurePass123!',
-        role: 'GESTIONNAIRE'
-      };
-
-      const result = registerSchema.safeParse(validData);
-      expect(result.success).toBe(true);
-    });
-
-    it('should accept registration without role (optional)', () => {
-      const validData = {
-        email: 'user@example.com',
         password: 'SecurePass123!'
       };
 
@@ -205,19 +194,18 @@ describe('Authentication Validators - Phase 2', () => {
       expect(result.success).toBe(true);
     });
 
-    it('should accept all valid roles', () => {
-      const roles = ['ADMIN', 'GESTIONNAIRE', 'LECTURE'];
+    it('should silently strip any role field from the body (audit C1 regression guard)', () => {
+      // The public register endpoint must never let the client pick a role.
+      // If anyone adds role back to this schema, this test should fail.
+      const dataWithRole = {
+        email: 'user@example.com',
+        password: 'SecurePass123!',
+        role: 'ADMIN'
+      };
 
-      roles.forEach(role => {
-        const data = {
-          email: 'user@example.com',
-          password: 'SecurePass123!',
-          role
-        };
-
-        const result = registerSchema.safeParse(data);
-        expect(result.success).toBe(true);
-      });
+      const result = registerSchema.safeParse(dataWithRole);
+      expect(result.success).toBe(true);
+      expect(result.data).not.toHaveProperty('role');
     });
 
     it('should reject invalid email', () => {
@@ -235,17 +223,6 @@ describe('Authentication Validators - Phase 2', () => {
       const invalidData = {
         email: 'user@example.com',
         password: 'weak'
-      };
-
-      const result = registerSchema.safeParse(invalidData);
-      expect(result.success).toBe(false);
-    });
-
-    it('should reject invalid role', () => {
-      const invalidData = {
-        email: 'user@example.com',
-        password: 'SecurePass123!',
-        role: 'SUPERADMIN'  // Not a valid role
       };
 
       const result = registerSchema.safeParse(invalidData);

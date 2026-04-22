@@ -40,7 +40,7 @@ export const exportEmployeesController = asyncHandler(async (req, res) => {
   const { search, dept } = req.query
 
   logger.info('Exporting employees', {
-    userId: req.user.id,
+    userId: req.user.userId,
     filters: { search, dept },
   })
 
@@ -56,7 +56,7 @@ export const exportAssetModelsController = asyncHandler(async (req, res) => {
   const { type, brand } = req.query
 
   logger.info('Exporting asset models', {
-    userId: req.user.id,
+    userId: req.user.userId,
     filters: { type, brand },
   })
 
@@ -72,7 +72,7 @@ export const exportAssetItemsController = asyncHandler(async (req, res) => {
   const { status, type, assetModelId } = req.query
 
   logger.info('Exporting asset items', {
-    userId: req.user.id,
+    userId: req.user.userId,
     filters: { status, type, assetModelId },
   })
 
@@ -88,7 +88,7 @@ export const exportStockItemsController = asyncHandler(async (req, res) => {
   const lowStock = req.query.lowStock === 'true'
 
   logger.info('Exporting stock items', {
-    userId: req.user.id,
+    userId: req.user.userId,
     filters: { lowStock },
   })
 
@@ -104,7 +104,7 @@ export const exportLoansController = asyncHandler(async (req, res) => {
   const { status, employeeId, startDate, endDate } = req.query
 
   logger.info('Exporting loans', {
-    userId: req.user.id,
+    userId: req.user.userId,
     filters: { status, employeeId, startDate, endDate },
   })
 
@@ -117,7 +117,7 @@ export const exportLoansController = asyncHandler(async (req, res) => {
  * @access Private (ADMIN, GESTIONNAIRE)
  */
 export const exportDashboardController = asyncHandler(async (req, res) => {
-  logger.info('Exporting dashboard', { userId: req.user.id })
+  logger.info('Exporting dashboard', { userId: req.user.userId })
 
   const buffer = await exportDashboard()
   sendXlsx(res, buffer, 'Dashboard_Complet')

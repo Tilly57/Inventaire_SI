@@ -422,7 +422,7 @@ export const closeLoan = asyncHandler(async (req, res) => {
  * }
  */
 export const deleteLoan = asyncHandler(async (req, res) => {
-  const result = await loansService.deleteLoan(req.params.id, req.user.id, req);
+  const result = await loansService.deleteLoan(req.params.id, req.user.userId, req);
 
   sendSuccess(res, result);
 });
@@ -457,7 +457,7 @@ export const deleteLoan = asyncHandler(async (req, res) => {
  */
 export const batchDeleteLoans = asyncHandler(async (req, res) => {
   const { loanIds } = req.body;
-  const result = await loansService.batchDeleteLoans(loanIds, req.user.id);
+  const result = await loansService.batchDeleteLoans(loanIds, req.user.userId);
 
   sendSuccess(res, result);
 });

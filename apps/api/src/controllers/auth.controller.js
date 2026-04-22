@@ -61,9 +61,9 @@ import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '.
  * }
  */
 export const register = asyncHandler(async (req, res) => {
-  const { email, password, role } = req.body;
+  const { email, password } = req.body;
 
-  const { accessToken, refreshToken, user } = await registerService(email, password, role);
+  const { accessToken, refreshToken, user } = await registerService(email, password);
 
   // Set refresh token in httpOnly cookie for security (same as login)
   res.cookie('refreshToken', refreshToken, {
