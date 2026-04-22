@@ -104,7 +104,7 @@ describe('User Validators', () => {
 
         const result = createUserSchema.safeParse(data);
         expect(result.success).toBe(false);
-        expect(result.error?.errors[0].message).toContain('Email invalide');
+        expect(result.error?.issues[0].message).toContain('Email invalide');
       });
 
       it('devrait rejeter un email sans @', () => {
@@ -162,7 +162,7 @@ describe('User Validators', () => {
 
         const result = createUserSchema.safeParse(data);
         expect(result.success).toBe(false);
-        expect(result.error?.errors[0].message).toContain('au moins 8 caractères');
+        expect(result.error?.issues[0].message).toContain('au moins 8 caractères');
       });
 
       it('devrait rejeter un mot de passe trop long', () => {
@@ -185,7 +185,7 @@ describe('User Validators', () => {
 
         const result = createUserSchema.safeParse(data);
         expect(result.success).toBe(false);
-        expect(result.error?.errors[0].message).toContain('majuscule');
+        expect(result.error?.issues[0].message).toContain('majuscule');
       });
 
       it('devrait rejeter un mot de passe sans minuscule', () => {
@@ -197,7 +197,7 @@ describe('User Validators', () => {
 
         const result = createUserSchema.safeParse(data);
         expect(result.success).toBe(false);
-        expect(result.error?.errors[0].message).toContain('minuscule');
+        expect(result.error?.issues[0].message).toContain('minuscule');
       });
 
       it('devrait rejeter un mot de passe sans chiffre', () => {
@@ -209,7 +209,7 @@ describe('User Validators', () => {
 
         const result = createUserSchema.safeParse(data);
         expect(result.success).toBe(false);
-        expect(result.error?.errors[0].message).toContain('chiffre');
+        expect(result.error?.issues[0].message).toContain('chiffre');
       });
 
       it('devrait rejeter un mot de passe sans caractere special', () => {
@@ -221,7 +221,7 @@ describe('User Validators', () => {
 
         const result = createUserSchema.safeParse(data);
         expect(result.success).toBe(false);
-        expect(result.error?.errors[0].message).toContain('spécial');
+        expect(result.error?.issues[0].message).toContain('spécial');
       });
     });
 
@@ -278,7 +278,7 @@ describe('User Validators', () => {
     it('devrait rejeter un email invalide quand fourni', () => {
       const result = updateUserSchema.safeParse({ email: 'invalide' });
       expect(result.success).toBe(false);
-      expect(result.error?.errors[0].message).toContain('Email invalide');
+      expect(result.error?.issues[0].message).toContain('Email invalide');
     });
 
     it('devrait rejeter un role invalide quand fourni', () => {
@@ -366,7 +366,7 @@ describe('User Validators', () => {
 
         const result = changePasswordSchema.safeParse(data);
         expect(result.success).toBe(false);
-        expect(result.error?.errors[0].message).toContain('Mot de passe actuel requis');
+        expect(result.error?.issues[0].message).toContain('Mot de passe actuel requis');
       });
 
       it('devrait rejeter un newPassword faible', () => {
@@ -387,7 +387,7 @@ describe('User Validators', () => {
 
         const result = changePasswordSchema.safeParse(data);
         expect(result.success).toBe(false);
-        expect(result.error?.errors[0].message).toContain('majuscule');
+        expect(result.error?.issues[0].message).toContain('majuscule');
       });
 
       it('devrait rejeter un newPassword sans caractere special', () => {
@@ -398,7 +398,7 @@ describe('User Validators', () => {
 
         const result = changePasswordSchema.safeParse(data);
         expect(result.success).toBe(false);
-        expect(result.error?.errors[0].message).toContain('spécial');
+        expect(result.error?.issues[0].message).toContain('spécial');
       });
     });
 

@@ -13,9 +13,9 @@ export const validate = (schema) => {
       req.body = validated;
       next();
     } catch (error) {
-      if (error.errors) {
+      if (error.issues) {
         // Zod validation error
-        const details = error.errors.map(err => ({
+        const details = error.issues.map(err => ({
           field: err.path.join('.'),
           message: err.message
         }));
@@ -37,8 +37,8 @@ export const validateQuery = (schema) => {
       req.query = validated;
       next();
     } catch (error) {
-      if (error.errors) {
-        const details = error.errors.map(err => ({
+      if (error.issues) {
+        const details = error.issues.map(err => ({
           field: err.path.join('.'),
           message: err.message
         }));
@@ -60,8 +60,8 @@ export const validateParams = (schema) => {
       req.params = validated;
       next();
     } catch (error) {
-      if (error.errors) {
-        const details = error.errors.map(err => ({
+      if (error.issues) {
+        const details = error.issues.map(err => ({
           field: err.path.join('.'),
           message: err.message
         }));

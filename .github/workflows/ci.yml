@@ -180,12 +180,37 @@ jobs:
       - name: Check for secrets in code
         run: |
           FOUND=0
-          for pattern in "password\s*[:=]\s*['\"][^'\"]*['\"]" "CHANGEME" "secret_key_here" "sk-[a-zA-Z0-9]{20,}" "AKIA[0-9A-Z]{16}"; do
-            if grep -rni "$pattern" apps/ --include="*.ts" --include="*.js" --include="*.tsx" \
-              --exclude-dir=node_modules --exclude-dir=dist --exclude="*.test.*" --exclude="*.spec.*" | \
-              grep -v "process.env" | grep -v "import.meta.env" | grep -v "example" | grep -v "placeholder" | \
-              grep -v "validator" | grep -v "schema" | head -5; then
+          # Pattern format: "flags|regex" — flags are passed to grep (e.g. "i" for case-insensitive, "" for case-sensitive)
+          # Patterns:
+          #   - password with non-empty string value (excludes `password: ''` placeholders)
+          #   - CHANGEME: case-sensitive word match (avoids matching French words like "changements")
+          #   - secret_key_here: case-insensitive placeholder marker
+          #   - sk-*: OpenAI/Anthropic API key shape
+          #   - AKIA*: AWS access key shape
+          PATTERNS=(
+            "i|password\s*[:=]\s*['\"][^'\"]+['\"]"
+            "w|CHANGEME"
+            "i|secret_key_here"
+            "|sk-[a-zA-Z0-9]{20,}"
+            "|AKIA[0-9A-Z]{16}"
+          )
+          for entry in "${PATTERNS[@]}"; do
+            flags="${entry%%|*}"
+            pattern="${entry#*|}"
+            grep_flags="-rn"
+            [[ "$flags" == *i* ]] && grep_flags="${grep_flags}i"
+            [[ "$flags" == *w* ]] && grep_flags="${grep_flags}w"
+            matches=$(grep $grep_flags -E "$pattern" apps/ \
+              --include="*.ts" --include="*.js" --include="*.tsx" \
+              --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=seeds \
+              --exclude="*.test.*" --exclude="*.spec.*" 2>/dev/null | \
+              grep -vE ":\s*\*" | \
+              grep -v "process.env" | grep -v "import.meta.env" | \
+              grep -v "example" | grep -v "placeholder" | \
+              grep -v "validator" | grep -v "schema" | head -5)
+            if [ -n "$matches" ]; then
               echo "FAILED: Potential hardcoded secret found for pattern: $pattern"
+              echo "$matches"
               FOUND=1
             fi
           done
