@@ -142,28 +142,31 @@ describe('Auth Service', () => {
       expect(result.user.role).toBe(ROLES.ADMIN);
     });
 
-    it('should respect specified role for non-first users', async () => {
+    it('should always create non-first users as GESTIONNAIRE regardless of any role argument', async () => {
+      // Audit C1: public register() no longer accepts a role. Even if a caller
+      // tried to pass one, the service must ignore it and force GESTIONNAIRE —
+      // otherwise a public POST /auth/register body could self-promote to ADMIN.
       const mockUser = {
         id: 'user2',
         email: mockEmail,
-        role: ROLES.LECTURE,
+        role: ROLES.GESTIONNAIRE,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
 
       mockPrisma.user.findUnique.mockResolvedValue(null);
-      mockPrisma.user.count.mockResolvedValue(5); // Not first user
+      mockPrisma.user.count.mockResolvedValue(5);
       mockBcrypt.hash.mockResolvedValue(mockPasswordHash);
       mockPrisma.user.create.mockResolvedValue(mockUser);
       mockJwt.generateAccessToken.mockReturnValue(mockAccessToken);
       mockJwt.generateRefreshToken.mockReturnValue(mockRefreshToken);
 
-      await register(mockEmail, mockPassword, ROLES.LECTURE);
+      await register(mockEmail, mockPassword);
 
       expect(mockPrisma.user.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
-            role: ROLES.LECTURE,
+            role: ROLES.GESTIONNAIRE,
           })
         })
       );
