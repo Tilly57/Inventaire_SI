@@ -1,12 +1,13 @@
 # Alertmanager Configuration - Inventaire SI
 #
-# Notifications email configurees via variables d'environnement SMTP
-# dans docker-compose.prod.yml (SMTP_HOST, SMTP_PORT, SMTP_FROM, etc.)
+# Les valeurs SMTP ci-dessous sont des templates remplacees au demarrage
+# par le script d'entrypoint (voir docker-compose.prod.yml).
+# Configurer SMTP_HOST, SMTP_PORT, SMTP_FROM dans .env
 
 global:
   resolve_timeout: 3m
-  smtp_smarthost: 'localhost:25'
-  smtp_from: 'alertes@tillyinventaire.ti'
+  smtp_smarthost: '${SMTP_HOST}:${SMTP_PORT}'
+  smtp_from: '${SMTP_FROM}'
   smtp_require_tls: false
 
 # Route tree

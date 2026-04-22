@@ -20,6 +20,8 @@ import {
 } from '../assetItems.validator.js';
 
 const VALID_STATUSES = ['EN_STOCK', 'PRETE', 'HS', 'REPARATION'];
+const VALID_MODEL_CUID = 'cjld2cyuq0000t3rmniod1foy';
+const VALID_MODEL_CUID_2 = 'cjld2cyuq0001t3rmniod1foz';
 
 describe('AssetItem Validators', () => {
   // ============================================
@@ -30,7 +32,7 @@ describe('AssetItem Validators', () => {
     describe('Donnees valides', () => {
       it('devrait accepter un asset item avec tous les champs', () => {
         const data = {
-          assetModelId: 'model-123',
+          assetModelId: VALID_MODEL_CUID,
           assetTag: 'TAG-001',
           serial: 'SN-12345',
           status: 'EN_STOCK',
@@ -42,7 +44,7 @@ describe('AssetItem Validators', () => {
       });
 
       it('devrait accepter un asset item avec seulement assetModelId', () => {
-        const data = { assetModelId: 'model-123' };
+        const data = { assetModelId: VALID_MODEL_CUID };
 
         const result = createAssetItemSchema.safeParse(data);
         expect(result.success).toBe(true);
@@ -50,7 +52,7 @@ describe('AssetItem Validators', () => {
 
       it('devrait accepter les champs optionnels comme null', () => {
         const data = {
-          assetModelId: 'model-123',
+          assetModelId: VALID_MODEL_CUID,
           assetTag: null,
           serial: null,
           notes: null
@@ -62,7 +64,7 @@ describe('AssetItem Validators', () => {
 
       it('devrait accepter tous les statuts valides', () => {
         VALID_STATUSES.forEach(status => {
-          const data = { assetModelId: 'model-123', status };
+          const data = { assetModelId: VALID_MODEL_CUID, status };
 
           const result = createAssetItemSchema.safeParse(data);
           expect(result.success).toBe(true);
@@ -71,7 +73,7 @@ describe('AssetItem Validators', () => {
 
       it('devrait accepter un assetTag a la limite de 100 caracteres', () => {
         const data = {
-          assetModelId: 'model-123',
+          assetModelId: VALID_MODEL_CUID,
           assetTag: 'T'.repeat(100)
         };
 
@@ -81,7 +83,7 @@ describe('AssetItem Validators', () => {
 
       it('devrait accepter un serial a la limite de 100 caracteres', () => {
         const data = {
-          assetModelId: 'model-123',
+          assetModelId: VALID_MODEL_CUID,
           serial: 'S'.repeat(100)
         };
 
@@ -91,7 +93,7 @@ describe('AssetItem Validators', () => {
 
       it('devrait accepter des notes a la limite de 1000 caracteres', () => {
         const data = {
-          assetModelId: 'model-123',
+          assetModelId: VALID_MODEL_CUID,
           notes: 'N'.repeat(1000)
         };
 
@@ -113,7 +115,7 @@ describe('AssetItem Validators', () => {
 
         const result = createAssetItemSchema.safeParse(data);
         expect(result.success).toBe(false);
-        expect(result.error?.errors[0].message).toContain('ID du modèle requis');
+        expect(result.error?.issues[0].message).toContain('ID du modèle invalide');
       });
 
       it('devrait rejeter un objet vide', () => {
@@ -125,42 +127,42 @@ describe('AssetItem Validators', () => {
     describe('Depassement de longueur maximale', () => {
       it('devrait rejeter un assetTag de plus de 100 caracteres', () => {
         const data = {
-          assetModelId: 'model-123',
+          assetModelId: VALID_MODEL_CUID,
           assetTag: 'T'.repeat(101)
         };
 
         const result = createAssetItemSchema.safeParse(data);
         expect(result.success).toBe(false);
-        expect(result.error?.errors[0].message).toContain('100 caractères');
+        expect(result.error?.issues[0].message).toContain('100 caractères');
       });
 
       it('devrait rejeter un serial de plus de 100 caracteres', () => {
         const data = {
-          assetModelId: 'model-123',
+          assetModelId: VALID_MODEL_CUID,
           serial: 'S'.repeat(101)
         };
 
         const result = createAssetItemSchema.safeParse(data);
         expect(result.success).toBe(false);
-        expect(result.error?.errors[0].message).toContain('100 caractères');
+        expect(result.error?.issues[0].message).toContain('100 caractères');
       });
 
       it('devrait rejeter des notes de plus de 1000 caracteres', () => {
         const data = {
-          assetModelId: 'model-123',
+          assetModelId: VALID_MODEL_CUID,
           notes: 'N'.repeat(1001)
         };
 
         const result = createAssetItemSchema.safeParse(data);
         expect(result.success).toBe(false);
-        expect(result.error?.errors[0].message).toContain('1000 caractères');
+        expect(result.error?.issues[0].message).toContain('1000 caractères');
       });
     });
 
     describe('Valeurs enum invalides', () => {
       it('devrait rejeter un statut invalide', () => {
         const data = {
-          assetModelId: 'model-123',
+          assetModelId: VALID_MODEL_CUID,
           status: 'INVALIDE'
         };
 
@@ -170,7 +172,7 @@ describe('AssetItem Validators', () => {
 
       it('devrait rejeter un statut en minuscules', () => {
         const data = {
-          assetModelId: 'model-123',
+          assetModelId: VALID_MODEL_CUID,
           status: 'en_stock'
         };
 
@@ -199,7 +201,7 @@ describe('AssetItem Validators', () => {
   describe('updateAssetItemSchema', () => {
     it('devrait accepter une mise a jour complete', () => {
       const data = {
-        assetModelId: 'model-456',
+        assetModelId: VALID_MODEL_CUID_2,
         assetTag: 'TAG-002',
         serial: 'SN-67890',
         status: 'REPARATION',
@@ -279,7 +281,7 @@ describe('AssetItem Validators', () => {
     describe('Donnees valides', () => {
       it('devrait accepter des donnees bulk completes', () => {
         const data = {
-          assetModelId: 'model-123',
+          assetModelId: VALID_MODEL_CUID,
           tagPrefix: 'PC-',
           quantity: 10,
           status: 'EN_STOCK',
@@ -292,7 +294,7 @@ describe('AssetItem Validators', () => {
 
       it('devrait accepter avec seulement les champs requis', () => {
         const data = {
-          assetModelId: 'model-123',
+          assetModelId: VALID_MODEL_CUID,
           tagPrefix: 'PC-',
           quantity: 1
         };
@@ -303,7 +305,7 @@ describe('AssetItem Validators', () => {
 
       it('devrait accepter la quantite minimale (1)', () => {
         const data = {
-          assetModelId: 'model-123',
+          assetModelId: VALID_MODEL_CUID,
           tagPrefix: 'PC-',
           quantity: 1
         };
@@ -314,7 +316,7 @@ describe('AssetItem Validators', () => {
 
       it('devrait accepter la quantite maximale (100)', () => {
         const data = {
-          assetModelId: 'model-123',
+          assetModelId: VALID_MODEL_CUID,
           tagPrefix: 'PC-',
           quantity: 100
         };
@@ -325,7 +327,7 @@ describe('AssetItem Validators', () => {
 
       it('devrait accepter un tagPrefix a la limite de 20 caracteres', () => {
         const data = {
-          assetModelId: 'model-123',
+          assetModelId: VALID_MODEL_CUID,
           tagPrefix: 'P'.repeat(20),
           quantity: 5
         };
@@ -336,7 +338,7 @@ describe('AssetItem Validators', () => {
 
       it('devrait accepter notes comme null', () => {
         const data = {
-          assetModelId: 'model-123',
+          assetModelId: VALID_MODEL_CUID,
           tagPrefix: 'PC-',
           quantity: 5,
           notes: null
@@ -356,14 +358,14 @@ describe('AssetItem Validators', () => {
       });
 
       it('devrait rejeter sans tagPrefix', () => {
-        const data = { assetModelId: 'model-123', quantity: 5 };
+        const data = { assetModelId: VALID_MODEL_CUID, quantity: 5 };
 
         const result = createAssetItemsBulkSchema.safeParse(data);
         expect(result.success).toBe(false);
       });
 
       it('devrait rejeter sans quantity', () => {
-        const data = { assetModelId: 'model-123', tagPrefix: 'PC-' };
+        const data = { assetModelId: VALID_MODEL_CUID, tagPrefix: 'PC-' };
 
         const result = createAssetItemsBulkSchema.safeParse(data);
         expect(result.success).toBe(false);
@@ -374,34 +376,34 @@ describe('AssetItem Validators', () => {
 
         const result = createAssetItemsBulkSchema.safeParse(data);
         expect(result.success).toBe(false);
-        expect(result.error?.errors[0].message).toContain('ID du modèle requis');
+        expect(result.error?.issues[0].message).toContain('ID du modèle invalide');
       });
 
       it('devrait rejeter un tagPrefix vide', () => {
-        const data = { assetModelId: 'model-123', tagPrefix: '', quantity: 5 };
+        const data = { assetModelId: VALID_MODEL_CUID, tagPrefix: '', quantity: 5 };
 
         const result = createAssetItemsBulkSchema.safeParse(data);
         expect(result.success).toBe(false);
-        expect(result.error?.errors[0].message).toContain('préfixe du tag est requis');
+        expect(result.error?.issues[0].message).toContain('préfixe du tag est requis');
       });
     });
 
     describe('Contraintes de valeurs', () => {
       it('devrait rejeter une quantite de 0', () => {
         const data = {
-          assetModelId: 'model-123',
+          assetModelId: VALID_MODEL_CUID,
           tagPrefix: 'PC-',
           quantity: 0
         };
 
         const result = createAssetItemsBulkSchema.safeParse(data);
         expect(result.success).toBe(false);
-        expect(result.error?.errors[0].message).toContain('au moins 1');
+        expect(result.error?.issues[0].message).toContain('au moins 1');
       });
 
       it('devrait rejeter une quantite negative', () => {
         const data = {
-          assetModelId: 'model-123',
+          assetModelId: VALID_MODEL_CUID,
           tagPrefix: 'PC-',
           quantity: -5
         };
@@ -412,38 +414,38 @@ describe('AssetItem Validators', () => {
 
       it('devrait rejeter une quantite superieure a 100', () => {
         const data = {
-          assetModelId: 'model-123',
+          assetModelId: VALID_MODEL_CUID,
           tagPrefix: 'PC-',
           quantity: 101
         };
 
         const result = createAssetItemsBulkSchema.safeParse(data);
         expect(result.success).toBe(false);
-        expect(result.error?.errors[0].message).toContain('100');
+        expect(result.error?.issues[0].message).toContain('100');
       });
 
       it('devrait rejeter une quantite decimale', () => {
         const data = {
-          assetModelId: 'model-123',
+          assetModelId: VALID_MODEL_CUID,
           tagPrefix: 'PC-',
           quantity: 5.5
         };
 
         const result = createAssetItemsBulkSchema.safeParse(data);
         expect(result.success).toBe(false);
-        expect(result.error?.errors[0].message).toContain('entier');
+        expect(result.error?.issues[0].message).toContain('entier');
       });
 
       it('devrait rejeter un tagPrefix de plus de 20 caracteres', () => {
         const data = {
-          assetModelId: 'model-123',
+          assetModelId: VALID_MODEL_CUID,
           tagPrefix: 'P'.repeat(21),
           quantity: 5
         };
 
         const result = createAssetItemsBulkSchema.safeParse(data);
         expect(result.success).toBe(false);
-        expect(result.error?.errors[0].message).toContain('20 caractères');
+        expect(result.error?.issues[0].message).toContain('20 caractères');
       });
     });
   });

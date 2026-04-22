@@ -120,7 +120,7 @@ describe('Employee Validators', () => {
 
         const result = createEmployeeSchema.safeParse(data);
         expect(result.success).toBe(false);
-        expect(result.error?.errors[0].message).toContain('Prénom requis');
+        expect(result.error?.issues[0].message).toContain('Prénom requis');
       });
 
       it('devrait rejeter un lastName vide', () => {
@@ -128,7 +128,7 @@ describe('Employee Validators', () => {
 
         const result = createEmployeeSchema.safeParse(data);
         expect(result.success).toBe(false);
-        expect(result.error?.errors[0].message).toContain('Nom requis');
+        expect(result.error?.issues[0].message).toContain('Nom requis');
       });
     });
 
@@ -141,7 +141,7 @@ describe('Employee Validators', () => {
 
         const result = createEmployeeSchema.safeParse(data);
         expect(result.success).toBe(false);
-        expect(result.error?.errors[0].message).toContain('100 caractères');
+        expect(result.error?.issues[0].message).toContain('100 caractères');
       });
 
       it('devrait rejeter un lastName de plus de 100 caracteres', () => {
@@ -152,7 +152,7 @@ describe('Employee Validators', () => {
 
         const result = createEmployeeSchema.safeParse(data);
         expect(result.success).toBe(false);
-        expect(result.error?.errors[0].message).toContain('100 caractères');
+        expect(result.error?.issues[0].message).toContain('100 caractères');
       });
 
       it('devrait rejeter un email de plus de 255 caracteres', () => {
@@ -165,7 +165,7 @@ describe('Employee Validators', () => {
 
         const result = createEmployeeSchema.safeParse(data);
         expect(result.success).toBe(false);
-        expect(result.error?.errors[0].message).toContain('255 caractères');
+        expect(result.error?.issues[0].message).toContain('255 caractères');
       });
 
       it('devrait rejeter un dept de plus de 100 caracteres', () => {
@@ -177,7 +177,7 @@ describe('Employee Validators', () => {
 
         const result = createEmployeeSchema.safeParse(data);
         expect(result.success).toBe(false);
-        expect(result.error?.errors[0].message).toContain('100 caractères');
+        expect(result.error?.issues[0].message).toContain('100 caractères');
       });
     });
 
@@ -191,7 +191,7 @@ describe('Employee Validators', () => {
 
         const result = createEmployeeSchema.safeParse(data);
         expect(result.success).toBe(false);
-        expect(result.error?.errors[0].message).toContain('Email invalide');
+        expect(result.error?.issues[0].message).toContain('Email invalide');
       });
 
       it('devrait rejeter un email sans domaine', () => {
@@ -214,7 +214,7 @@ describe('Employee Validators', () => {
 
         const result = createEmployeeSchema.safeParse(data);
         expect(result.success).toBe(false);
-        expect(result.error?.errors[0].message).toContain('ID manager invalide');
+        expect(result.error?.issues[0].message).toContain('ID manager invalide');
       });
 
       it('devrait rejeter un managerId UUID au lieu de CUID', () => {
@@ -362,7 +362,7 @@ describe('Employee Validators', () => {
 
       const result = bulkCreateEmployeesSchema.safeParse(data);
       expect(result.success).toBe(false);
-      expect(result.error?.errors[0].message).toContain('Au moins un employé requis');
+      expect(result.error?.issues[0].message).toContain('Au moins un employé requis');
     });
 
     it('devrait rejeter sans la propriete employees', () => {
