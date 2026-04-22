@@ -18,267 +18,110 @@ import {
   exportLoans,
   exportDashboard,
 } from '../services/export.service.js'
+import { asyncHandler } from '../middleware/asyncHandler.js'
 import logger from '../config/logger.js'
 
+const XLSX_CONTENT_TYPE =
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+
+function sendXlsx(res, buffer, filenameBase) {
+  const timestamp = new Date().toISOString().slice(0, 10)
+  const filename = `${filenameBase}_${timestamp}.xlsx`
+  res.setHeader('Content-Type', XLSX_CONTENT_TYPE)
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
+  res.send(buffer)
+}
+
 /**
- * Export employés vers Excel
- *
- * Query params:
- * - search: string (recherche nom/prénom/email)
- * - dept: string (filtrer par département)
- *
  * @route GET /api/export/employees
  * @access Private (ADMIN, GESTIONNAIRE)
  */
-export async function exportEmployeesController(req, res) {
-  try {
-    const { search, dept } = req.query
+export const exportEmployeesController = asyncHandler(async (req, res) => {
+  const { search, dept } = req.query
 
-    logger.info('Exporting employees', {
-      userId: req.user.id,
-      filters: { search, dept },
-    })
+  logger.info('Exporting employees', {
+    userId: req.user.id,
+    filters: { search, dept },
+  })
 
-    const buffer = await exportEmployees({ search, dept })
-
-    // Générer nom de fichier avec timestamp
-    const timestamp = new Date().toISOString().slice(0, 10)
-    const filename = `Employes_${timestamp}.xlsx`
-
-    res.setHeader(
-      'Content-Type',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    )
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
-    res.send(buffer)
-  } catch (error) {
-    logger.error('Export employees failed', {
-      error: error.message,
-      userId: req.user.id,
-    })
-    res.status(500).json({
-      success: false,
-      error: 'Erreur lors de l\'export des employés',
-    })
-  }
-}
+  const buffer = await exportEmployees({ search, dept })
+  sendXlsx(res, buffer, 'Employes')
+})
 
 /**
- * Export modèles d'équipements vers Excel
- *
- * Query params:
- * - type: string (filtrer par type)
- * - brand: string (filtrer par marque)
- *
  * @route GET /api/export/asset-models
  * @access Private (ADMIN, GESTIONNAIRE)
  */
-export async function exportAssetModelsController(req, res) {
-  try {
-    const { type, brand } = req.query
+export const exportAssetModelsController = asyncHandler(async (req, res) => {
+  const { type, brand } = req.query
 
-    logger.info('Exporting asset models', {
-      userId: req.user.id,
-      filters: { type, brand },
-    })
+  logger.info('Exporting asset models', {
+    userId: req.user.id,
+    filters: { type, brand },
+  })
 
-    const buffer = await exportAssetModels({ type, brand })
-
-    const timestamp = new Date().toISOString().slice(0, 10)
-    const filename = `Modeles_Equipements_${timestamp}.xlsx`
-
-    res.setHeader(
-      'Content-Type',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    )
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
-    res.send(buffer)
-  } catch (error) {
-    logger.error('Export asset models failed', {
-      error: error.message,
-      userId: req.user.id,
-    })
-    res.status(500).json({
-      success: false,
-      error: 'Erreur lors de l\'export des modèles',
-    })
-  }
-}
+  const buffer = await exportAssetModels({ type, brand })
+  sendXlsx(res, buffer, 'Modeles_Equipements')
+})
 
 /**
- * Export articles d'équipement vers Excel
- *
- * Query params:
- * - status: string (EN_STOCK, PRETE, HS, REPARATION)
- * - type: string (filtrer par type)
- * - assetModelId: string (filtrer par modèle)
- *
  * @route GET /api/export/asset-items
  * @access Private (ADMIN, GESTIONNAIRE)
  */
-export async function exportAssetItemsController(req, res) {
-  try {
-    const { status, type, assetModelId } = req.query
+export const exportAssetItemsController = asyncHandler(async (req, res) => {
+  const { status, type, assetModelId } = req.query
 
-    logger.info('Exporting asset items', {
-      userId: req.user.id,
-      filters: { status, type, assetModelId },
-    })
+  logger.info('Exporting asset items', {
+    userId: req.user.id,
+    filters: { status, type, assetModelId },
+  })
 
-    const buffer = await exportAssetItems({ status, type, assetModelId })
-
-    const timestamp = new Date().toISOString().slice(0, 10)
-    const filename = `Equipements_${timestamp}.xlsx`
-
-    res.setHeader(
-      'Content-Type',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    )
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
-    res.send(buffer)
-  } catch (error) {
-    logger.error('Export asset items failed', {
-      error: error.message,
-      userId: req.user.id,
-    })
-    res.status(500).json({
-      success: false,
-      error: 'Erreur lors de l\'export des équipements',
-    })
-  }
-}
+  const buffer = await exportAssetItems({ status, type, assetModelId })
+  sendXlsx(res, buffer, 'Equipements')
+})
 
 /**
- * Export stock vers Excel
- *
- * Query params:
- * - lowStock: boolean (afficher seulement stock bas)
- *
  * @route GET /api/export/stock-items
  * @access Private (ADMIN, GESTIONNAIRE)
  */
-export async function exportStockItemsController(req, res) {
-  try {
-    const lowStock = req.query.lowStock === 'true'
+export const exportStockItemsController = asyncHandler(async (req, res) => {
+  const lowStock = req.query.lowStock === 'true'
 
-    logger.info('Exporting stock items', {
-      userId: req.user.id,
-      filters: { lowStock },
-    })
+  logger.info('Exporting stock items', {
+    userId: req.user.id,
+    filters: { lowStock },
+  })
 
-    const buffer = await exportStockItems({ lowStock })
-
-    const timestamp = new Date().toISOString().slice(0, 10)
-    const filename = lowStock
-      ? `Stock_Bas_${timestamp}.xlsx`
-      : `Stock_${timestamp}.xlsx`
-
-    res.setHeader(
-      'Content-Type',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    )
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
-    res.send(buffer)
-  } catch (error) {
-    logger.error('Export stock items failed', {
-      error: error.message,
-      userId: req.user.id,
-    })
-    res.status(500).json({
-      success: false,
-      error: 'Erreur lors de l\'export du stock',
-    })
-  }
-}
+  const buffer = await exportStockItems({ lowStock })
+  sendXlsx(res, buffer, lowStock ? 'Stock_Bas' : 'Stock')
+})
 
 /**
- * Export prêts vers Excel
- *
- * Query params:
- * - status: string (OPEN, CLOSED)
- * - employeeId: string (filtrer par employé)
- * - startDate: Date (date début)
- * - endDate: Date (date fin)
- *
  * @route GET /api/export/loans
  * @access Private (ADMIN, GESTIONNAIRE)
  */
-export async function exportLoansController(req, res) {
-  try {
-    const { status, employeeId, startDate, endDate } = req.query
+export const exportLoansController = asyncHandler(async (req, res) => {
+  const { status, employeeId, startDate, endDate } = req.query
 
-    logger.info('Exporting loans', {
-      userId: req.user.id,
-      filters: { status, employeeId, startDate, endDate },
-    })
+  logger.info('Exporting loans', {
+    userId: req.user.id,
+    filters: { status, employeeId, startDate, endDate },
+  })
 
-    const buffer = await exportLoans({
-      status,
-      employeeId,
-      startDate,
-      endDate,
-    })
-
-    const timestamp = new Date().toISOString().slice(0, 10)
-    const filename = `Prets_${timestamp}.xlsx`
-
-    res.setHeader(
-      'Content-Type',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    )
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
-    res.send(buffer)
-  } catch (error) {
-    logger.error('Export loans failed', {
-      error: error.message,
-      userId: req.user.id,
-    })
-    res.status(500).json({
-      success: false,
-      error: 'Erreur lors de l\'export des prêts',
-    })
-  }
-}
+  const buffer = await exportLoans({ status, employeeId, startDate, endDate })
+  sendXlsx(res, buffer, 'Prets')
+})
 
 /**
- * Export dashboard complet (multi-feuilles)
- *
- * Génère un fichier Excel avec plusieurs feuilles:
- * - Vue d'ensemble (statistiques)
- * - Employés
- * - Équipements
- * - Stock
- * - Prêts actifs
- *
  * @route GET /api/export/dashboard
  * @access Private (ADMIN, GESTIONNAIRE)
  */
-export async function exportDashboardController(req, res) {
-  try {
-    logger.info('Exporting dashboard', { userId: req.user.id })
+export const exportDashboardController = asyncHandler(async (req, res) => {
+  logger.info('Exporting dashboard', { userId: req.user.id })
 
-    const buffer = await exportDashboard()
-
-    const timestamp = new Date().toISOString().slice(0, 10)
-    const filename = `Dashboard_Complet_${timestamp}.xlsx`
-
-    res.setHeader(
-      'Content-Type',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    )
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
-    res.send(buffer)
-  } catch (error) {
-    logger.error('Export dashboard failed', {
-      error: error.message,
-      userId: req.user.id,
-    })
-    res.status(500).json({
-      success: false,
-      error: 'Erreur lors de l\'export du dashboard',
-    })
-  }
-}
+  const buffer = await exportDashboard()
+  sendXlsx(res, buffer, 'Dashboard_Complet')
+})
 
 export default {
   exportEmployeesController,

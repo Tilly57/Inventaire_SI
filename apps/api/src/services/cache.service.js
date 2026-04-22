@@ -492,14 +492,6 @@ export async function getBlacklistStats() {
   }
 }
 
-// Graceful shutdown
-process.on('SIGTERM', async () => {
-  if (redis) {
-    logger.info('Closing Redis connection...')
-    await redis.quit()
-  }
-})
-
 export default {
   get,
   set,
