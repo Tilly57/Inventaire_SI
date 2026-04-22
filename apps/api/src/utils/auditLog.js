@@ -197,18 +197,17 @@ export async function getRecentAuditLogs(limit = 100) {
 }
 
 /**
- * Extract IP address from request
+ * Extract IP address from request.
+ *
+ * Uses Express's `req.ip`, which honours the `trust proxy` setting configured
+ * in app.js. Reading `X-Forwarded-For` directly would let a client spoof its
+ * source address; `req.ip` only trusts headers from whitelisted proxies.
+ *
  * @param {Object} req - Express request object
  * @returns {string|null} IP address
  */
 export function getIpAddress(req) {
-  return (
-    req.headers['x-forwarded-for']?.split(',')[0] ||
-    req.headers['x-real-ip'] ||
-    req.connection?.remoteAddress ||
-    req.socket?.remoteAddress ||
-    null
-  );
+  return req.ip || req.socket?.remoteAddress || null;
 }
 
 /**

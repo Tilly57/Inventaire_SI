@@ -4,7 +4,7 @@
  * Tests HTTP layer behavior:
  * - Content-Type and Content-Disposition headers
  * - Query parameter forwarding to service
- * - Error handling (500 responses)
+ * - Error propagation to Express error middleware via asyncHandler
  * - Filename generation with timestamp
  */
 
@@ -48,7 +48,7 @@ const {
   exportDashboardController,
 } = await import('../../controllers/export.controller.js');
 
-// Helper to create mock req/res
+// Helper to create mock req/res/next
 function createMockReqRes(query = {}) {
   return {
     req: {
@@ -61,7 +61,14 @@ function createMockReqRes(query = {}) {
       status: jest.fn().mockReturnThis(),
       json: jest.fn(),
     },
+    next: jest.fn(),
   };
+}
+
+// asyncHandler wraps errors and forwards them to next(err).
+// We await the returned promise so the catch chain settles before assertions.
+async function invoke(controller, req, res, next) {
+  await controller(req, res, next);
 }
 
 describe('Export Controller', () => {
@@ -75,9 +82,9 @@ describe('Export Controller', () => {
   describe('exportEmployeesController', () => {
     it('should export employees with correct headers', async () => {
       mockExportEmployees.mockResolvedValue(mockBuffer);
-      const { req, res } = createMockReqRes({ search: 'john', dept: 'IT' });
+      const { req, res, next } = createMockReqRes({ search: 'john', dept: 'IT' });
 
-      await exportEmployeesController(req, res);
+      await invoke(exportEmployeesController, req, res, next);
 
       expect(mockExportEmployees).toHaveBeenCalledWith({ search: 'john', dept: 'IT' });
       expect(res.setHeader).toHaveBeenCalledWith('Content-Type', XLSX_CONTENT_TYPE);
@@ -86,39 +93,37 @@ describe('Export Controller', () => {
         expect.stringMatching(/^attachment; filename="Employes_\d{4}-\d{2}-\d{2}\.xlsx"$/)
       );
       expect(res.send).toHaveBeenCalledWith(mockBuffer);
+      expect(next).not.toHaveBeenCalled();
     });
 
     it('should export employees without filters', async () => {
       mockExportEmployees.mockResolvedValue(mockBuffer);
-      const { req, res } = createMockReqRes();
+      const { req, res, next } = createMockReqRes();
 
-      await exportEmployeesController(req, res);
+      await invoke(exportEmployeesController, req, res, next);
 
       expect(mockExportEmployees).toHaveBeenCalledWith({ search: undefined, dept: undefined });
       expect(res.send).toHaveBeenCalledWith(mockBuffer);
     });
 
-    it('should return 500 on service error', async () => {
-      mockExportEmployees.mockRejectedValue(new Error('DB error'));
-      const { req, res } = createMockReqRes();
+    it('should forward errors to next() on service failure', async () => {
+      const err = new Error('DB error');
+      mockExportEmployees.mockRejectedValue(err);
+      const { req, res, next } = createMockReqRes();
 
-      await exportEmployeesController(req, res);
+      await invoke(exportEmployeesController, req, res, next);
 
-      expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({
-        success: false,
-        error: "Erreur lors de l'export des employés",
-      });
-      expect(mockLogger.error).toHaveBeenCalled();
+      expect(next).toHaveBeenCalledWith(err);
+      expect(res.send).not.toHaveBeenCalled();
     });
   });
 
   describe('exportAssetModelsController', () => {
     it('should export asset models with filters', async () => {
       mockExportAssetModels.mockResolvedValue(mockBuffer);
-      const { req, res } = createMockReqRes({ type: 'Laptop', brand: 'Dell' });
+      const { req, res, next } = createMockReqRes({ type: 'Laptop', brand: 'Dell' });
 
-      await exportAssetModelsController(req, res);
+      await invoke(exportAssetModelsController, req, res, next);
 
       expect(mockExportAssetModels).toHaveBeenCalledWith({ type: 'Laptop', brand: 'Dell' });
       expect(res.setHeader).toHaveBeenCalledWith(
@@ -128,22 +133,23 @@ describe('Export Controller', () => {
       expect(res.send).toHaveBeenCalledWith(mockBuffer);
     });
 
-    it('should return 500 on error', async () => {
-      mockExportAssetModels.mockRejectedValue(new Error('fail'));
-      const { req, res } = createMockReqRes();
+    it('should forward errors to next() on failure', async () => {
+      const err = new Error('fail');
+      mockExportAssetModels.mockRejectedValue(err);
+      const { req, res, next } = createMockReqRes();
 
-      await exportAssetModelsController(req, res);
+      await invoke(exportAssetModelsController, req, res, next);
 
-      expect(res.status).toHaveBeenCalledWith(500);
+      expect(next).toHaveBeenCalledWith(err);
     });
   });
 
   describe('exportAssetItemsController', () => {
     it('should export asset items with status filter', async () => {
       mockExportAssetItems.mockResolvedValue(mockBuffer);
-      const { req, res } = createMockReqRes({ status: 'EN_STOCK', type: 'Laptop', assetModelId: 'cm1' });
+      const { req, res, next } = createMockReqRes({ status: 'EN_STOCK', type: 'Laptop', assetModelId: 'cm1' });
 
-      await exportAssetItemsController(req, res);
+      await invoke(exportAssetItemsController, req, res, next);
 
       expect(mockExportAssetItems).toHaveBeenCalledWith({
         status: 'EN_STOCK',
@@ -156,22 +162,23 @@ describe('Export Controller', () => {
       );
     });
 
-    it('should return 500 on error', async () => {
-      mockExportAssetItems.mockRejectedValue(new Error('fail'));
-      const { req, res } = createMockReqRes();
+    it('should forward errors to next() on failure', async () => {
+      const err = new Error('fail');
+      mockExportAssetItems.mockRejectedValue(err);
+      const { req, res, next } = createMockReqRes();
 
-      await exportAssetItemsController(req, res);
+      await invoke(exportAssetItemsController, req, res, next);
 
-      expect(res.status).toHaveBeenCalledWith(500);
+      expect(next).toHaveBeenCalledWith(err);
     });
   });
 
   describe('exportStockItemsController', () => {
     it('should export stock items', async () => {
       mockExportStockItems.mockResolvedValue(mockBuffer);
-      const { req, res } = createMockReqRes({ lowStock: 'false' });
+      const { req, res, next } = createMockReqRes({ lowStock: 'false' });
 
-      await exportStockItemsController(req, res);
+      await invoke(exportStockItemsController, req, res, next);
 
       expect(mockExportStockItems).toHaveBeenCalledWith({ lowStock: false });
       expect(res.setHeader).toHaveBeenCalledWith(
@@ -182,9 +189,9 @@ describe('Export Controller', () => {
 
     it('should export low stock items with different filename', async () => {
       mockExportStockItems.mockResolvedValue(mockBuffer);
-      const { req, res } = createMockReqRes({ lowStock: 'true' });
+      const { req, res, next } = createMockReqRes({ lowStock: 'true' });
 
-      await exportStockItemsController(req, res);
+      await invoke(exportStockItemsController, req, res, next);
 
       expect(mockExportStockItems).toHaveBeenCalledWith({ lowStock: true });
       expect(res.setHeader).toHaveBeenCalledWith(
@@ -193,27 +200,28 @@ describe('Export Controller', () => {
       );
     });
 
-    it('should return 500 on error', async () => {
-      mockExportStockItems.mockRejectedValue(new Error('fail'));
-      const { req, res } = createMockReqRes();
+    it('should forward errors to next() on failure', async () => {
+      const err = new Error('fail');
+      mockExportStockItems.mockRejectedValue(err);
+      const { req, res, next } = createMockReqRes();
 
-      await exportStockItemsController(req, res);
+      await invoke(exportStockItemsController, req, res, next);
 
-      expect(res.status).toHaveBeenCalledWith(500);
+      expect(next).toHaveBeenCalledWith(err);
     });
   });
 
   describe('exportLoansController', () => {
     it('should export loans with date range', async () => {
       mockExportLoans.mockResolvedValue(mockBuffer);
-      const { req, res } = createMockReqRes({
+      const { req, res, next } = createMockReqRes({
         status: 'OPEN',
         employeeId: 'emp1',
         startDate: '2026-01-01',
         endDate: '2026-12-31',
       });
 
-      await exportLoansController(req, res);
+      await invoke(exportLoansController, req, res, next);
 
       expect(mockExportLoans).toHaveBeenCalledWith({
         status: 'OPEN',
@@ -227,22 +235,23 @@ describe('Export Controller', () => {
       );
     });
 
-    it('should return 500 on error', async () => {
-      mockExportLoans.mockRejectedValue(new Error('fail'));
-      const { req, res } = createMockReqRes();
+    it('should forward errors to next() on failure', async () => {
+      const err = new Error('fail');
+      mockExportLoans.mockRejectedValue(err);
+      const { req, res, next } = createMockReqRes();
 
-      await exportLoansController(req, res);
+      await invoke(exportLoansController, req, res, next);
 
-      expect(res.status).toHaveBeenCalledWith(500);
+      expect(next).toHaveBeenCalledWith(err);
     });
   });
 
   describe('exportDashboardController', () => {
     it('should export dashboard with correct filename', async () => {
       mockExportDashboard.mockResolvedValue(mockBuffer);
-      const { req, res } = createMockReqRes();
+      const { req, res, next } = createMockReqRes();
 
-      await exportDashboardController(req, res);
+      await invoke(exportDashboardController, req, res, next);
 
       expect(mockExportDashboard).toHaveBeenCalled();
       expect(res.setHeader).toHaveBeenCalledWith(
@@ -252,17 +261,14 @@ describe('Export Controller', () => {
       expect(res.send).toHaveBeenCalledWith(mockBuffer);
     });
 
-    it('should return 500 on error', async () => {
-      mockExportDashboard.mockRejectedValue(new Error('fail'));
-      const { req, res } = createMockReqRes();
+    it('should forward errors to next() on failure', async () => {
+      const err = new Error('fail');
+      mockExportDashboard.mockRejectedValue(err);
+      const { req, res, next } = createMockReqRes();
 
-      await exportDashboardController(req, res);
+      await invoke(exportDashboardController, req, res, next);
 
-      expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({
-        success: false,
-        error: "Erreur lors de l'export du dashboard",
-      });
+      expect(next).toHaveBeenCalledWith(err);
     });
   });
 });
