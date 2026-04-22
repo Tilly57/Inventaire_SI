@@ -1,4 +1,8 @@
 # Loki Configuration - Inventaire SI
+#
+# auth_enabled: false — acceptable en mode single-tenant derriere un reseau
+# Docker interne (expose: 3100 uniquement). Loki n'est pas accessible depuis
+# l'exterieur ; seuls Promtail et Grafana y accedent via inventaire_network.
 auth_enabled: false
 
 server:

@@ -78,14 +78,14 @@ describe('Authentication Validators - Phase 2', () => {
       it('should reject password shorter than 8 characters', () => {
         const result = passwordSchema.safeParse('Pass1!');
         expect(result.success).toBe(false);
-        expect(result.error?.errors[0].message).toContain('au moins 8 caractères');
+        expect(result.error?.issues[0].message).toContain('au moins 8 caractères');
       });
 
       it('should reject password longer than 128 characters', () => {
         const password = 'A1!' + 'x'.repeat(126); // 129 chars total
         const result = passwordSchema.safeParse(password);
         expect(result.success).toBe(false);
-        expect(result.error?.errors[0].message).toContain('128 caractères');
+        expect(result.error?.issues[0].message).toContain('128 caractères');
       });
 
       it('should reject empty password', () => {
@@ -98,7 +98,7 @@ describe('Authentication Validators - Phase 2', () => {
       it('should reject password without uppercase letter', () => {
         const result = passwordSchema.safeParse('password123!');
         expect(result.success).toBe(false);
-        expect(result.error?.errors[0].message).toContain('lettre majuscule');
+        expect(result.error?.issues[0].message).toContain('lettre majuscule');
       });
     });
 
@@ -106,7 +106,7 @@ describe('Authentication Validators - Phase 2', () => {
       it('should reject password without lowercase letter', () => {
         const result = passwordSchema.safeParse('PASSWORD123!');
         expect(result.success).toBe(false);
-        expect(result.error?.errors[0].message).toContain('lettre minuscule');
+        expect(result.error?.issues[0].message).toContain('lettre minuscule');
       });
     });
 
@@ -114,7 +114,7 @@ describe('Authentication Validators - Phase 2', () => {
       it('should reject password without digit', () => {
         const result = passwordSchema.safeParse('Password!');
         expect(result.success).toBe(false);
-        expect(result.error?.errors[0].message).toContain('chiffre');
+        expect(result.error?.issues[0].message).toContain('chiffre');
       });
     });
 
@@ -122,7 +122,7 @@ describe('Authentication Validators - Phase 2', () => {
       it('should reject password without special character', () => {
         const result = passwordSchema.safeParse('Password123');
         expect(result.success).toBe(false);
-        expect(result.error?.errors[0].message).toContain('caractère spécial');
+        expect(result.error?.issues[0].message).toContain('caractère spécial');
       });
     });
 
@@ -130,19 +130,19 @@ describe('Authentication Validators - Phase 2', () => {
       it('should reject password missing uppercase and special char', () => {
         const result = passwordSchema.safeParse('password123');
         expect(result.success).toBe(false);
-        expect(result.error?.errors.length).toBeGreaterThan(1);
+        expect(result.error?.issues.length).toBeGreaterThan(1);
       });
 
       it('should reject password with only lowercase letters', () => {
         const result = passwordSchema.safeParse('password');
         expect(result.success).toBe(false);
-        expect(result.error?.errors.length).toBe(3); // Missing uppercase, digit, special
+        expect(result.error?.issues.length).toBe(3); // Missing uppercase, digit, special
       });
 
       it('should reject password with only numbers', () => {
         const result = passwordSchema.safeParse('12345678');
         expect(result.success).toBe(false);
-        expect(result.error?.errors.length).toBe(3); // Missing uppercase, lowercase, special
+        expect(result.error?.issues.length).toBe(3); // Missing uppercase, lowercase, special
       });
     });
 
@@ -228,7 +228,7 @@ describe('Authentication Validators - Phase 2', () => {
 
       const result = registerSchema.safeParse(invalidData);
       expect(result.success).toBe(false);
-      expect(result.error?.errors[0].message).toContain('Email invalide');
+      expect(result.error?.issues[0].message).toContain('Email invalide');
     });
 
     it('should reject weak password', () => {
@@ -316,7 +316,7 @@ describe('Authentication Validators - Phase 2', () => {
 
       const result = loginSchema.safeParse(invalidData);
       expect(result.success).toBe(false);
-      expect(result.error?.errors[0].message).toContain('Email invalide');
+      expect(result.error?.issues[0].message).toContain('Email invalide');
     });
 
     it('should reject empty password', () => {
@@ -327,7 +327,7 @@ describe('Authentication Validators - Phase 2', () => {
 
       const result = loginSchema.safeParse(invalidData);
       expect(result.success).toBe(false);
-      expect(result.error?.errors[0].message).toContain('Mot de passe requis');
+      expect(result.error?.issues[0].message).toContain('Mot de passe requis');
     });
 
     it('should reject missing email', () => {
@@ -392,7 +392,7 @@ describe('Authentication Validators - Phase 2', () => {
 
       const result = changePasswordSchema.safeParse(invalidData);
       expect(result.success).toBe(false);
-      expect(result.error?.errors[0].message).toContain('Mot de passe actuel requis');
+      expect(result.error?.issues[0].message).toContain('Mot de passe actuel requis');
     });
 
     it('should reject missing current password', () => {
@@ -476,7 +476,7 @@ describe('Authentication Validators - Phase 2', () => {
       const result = passwordSchema.safeParse('weak');
       expect(result.success).toBe(false);
 
-      const errorMessages = result.error?.errors.map(e => e.message);
+      const errorMessages = result.error?.issues.map(e => e.message);
       errorMessages?.forEach(message => {
         expect(typeof message).toBe('string');
         expect(message.length).toBeGreaterThan(0);
@@ -494,7 +494,7 @@ describe('Authentication Validators - Phase 2', () => {
       testCases.forEach(({ password, expectedError }) => {
         const result = passwordSchema.safeParse(password);
         expect(result.success).toBe(false);
-        const errorMessage = result.error?.errors[0].message;
+        const errorMessage = result.error?.issues[0].message;
         expect(errorMessage?.toLowerCase()).toContain(expectedError.toLowerCase());
       });
     });

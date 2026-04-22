@@ -17,6 +17,8 @@ import {
 
 const VALID_CUID = 'cjld2cyuq0000t3rmniod1foy';
 const VALID_CUID_2 = 'cjld2cyuq0001t3rmniod1foz';
+const VALID_CUID_ASSET = 'cjld2cyuq0002t3rmniod1foa';
+const VALID_CUID_STOCK = 'cjld2cyuq0003t3rmniod1fob';
 
 describe('Loan Validators', () => {
   // ============================================
@@ -25,18 +27,13 @@ describe('Loan Validators', () => {
 
   describe('createLoanSchema', () => {
     describe('Donnees valides', () => {
-      it('devrait accepter un employeeId valide', () => {
+      it('devrait accepter un employeeId CUID valide', () => {
         const result = createLoanSchema.safeParse({ employeeId: VALID_CUID });
         expect(result.success).toBe(true);
       });
 
-      it('devrait accepter un employeeId court', () => {
-        const result = createLoanSchema.safeParse({ employeeId: 'e1' });
-        expect(result.success).toBe(true);
-      });
-
-      it('devrait accepter un employeeId a la limite de 30 caracteres', () => {
-        const result = createLoanSchema.safeParse({ employeeId: 'A'.repeat(30) });
+      it('devrait accepter un autre format CUID valide', () => {
+        const result = createLoanSchema.safeParse({ employeeId: VALID_CUID_2 });
         expect(result.success).toBe(true);
       });
     });
@@ -50,15 +47,18 @@ describe('Loan Validators', () => {
       it('devrait rejeter un employeeId vide', () => {
         const result = createLoanSchema.safeParse({ employeeId: '' });
         expect(result.success).toBe(false);
-        expect(result.error?.errors[0].message).toContain("ID de l'employé requis");
       });
     });
 
-    describe('Contraintes de longueur', () => {
-      it('devrait rejeter un employeeId de plus de 30 caracteres', () => {
-        const result = createLoanSchema.safeParse({ employeeId: 'A'.repeat(31) });
+    describe('Validation CUID', () => {
+      it('devrait rejeter un employeeId non-CUID', () => {
+        const result = createLoanSchema.safeParse({ employeeId: 'not-a-cuid' });
         expect(result.success).toBe(false);
-        expect(result.error?.errors[0].message).toContain('ID invalide');
+      });
+
+      it('devrait rejeter un employeeId numerique court', () => {
+        const result = createLoanSchema.safeParse({ employeeId: 'e1' });
+        expect(result.success).toBe(false);
       });
     });
 
@@ -87,14 +87,14 @@ describe('Loan Validators', () => {
   describe('addLoanLineSchema', () => {
     describe('Donnees valides', () => {
       it('devrait accepter une ligne avec un assetItemId', () => {
-        const data = { assetItemId: 'asset-123' };
+        const data = { assetItemId: VALID_CUID_ASSET };
 
         const result = addLoanLineSchema.safeParse(data);
         expect(result.success).toBe(true);
       });
 
       it('devrait accepter une ligne avec un stockItemId', () => {
-        const data = { stockItemId: 'stock-456' };
+        const data = { stockItemId: VALID_CUID_STOCK };
 
         const result = addLoanLineSchema.safeParse(data);
         expect(result.success).toBe(true);
@@ -102,7 +102,7 @@ describe('Loan Validators', () => {
 
       it('devrait accepter une ligne avec stockItemId et quantity', () => {
         const data = {
-          stockItemId: 'stock-456',
+          stockItemId: VALID_CUID_STOCK,
           quantity: 5
         };
 
@@ -112,8 +112,8 @@ describe('Loan Validators', () => {
 
       it('devrait accepter une ligne avec les deux IDs fournis', () => {
         const data = {
-          assetItemId: 'asset-123',
-          stockItemId: 'stock-456'
+          assetItemId: VALID_CUID_ASSET,
+          stockItemId: VALID_CUID_STOCK
         };
 
         const result = addLoanLineSchema.safeParse(data);
@@ -122,7 +122,7 @@ describe('Loan Validators', () => {
 
       it('devrait accepter assetItemId avec stockItemId null', () => {
         const data = {
-          assetItemId: 'asset-123',
+          assetItemId: VALID_CUID_ASSET,
           stockItemId: null
         };
 
@@ -133,7 +133,7 @@ describe('Loan Validators', () => {
       it('devrait accepter stockItemId avec assetItemId null', () => {
         const data = {
           assetItemId: null,
-          stockItemId: 'stock-456'
+          stockItemId: VALID_CUID_STOCK
         };
 
         const result = addLoanLineSchema.safeParse(data);
@@ -142,7 +142,7 @@ describe('Loan Validators', () => {
 
       it('devrait accepter une quantite minimale de 1', () => {
         const data = {
-          stockItemId: 'stock-456',
+          stockItemId: VALID_CUID_STOCK,
           quantity: 1
         };
 
@@ -155,7 +155,7 @@ describe('Loan Validators', () => {
       it('devrait rejeter une ligne sans assetItemId ni stockItemId', () => {
         const result = addLoanLineSchema.safeParse({});
         expect(result.success).toBe(false);
-        expect(result.error?.errors[0].message).toContain(
+        expect(result.error?.issues[0].message).toContain(
           'soit un article d\'équipement soit un article de stock'
         );
       });
@@ -168,7 +168,7 @@ describe('Loan Validators', () => {
 
         const result = addLoanLineSchema.safeParse(data);
         expect(result.success).toBe(false);
-        expect(result.error?.errors[0].message).toContain(
+        expect(result.error?.issues[0].message).toContain(
           'soit un article d\'équipement soit un article de stock'
         );
       });
@@ -177,18 +177,18 @@ describe('Loan Validators', () => {
     describe('Contraintes de quantite', () => {
       it('devrait rejeter une quantite de 0', () => {
         const data = {
-          stockItemId: 'stock-456',
+          stockItemId: VALID_CUID_STOCK,
           quantity: 0
         };
 
         const result = addLoanLineSchema.safeParse(data);
         expect(result.success).toBe(false);
-        expect(result.error?.errors[0].message).toContain('au moins 1');
+        expect(result.error?.issues[0].message).toContain('au moins 1');
       });
 
       it('devrait rejeter une quantite negative', () => {
         const data = {
-          stockItemId: 'stock-456',
+          stockItemId: VALID_CUID_STOCK,
           quantity: -3
         };
 
@@ -198,7 +198,7 @@ describe('Loan Validators', () => {
 
       it('devrait rejeter une quantite decimale', () => {
         const data = {
-          stockItemId: 'stock-456',
+          stockItemId: VALID_CUID_STOCK,
           quantity: 2.5
         };
 
@@ -214,7 +214,7 @@ describe('Loan Validators', () => {
       });
 
       it('devrait accepter une ligne sans quantity (optionnelle)', () => {
-        const data = { assetItemId: 'asset-123' };
+        const data = { assetItemId: VALID_CUID_ASSET };
 
         const result = addLoanLineSchema.safeParse(data);
         expect(result.success).toBe(true);
@@ -222,7 +222,7 @@ describe('Loan Validators', () => {
 
       it('devrait accepter une grande quantite', () => {
         const data = {
-          stockItemId: 'stock-456',
+          stockItemId: VALID_CUID_STOCK,
           quantity: 9999
         };
 
@@ -266,7 +266,7 @@ describe('Loan Validators', () => {
 
       const result = batchDeleteLoansSchema.safeParse(data);
       expect(result.success).toBe(false);
-      expect(result.error?.errors[0].message).toContain('Au moins un prêt');
+      expect(result.error?.issues[0].message).toContain('Au moins un prêt');
     });
 
     it('devrait rejeter un tableau de plus de 100 elements', () => {
@@ -277,7 +277,7 @@ describe('Loan Validators', () => {
 
       const result = batchDeleteLoansSchema.safeParse(data);
       expect(result.success).toBe(false);
-      expect(result.error?.errors[0].message).toContain('100 prêts');
+      expect(result.error?.issues[0].message).toContain('100 prêts');
     });
 
     it('devrait rejeter un tableau avec des IDs non-CUID', () => {

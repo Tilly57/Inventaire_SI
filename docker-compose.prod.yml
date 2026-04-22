@@ -177,13 +177,19 @@ services:
     container_name: inventaire_alertmanager
     restart: unless-stopped
     volumes:
-      - ./monitoring/alertmanager:/etc/alertmanager
+      - ./monitoring/alertmanager:/etc/alertmanager:ro
       - alertmanager_data:/alertmanager
-    command:
-      - '--config.file=/etc/alertmanager/alertmanager.yml'
-      - '--storage.path=/alertmanager'
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        # Inject SMTP env vars into config at startup
+        sed -e "s|\$${SMTP_HOST}|$$SMTP_HOST|g" \
+            -e "s|\$${SMTP_PORT}|$$SMTP_PORT|g" \
+            -e "s|\$${SMTP_FROM}|$$SMTP_FROM|g" \
+            /etc/alertmanager/alertmanager.yml > /tmp/alertmanager.yml
+        exec /bin/alertmanager --config.file=/tmp/alertmanager.yml --storage.path=/alertmanager
     environment:
-      # SMTP — configurer dans .env pour activer les notifications email
       SMTP_HOST: ${SMTP_HOST:-localhost}
       SMTP_PORT: ${SMTP_PORT:-25}
       SMTP_FROM: ${SMTP_FROM:-alertes@tillyinventaire.ti}
