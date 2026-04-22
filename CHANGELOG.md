@@ -3,6 +3,34 @@
 All notable changes to this project will be documented in this file.
 
 
+# Release v1.3.2 - 2026-04-22
+
+## Summary
+
+<!-- Add a brief summary of this release -->
+
+## Changes
+
+### ✨ Features
+
+
+### 🐛 Bug Fixes
+- fix(audit): implement Phase 1 & 2 improvements from April 2026 audit
+
+### 📚 Documentation
+
+
+### 🔧 Improvements
+
+
+### 📦 Dependencies
+
+
+### All Commits
+- ae1f0ee Merge branch 'fix/audit-phase1-2-improvements' into staging (Tilly57)
+- 3c7be46 fix(audit): implement Phase 1 & 2 improvements from April 2026 audit (Tilly57)
+
+
 # Release v1.3.1 - 2026-04-22
 
 ## Summary
