@@ -42,6 +42,9 @@ const mockPrisma = {
     }
     return Promise.all(fnOrArray);
   }),
+  // Conditional atomic UPDATE used by addLoanLine for stock items.
+  // Default: 1 row affected (success). Tests can override per-case.
+  $executeRaw: jest.fn(() => Promise.resolve(1)),
 };
 
 // Mock dependencies
@@ -283,6 +286,8 @@ describe('Loans Service', () => {
       it('should throw ValidationError when insufficient stock', async () => {
         const mockStock = { id: 'stock1', quantity: 10, loaned: 8 };
         mockPrisma.loan.findUnique.mockResolvedValue(mockLoan);
+        // Conditional UPDATE affects 0 rows when `quantity - loaned < requested`
+        mockPrisma.$executeRaw.mockResolvedValueOnce(0);
         mockPrisma.stockItem.findUnique.mockResolvedValue(mockStock);
 
         await expect(addLoanLine('loan1', { stockItemId: 'stock1', quantity: 5 }))

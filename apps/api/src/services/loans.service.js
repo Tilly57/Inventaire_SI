@@ -353,24 +353,26 @@ export async function addLoanLine(loanId, data, req) {
   if (data.stockItemId) {
     const quantity = data.quantity || 1;
 
-    // Use interactive transaction to ensure atomicity:
-    // Check availability AND create line AND update stock in one atomic operation
+    // Atomic conditional update avoids read-modify-write race on the `loaned` counter:
+    // the UPDATE itself enforces `quantity - loaned >= requested`, so two concurrent
+    // borrow requests can never both succeed when only one unit is free.
     const loanLine = await prisma.$transaction(async (tx) => {
-      const stockItem = await tx.stockItem.findUnique({
-        where: { id: data.stockItemId }
-      });
+      const updatedCount = await tx.$executeRaw`
+        UPDATE "StockItem"
+        SET "loaned" = "loaned" + ${quantity}, "updatedAt" = NOW()
+        WHERE "id" = ${data.stockItemId} AND "quantity" - "loaned" >= ${quantity}
+      `;
 
-      if (!stockItem) {
-        throw new ValidationError('Article de stock non trouvé');
-      }
-
-      // Verify sufficient quantity available (total - loaned)
-      const available = stockItem.quantity - (stockItem.loaned || 0);
-      if (available < quantity) {
+      if (updatedCount === 0) {
+        const current = await tx.stockItem.findUnique({ where: { id: data.stockItemId } });
+        if (!current) {
+          throw new ValidationError('Article de stock non trouvé');
+        }
+        const available = current.quantity - (current.loaned || 0);
         throw new ValidationError(`Quantité insuffisante en stock (disponible: ${available})`);
       }
 
-      const line = await tx.loanLine.create({
+      return tx.loanLine.create({
         data: {
           loanId,
           stockItemId: data.stockItemId,
@@ -380,15 +382,6 @@ export async function addLoanLine(loanId, data, req) {
           stockItem: true
         }
       });
-
-      await tx.stockItem.update({
-        where: { id: data.stockItemId },
-        data: {
-          loaned: (stockItem.loaned || 0) + quantity
-        }
-      });
-
-      return line;
     }, { isolationLevel: 'Serializable' });
 
     // Audit trail
