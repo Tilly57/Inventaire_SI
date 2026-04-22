@@ -99,7 +99,7 @@ describe('StockItem Validators', () => {
 
         const result = createStockItemSchema.safeParse(data);
         expect(result.success).toBe(false);
-        expect(result.error?.errors[0].message).toContain('ID du modèle requis');
+        expect(result.error?.issues[0].message).toContain('ID du modèle requis');
       });
     });
 
@@ -112,7 +112,7 @@ describe('StockItem Validators', () => {
 
         const result = createStockItemSchema.safeParse(data);
         expect(result.success).toBe(false);
-        expect(result.error?.errors[0].message).toContain('positive');
+        expect(result.error?.issues[0].message).toContain('positive');
       });
 
       it('devrait rejeter une quantite decimale', () => {
@@ -133,7 +133,7 @@ describe('StockItem Validators', () => {
 
         const result = createStockItemSchema.safeParse(data);
         expect(result.success).toBe(false);
-        expect(result.error?.errors[0].message).toContain('1000 caractères');
+        expect(result.error?.issues[0].message).toContain('1000 caractères');
       });
     });
 

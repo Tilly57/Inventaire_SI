@@ -113,7 +113,7 @@ describe('AssetModel Validators', () => {
 
         const result = createAssetModelSchema.safeParse(data);
         expect(result.success).toBe(false);
-        expect(result.error?.errors[0].message).toContain('Type requis');
+        expect(result.error?.issues[0].message).toContain('Type requis');
       });
 
       it('devrait rejeter une marque vide', () => {
@@ -121,7 +121,7 @@ describe('AssetModel Validators', () => {
 
         const result = createAssetModelSchema.safeParse(data);
         expect(result.success).toBe(false);
-        expect(result.error?.errors[0].message).toContain('Marque requise');
+        expect(result.error?.issues[0].message).toContain('Marque requise');
       });
 
       it('devrait rejeter un modelName vide', () => {
@@ -129,7 +129,7 @@ describe('AssetModel Validators', () => {
 
         const result = createAssetModelSchema.safeParse(data);
         expect(result.success).toBe(false);
-        expect(result.error?.errors[0].message).toContain('Nom du modèle requis');
+        expect(result.error?.issues[0].message).toContain('Nom du modèle requis');
       });
     });
 
@@ -143,7 +143,7 @@ describe('AssetModel Validators', () => {
 
         const result = createAssetModelSchema.safeParse(data);
         expect(result.success).toBe(false);
-        expect(result.error?.errors[0].message).toContain('100 caractères');
+        expect(result.error?.issues[0].message).toContain('100 caractères');
       });
 
       it('devrait rejeter une marque de plus de 100 caracteres', () => {
@@ -155,7 +155,7 @@ describe('AssetModel Validators', () => {
 
         const result = createAssetModelSchema.safeParse(data);
         expect(result.success).toBe(false);
-        expect(result.error?.errors[0].message).toContain('100 caractères');
+        expect(result.error?.issues[0].message).toContain('100 caractères');
       });
 
       it('devrait rejeter un modelName de plus de 200 caracteres', () => {
@@ -167,7 +167,7 @@ describe('AssetModel Validators', () => {
 
         const result = createAssetModelSchema.safeParse(data);
         expect(result.success).toBe(false);
-        expect(result.error?.errors[0].message).toContain('200 caractères');
+        expect(result.error?.issues[0].message).toContain('200 caractères');
       });
     });
 
@@ -276,7 +276,7 @@ describe('AssetModel Validators', () => {
 
       const result = batchDeleteAssetModelsSchema.safeParse(data);
       expect(result.success).toBe(false);
-      expect(result.error?.errors[0].message).toContain('Au moins un modèle');
+      expect(result.error?.issues[0].message).toContain('Au moins un modèle');
     });
 
     it('devrait rejeter un tableau de plus de 100 elements', () => {
@@ -287,7 +287,7 @@ describe('AssetModel Validators', () => {
 
       const result = batchDeleteAssetModelsSchema.safeParse(data);
       expect(result.success).toBe(false);
-      expect(result.error?.errors[0].message).toContain('100 modèles');
+      expect(result.error?.issues[0].message).toContain('100 modèles');
     });
 
     it('devrait rejeter un tableau avec des IDs non-CUID', () => {

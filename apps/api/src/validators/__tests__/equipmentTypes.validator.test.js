@@ -65,7 +65,7 @@ describe('EquipmentType Validators', () => {
       it('devrait rejeter un nom de 1 caractere', () => {
         const result = createEquipmentTypeSchema.safeParse({ name: 'A' });
         expect(result.success).toBe(false);
-        expect(result.error?.errors[0].message).toContain('au moins 2 caractères');
+        expect(result.error?.issues[0].message).toContain('au moins 2 caractères');
       });
 
       it('devrait rejeter un nom vide', () => {
@@ -76,7 +76,7 @@ describe('EquipmentType Validators', () => {
       it('devrait rejeter un nom de plus de 50 caracteres', () => {
         const result = createEquipmentTypeSchema.safeParse({ name: 'A'.repeat(51) });
         expect(result.success).toBe(false);
-        expect(result.error?.errors[0].message).toContain('50 caractères');
+        expect(result.error?.issues[0].message).toContain('50 caractères');
       });
     });
 
@@ -159,7 +159,7 @@ describe('EquipmentType Validators', () => {
     it('devrait rejeter un nom trop court quand fourni', () => {
       const result = updateEquipmentTypeSchema.safeParse({ name: 'A' });
       expect(result.success).toBe(false);
-      expect(result.error?.errors[0].message).toContain('au moins 2 caractères');
+      expect(result.error?.issues[0].message).toContain('au moins 2 caractères');
     });
 
     it('devrait rejeter un nom trop long quand fourni', () => {
