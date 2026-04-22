@@ -194,12 +194,14 @@ export async function delPattern(pattern) {
     let cursor = '0'
     let deletedCount = 0
 
+    // ioredis scan returns a [cursor, keys] tuple, not node-redis's { cursor, keys }.
+    // Using the wrong signature here silently broke cache invalidation for months.
     do {
-      const result = await client.scan(cursor, { MATCH: pattern, COUNT: 100 })
-      cursor = result.cursor.toString()
-      if (result.keys.length > 0) {
-        await client.del(result.keys)
-        deletedCount += result.keys.length
+      const [nextCursor, keys] = await client.scan(cursor, 'MATCH', pattern, 'COUNT', 100)
+      cursor = nextCursor
+      if (keys.length > 0) {
+        await client.del(keys)
+        deletedCount += keys.length
       }
     } while (cursor !== '0')
 
