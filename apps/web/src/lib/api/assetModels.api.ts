@@ -22,7 +22,7 @@ import type {
  * Fetch all asset models
  *
  * Returns all equipment model templates with item counts.
- * Uses high limit (1000) to bypass pagination.
+ * Backend caps the unpaginated response at UNPAGINATED_MAX_ITEMS (1000).
  *
  * @returns Promise resolving to array of asset models
  *
@@ -35,7 +35,7 @@ import type {
  * // ]
  */
 export async function getAllAssetModelsApi(): Promise<AssetModel[]> {
-  const response = await apiClient.get<any>('/asset-models?limit=1000')
+  const response = await apiClient.get<any>('/asset-models')
   const data = response.data.data
   return Array.isArray(data) ? data : data.models || []
 }
