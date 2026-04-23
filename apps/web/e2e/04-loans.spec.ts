@@ -71,7 +71,7 @@ test.describe.skip('Loan Workflow', () => {
     await canvas.click({ position: { x: 150, y: 100 } });
 
     // Confirm signature
-    await clickButton(page, 'Valider');
+    await clickButton(page, 'Enregistrer');
 
     // Wait for signature saved
     await page.waitForSelector('text=/signature.*enregistrée/i', { timeout: 10000 });
@@ -85,7 +85,7 @@ test.describe.skip('Loan Workflow', () => {
     await returnCanvas.click({ position: { x: 150, y: 100 } });
 
     // Confirm signature
-    await clickButton(page, 'Valider');
+    await clickButton(page, 'Enregistrer');
 
     // Wait for signature saved
     await page.waitForSelector('text=/signature.*enregistrée/i', { timeout: 10000 });

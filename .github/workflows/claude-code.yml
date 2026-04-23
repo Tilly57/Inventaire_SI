@@ -51,7 +51,10 @@ permissions:
 # Variables d'environnement globales
 env:
   NODE_VERSION: '18.x'
-  PYTHON_VERSION: '3.11'
+  # Force JS actions to run on Node 24 to silence the Node 20 deprecation
+  # warnings emitted by actions/github-script@v7 and actions/upload-artifact@v5
+  # (their own major tags still ship Node 20 internally until mid-2026).
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
 jobs:
   # Job de validation pré-Claude
@@ -123,12 +126,6 @@ jobs:
           cache-dependency-path: |
             apps/api/package-lock.json
             apps/web/package-lock.json
-
-      - name: 🐍 Setup Python (pour outils d'analyse)
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'pip'
 
       - name: 📦 Cache Claude Context
         uses: actions/cache@v5
