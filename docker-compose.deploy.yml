@@ -15,6 +15,13 @@ services:
     image: docker:cli
     container_name: inventaire_auto_deploy
     restart: unless-stopped
+    # Loads BACKUP_ENCRYPTION_KEY + DEPLOY_REQUIRE_GPG from a host-side secrets
+    # file (chmod 600, owned by root). Required since v1.3.4 for encrypted
+    # pre-deploy backups and safe rollback. The path is optional — the service
+    # still starts without it (backup step skips with a loud warning).
+    env_file:
+      - path: /etc/inventaire/.env.deploy
+        required: false
     environment:
       - DEPLOY_REPO_DIR=/repo
       - DEPLOY_BRANCH=production
