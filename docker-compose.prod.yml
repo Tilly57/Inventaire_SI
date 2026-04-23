@@ -51,6 +51,28 @@ services:
     networks:
       - inventaire_network
 
+  # One-shot Prisma migration runner.
+  # Runs `prisma migrate deploy` once, then exits 0. The `api` service waits
+  # for successful completion before starting, so migrations never block
+  # the runtime container or race across replicas.
+  api-migrate:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: inventaire_api_migrate
+    restart: "no"
+    env_file:
+      - ./apps/api/.env
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL must be set in production}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ["npx", "prisma", "migrate", "deploy"]
+    networks:
+      - inventaire_network
+
   # API Backend
   api:
     build:
@@ -77,6 +99,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      api-migrate:
+        condition: service_completed_successfully
     # Port non exposé — accessible uniquement via le reverse proxy Nginx
     expose:
       - "3001"

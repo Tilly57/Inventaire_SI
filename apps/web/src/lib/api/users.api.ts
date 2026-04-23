@@ -22,7 +22,7 @@ import type {
  * Fetch all system users
  *
  * Returns all users without password hashes (excluded for security).
- * Uses high limit (1000) to bypass pagination and get all users.
+ * Backend caps the unpaginated response at UNPAGINATED_MAX_ITEMS (1000).
  *
  * @returns Promise resolving to array of users
  *
@@ -31,7 +31,7 @@ import type {
  * // users = [{ id, email, role, createdAt, updatedAt }, ...]
  */
 export async function getAllUsersApi(): Promise<User[]> {
-  const response = await apiClient.get<any>('/users?limit=1000')
+  const response = await apiClient.get<any>('/users')
   const data = response.data.data
   // Handle both direct array and paginated response formats
   return Array.isArray(data) ? data : data.users || data

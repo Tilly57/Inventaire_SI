@@ -44,5 +44,7 @@ USER nodejs
 # Expose API port
 EXPOSE 3001
 
-# Run migrations and start server
-CMD ["sh", "-c", "npx prisma migrate deploy && npm start"]
+# Migrations are executed by a dedicated one-shot service (api-migrate) in
+# docker-compose.prod.yml and must have completed before this container starts.
+# Running them here would block startup under replica / zero-downtime deploys.
+CMD ["npm", "start"]

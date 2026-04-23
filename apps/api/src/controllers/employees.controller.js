@@ -14,7 +14,8 @@
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import * as employeesService from '../services/employees.service.js';
 import { sendSuccess, sendCreated } from '../utils/responseHelpers.js';
-import { parsePaginationParams } from '../utils/pagination.js';
+import { parsePaginationParams, UNPAGINATED_MAX_ITEMS } from '../utils/pagination.js';
+import logger from '../config/logger.js';
 
 /**
  * Get all employees with pagination support
@@ -70,10 +71,13 @@ export const getAllEmployees = asyncHandler(async (req, res) => {
       search,
       dept,
       page: 1,
-      pageSize: 1000,
+      pageSize: UNPAGINATED_MAX_ITEMS,
       sortBy: sortBy || 'lastName',
       sortOrder: sortOrder || 'asc'
     });
+    if (result.data.length === UNPAGINATED_MAX_ITEMS) {
+      logger.warn(`[pagination] /employees reached UNPAGINATED_MAX_ITEMS (${UNPAGINATED_MAX_ITEMS}) — client must switch to page/pageSize`);
+    }
     sendSuccess(res, result.data);
   }
 });

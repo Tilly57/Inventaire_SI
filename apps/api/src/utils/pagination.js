@@ -23,6 +23,10 @@ export const PAGINATION_DEFAULTS = {
   MIN_PAGE_SIZE: 1
 };
 
+// Hard cap for unpaginated list endpoints (backward-compat for dropdowns/exports).
+// If a real dataset reaches this size, clients must switch to pagination.
+export const UNPAGINATED_MAX_ITEMS = 1000;
+
 /**
  * Parse and validate pagination parameters from query string
  *

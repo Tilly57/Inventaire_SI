@@ -13,6 +13,9 @@ BACKUP_DIR="${BACKUP_DIR:-./backups/database}"
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 BACKUP_FILE="$BACKUP_DIR/${DB_NAME}_${TIMESTAMP}.sql"
 RETENTION_DAYS="${BACKUP_RETENTION_DAYS:-30}"
+# Encryption is mandatory in production: plain dumps expose every row to any
+# reader of the filesystem or of the off-site replica.
+ENCRYPTION_KEY="${BACKUP_ENCRYPTION_KEY:-}"
 
 # Remote backup replication (optional)
 # Set BACKUP_REMOTE_DIR to enable, e.g.: user@nas:/backups/inventaire
@@ -29,25 +32,30 @@ if [ -z "$POSTGRES_PASSWORD" ]; then
 fi
 export PGPASSWORD="$POSTGRES_PASSWORD"
 
-# Perform backup
-echo "[backup] Starting database backup..."
-pg_dump -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -F c -f "$BACKUP_FILE"
+if [ -z "$ENCRYPTION_KEY" ]; then
+    echo "Error: BACKUP_ENCRYPTION_KEY environment variable not set"
+    echo "  Backups must be encrypted. Generate a key: openssl rand -base64 32"
+    echo "  Store it in a secrets manager and export it before running this script."
+    exit 1
+fi
 
-if [ $? -eq 0 ] && [ -s "$BACKUP_FILE" ]; then
-    echo "[backup] Backup completed: $BACKUP_FILE"
-
-    # Compress backup
-    gzip "$BACKUP_FILE"
-    COMPRESSED="${BACKUP_FILE}.gz"
-    BACKUP_SIZE=$(ls -lh "$COMPRESSED" | awk '{print $5}')
-    echo "[backup] Compressed: ${COMPRESSED} ($BACKUP_SIZE)"
+# Perform backup (stream → gzip → openssl AES-256-CBC with PBKDF2)
+ENCRYPTED_FILE="${BACKUP_FILE}.gz.enc"
+echo "[backup] Starting database backup (encrypted)..."
+if pg_dump -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -F c \
+    | gzip \
+    | BACKUP_ENCRYPTION_KEY="$ENCRYPTION_KEY" \
+      openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:BACKUP_ENCRYPTION_KEY \
+    > "$ENCRYPTED_FILE" && [ -s "$ENCRYPTED_FILE" ]; then
+    BACKUP_SIZE=$(ls -lh "$ENCRYPTED_FILE" | awk '{print $5}')
+    echo "[backup] Encrypted backup created: $ENCRYPTED_FILE ($BACKUP_SIZE)"
 
     # Replicate to remote if configured
     if [ -n "$BACKUP_REMOTE_DIR" ]; then
         echo "[backup] Replicating to remote: $BACKUP_REMOTE_DIR"
-        if rsync -az "$COMPRESSED" "$BACKUP_REMOTE_DIR/" 2>/dev/null; then
+        if rsync -az "$ENCRYPTED_FILE" "$BACKUP_REMOTE_DIR/" 2>/dev/null; then
             echo "[backup] Remote replication successful"
-        elif scp -q "$COMPRESSED" "$BACKUP_REMOTE_DIR/" 2>/dev/null; then
+        elif scp -q "$ENCRYPTED_FILE" "$BACKUP_REMOTE_DIR/" 2>/dev/null; then
             echo "[backup] Remote replication successful (scp fallback)"
         else
             echo "[backup] WARNING: Remote replication failed — local backup preserved"
@@ -55,17 +63,20 @@ if [ $? -eq 0 ] && [ -s "$BACKUP_FILE" ]; then
     fi
 
     # Delete old backups (older than RETENTION_DAYS)
-    find "$BACKUP_DIR" -name "${DB_NAME}_*.sql.gz" -mtime +$RETENTION_DAYS -delete 2>/dev/null || true
+    find "$BACKUP_DIR" -name "${DB_NAME}_*.sql.gz.enc" -mtime +$RETENTION_DAYS -delete 2>/dev/null || true
+    # Clean up any legacy unencrypted artifacts from previous runs
+    find "$BACKUP_DIR" -name "${DB_NAME}_*.sql.gz" ! -name "*.gz.enc" -mtime +$RETENTION_DAYS -delete 2>/dev/null || true
     echo "[backup] Old backups cleaned (retention: $RETENTION_DAYS days)"
 else
-    echo "[backup] FAILED — backup file empty or pg_dump error"
-    rm -f "$BACKUP_FILE"
+    echo "[backup] FAILED — backup empty or pg_dump/openssl error"
+    rm -f "$ENCRYPTED_FILE"
     exit 1
 fi
 
 # List recent backups
 echo ""
 echo "[backup] Recent backups:"
-ls -lh "$BACKUP_DIR"/${DB_NAME}_*.sql.gz 2>/dev/null | tail -5
+ls -lh "$BACKUP_DIR"/${DB_NAME}_*.sql.gz.enc 2>/dev/null | tail -5
 
 unset PGPASSWORD
+unset ENCRYPTION_KEY
