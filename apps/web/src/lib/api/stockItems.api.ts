@@ -25,7 +25,7 @@ import type {
  * Fetch all stock items
  *
  * Returns all consumable items with current quantities.
- * Uses high limit (1000) to bypass pagination.
+ * Backend caps the unpaginated response at UNPAGINATED_MAX_ITEMS (1000).
  *
  * @returns Promise resolving to array of stock items
  *
@@ -38,7 +38,7 @@ import type {
  * // ]
  */
 export async function getAllStockItemsApi(): Promise<StockItem[]> {
-  const response = await apiClient.get<any>('/stock-items?limit=1000')
+  const response = await apiClient.get<any>('/stock-items')
   const data = response.data.data
   return Array.isArray(data) ? data : data.items || []
 }

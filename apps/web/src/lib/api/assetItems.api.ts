@@ -27,7 +27,8 @@ import type { PaginatedResponse, PaginationParams } from '@/lib/types/pagination
  * Fetch all asset items
  *
  * Returns all physical equipment items with model details.
- * Uses high limit (1000) to bypass pagination.
+ * Backend caps the unpaginated response at UNPAGINATED_MAX_ITEMS (1000).
+ * For larger datasets, switch to getAssetItemsApiPaginated.
  *
  * @returns Promise resolving to array of asset items
  *
@@ -43,7 +44,7 @@ import type { PaginatedResponse, PaginationParams } from '@/lib/types/pagination
  * // ]
  */
 export async function getAllAssetItemsApi(): Promise<AssetItem[]> {
-  const response = await apiClient.get<any>('/asset-items?limit=1000')
+  const response = await apiClient.get<any>('/asset-items')
   const data = response.data.data
   return Array.isArray(data) ? data : data.items || []
 }

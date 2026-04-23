@@ -24,7 +24,8 @@
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import * as loansService from '../services/loans.service.js';
 import { sendSuccess, sendCreated } from '../utils/responseHelpers.js';
-import { parsePaginationParams } from '../utils/pagination.js';
+import { parsePaginationParams, UNPAGINATED_MAX_ITEMS } from '../utils/pagination.js';
+import logger from '../config/logger.js';
 
 /**
  * Get all loans with optional filters and pagination
@@ -97,10 +98,13 @@ export const getAllLoans = asyncHandler(async (req, res) => {
       status,
       employeeId,
       page: 1,
-      pageSize: 1000,
+      pageSize: UNPAGINATED_MAX_ITEMS,
       sortBy: sortBy || 'openedAt',
       sortOrder: sortOrder || 'desc'
     });
+    if (result.data.length === UNPAGINATED_MAX_ITEMS) {
+      logger.warn(`[pagination] /loans reached UNPAGINATED_MAX_ITEMS (${UNPAGINATED_MAX_ITEMS}) — client must switch to page/pageSize`);
+    }
     sendSuccess(res, result.data);
   }
 });
