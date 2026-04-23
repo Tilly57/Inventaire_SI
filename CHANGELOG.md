@@ -3,6 +3,39 @@
 All notable changes to this project will be documented in this file.
 
 
+# Release v1.3.7 - 2026-04-23
+
+## Summary
+
+<!-- Add a brief summary of this release -->
+
+## Changes
+
+### ✨ Features
+
+
+### 🐛 Bug Fixes
+- fix(ci): unblock deployment pipeline (ESM scripts + green E2E + workflow cleanup) (#7)
+
+### 📚 Documentation
+
+
+### 🔧 Improvements
+
+
+### 📦 Dependencies
+- chore(release): merge release/1.3.6 to staging
+- chore(release): bump version to 1.3.6
+- chore(deploy): inject BACKUP_ENCRYPTION_KEY into auto-deploy service
+
+### All Commits
+- 25e9563 fix(ci): unblock deployment pipeline (ESM scripts + green E2E + workflow cleanup) (#7) (Gruy)
+- 3286145 chore(release): merge release/1.3.6 to staging (Tilly57)
+- 42fda78 chore(release): bump version to 1.3.6 (Tilly57)
+- 11563f4 Merge chore/backup-encryption-env into staging (Tilly57)
+- 11dc534 chore(deploy): inject BACKUP_ENCRYPTION_KEY into auto-deploy service (Tilly57)
+
+
 # Release v1.3.6 - 2026-04-23
 
 ## Summary
