@@ -46,12 +46,12 @@ import { LOW_STOCK_THRESHOLD } from '@/lib/utils/constants'
  */
 export async function getDashboardStatsApi(): Promise<DashboardStats> {
   try {
-    // Fetch data from existing endpoints with high limit to get all items
-    // Use Promise.all for parallel requests (better performance)
+    // Fetch data from existing endpoints (backend caps unpaginated responses at 1000).
+    // Use Promise.all for parallel requests (better performance).
     const [employeesRes, assetsRes, loansRes] = await Promise.all([
-      apiClient.get<ApiResponse<any>>('/employees?limit=1000'),
-      apiClient.get<ApiResponse<any>>('/asset-items?limit=1000'),
-      apiClient.get<ApiResponse<any>>('/loans?limit=1000'),
+      apiClient.get<ApiResponse<any>>('/employees'),
+      apiClient.get<ApiResponse<any>>('/asset-items'),
+      apiClient.get<ApiResponse<any>>('/loans'),
     ])
 
     // Extract data from responses
@@ -127,7 +127,7 @@ export async function getDashboardStatsApi(): Promise<DashboardStats> {
  */
 export async function getRecentLoansApi(): Promise<Loan[]> {
   try {
-    const response = await apiClient.get<ApiResponse<any>>('/loans?limit=1000')
+    const response = await apiClient.get<ApiResponse<any>>('/loans')
     const data = response.data.data
     const loans: Loan[] = Array.isArray(data) ? data : data.loans || []
 
@@ -168,8 +168,8 @@ export async function getLowStockItemsApi(): Promise<LowStockAlertItem[]> {
   try {
     // Fetch both StockItems and AssetItems in parallel
     const [stockResponse, assetsResponse] = await Promise.all([
-      apiClient.get<ApiResponse<any>>('/stock-items?limit=1000'),
-      apiClient.get<ApiResponse<any>>('/asset-items?limit=1000'),
+      apiClient.get<ApiResponse<any>>('/stock-items'),
+      apiClient.get<ApiResponse<any>>('/asset-items'),
     ])
 
     const stockData = stockResponse.data.data
@@ -247,7 +247,7 @@ export async function getLowStockItemsApi(): Promise<LowStockAlertItem[]> {
  */
 export async function getOutOfServiceItemsApi(): Promise<AssetItem[]> {
   try {
-    const response = await apiClient.get<ApiResponse<any>>('/asset-items?limit=1000')
+    const response = await apiClient.get<ApiResponse<any>>('/asset-items')
     const data = response.data.data
     const assetItems: AssetItem[] = Array.isArray(data) ? data : data.items || []
 
@@ -277,7 +277,7 @@ export async function getOutOfServiceItemsApi(): Promise<AssetItem[]> {
  */
 export async function getEquipmentByTypeApi(): Promise<EquipmentByType[]> {
   try {
-    const response = await apiClient.get<ApiResponse<any>>('/asset-items?limit=1000')
+    const response = await apiClient.get<ApiResponse<any>>('/asset-items')
     const data = response.data.data
     const assetItems: AssetItem[] = Array.isArray(data) ? data : data.items || []
 

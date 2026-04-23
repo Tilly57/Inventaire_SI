@@ -4,7 +4,8 @@
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import * as assetItemsService from '../services/assetItems.service.js';
 import { sendSuccess, sendCreated, sendSuccessWithMeta } from '../utils/responseHelpers.js';
-import { parsePaginationParams } from '../utils/pagination.js';
+import { parsePaginationParams, UNPAGINATED_MAX_ITEMS } from '../utils/pagination.js';
+import logger from '../config/logger.js';
 
 /**
  * GET /api/asset-items
@@ -39,10 +40,13 @@ export const getAllAssetItems = asyncHandler(async (req, res) => {
       assetModelId,
       search,
       page: 1,
-      pageSize: 1000,
+      pageSize: UNPAGINATED_MAX_ITEMS,
       sortBy: sortBy || 'createdAt',
       sortOrder: sortOrder || 'desc'
     });
+    if (result.data.length === UNPAGINATED_MAX_ITEMS) {
+      logger.warn(`[pagination] /asset-items reached UNPAGINATED_MAX_ITEMS (${UNPAGINATED_MAX_ITEMS}) — client must switch to page/pageSize`);
+    }
     sendSuccess(res, result.data);
   }
 });

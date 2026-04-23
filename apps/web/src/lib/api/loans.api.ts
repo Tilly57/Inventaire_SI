@@ -28,7 +28,7 @@ import type { PaginatedResponse, PaginationParams } from '@/lib/types/pagination
  * Fetch all loans
  *
  * Returns all loans with employee and line details.
- * Uses high limit (1000) to bypass pagination.
+ * Backend caps the unpaginated response at UNPAGINATED_MAX_ITEMS (1000).
  *
  * @returns Promise resolving to array of loans
  *
@@ -45,7 +45,7 @@ import type { PaginatedResponse, PaginationParams } from '@/lib/types/pagination
  * // ]
  */
 export async function getAllLoansApi(): Promise<Loan[]> {
-  const response = await apiClient.get<any>('/loans?limit=1000')
+  const response = await apiClient.get<any>('/loans')
   const data = response.data.data
   return Array.isArray(data) ? data : data.loans || []
 }

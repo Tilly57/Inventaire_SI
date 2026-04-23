@@ -27,6 +27,13 @@ DB_USER="${DB_USER:-inventaire_user}"
 DB_NAME="${DB_NAME:-inventaire}"
 BACKUP_DIR="${BACKUP_DIR:-/repo/backups/pre-deploy}"
 PROJECT_NAME="${COMPOSE_PROJECT_NAME:-inventaire_si}"
+# Opt-in GPG signature verification for the incoming commit.
+# Set DEPLOY_REQUIRE_GPG=1 in the deploy environment once commits are signed.
+REQUIRE_GPG="${DEPLOY_REQUIRE_GPG:-0}"
+# Mandatory encryption key for the pre-deploy DB backup (openssl AES-256-CBC).
+# Generate: openssl rand -base64 32. Without it the deploy still runs but the
+# backup step is skipped with a loud warning — no plaintext dump is written.
+ENCRYPTION_KEY="${BACKUP_ENCRYPTION_KEY:-}"
 # HOST_REPO_DIR is the path on the Docker HOST filesystem
 # Docker compose needs this so bind-mount volume paths resolve correctly
 # (relative paths in compose files are resolved relative to project-directory)
@@ -68,26 +75,49 @@ log_info "  Remote: ${REMOTE_HASH:0:8}"
 log_info "Changes:"
 git log --oneline "${LOCAL_HASH}..${REMOTE_HASH}" 2>&1
 
-# ── Step 1: Pre-deploy database backup ──
-log_info "Creating pre-deploy database backup..."
+# ── Step 1: Pre-deploy database backup (encrypted) ──
 mkdir -p "$BACKUP_DIR"
-BACKUP_FILE="$BACKUP_DIR/pre-deploy_$(date +%Y%m%d_%H%M%S).sql.gz"
+BACKUP_FILE=""
 
-if docker exec "$DB_CONTAINER" pg_dump -U "$DB_USER" "$DB_NAME" 2>/dev/null | gzip > "$BACKUP_FILE" && [ -s "$BACKUP_FILE" ]; then
-    BACKUP_SIZE=$(ls -lh "$BACKUP_FILE" 2>/dev/null | awk '{print $5}')
-    log_ok "Database backup created: $BACKUP_FILE ($BACKUP_SIZE)"
+if [ -z "$ENCRYPTION_KEY" ]; then
+    log_warn "BACKUP_ENCRYPTION_KEY not set — skipping pre-deploy backup (no plaintext dump will be written)"
+    log_warn "Rollback will NOT be able to restore the database. Export BACKUP_ENCRYPTION_KEY to enable safe rollback."
 else
-    log_warn "DATABASE BACKUP FAILED — proceeding with caution"
-    rm -f "$BACKUP_FILE"
-    BACKUP_FILE=""
+    log_info "Creating pre-deploy database backup (encrypted)..."
+    CANDIDATE="$BACKUP_DIR/pre-deploy_$(date +%Y%m%d_%H%M%S).sql.gz.enc"
+    if docker exec "$DB_CONTAINER" pg_dump -U "$DB_USER" "$DB_NAME" 2>/dev/null \
+        | gzip \
+        | BACKUP_ENCRYPTION_KEY="$ENCRYPTION_KEY" openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:BACKUP_ENCRYPTION_KEY \
+        > "$CANDIDATE" && [ -s "$CANDIDATE" ]; then
+        BACKUP_FILE="$CANDIDATE"
+        BACKUP_SIZE=$(ls -lh "$BACKUP_FILE" 2>/dev/null | awk '{print $5}')
+        log_ok "Encrypted database backup created: $BACKUP_FILE ($BACKUP_SIZE)"
+    else
+        log_warn "DATABASE BACKUP FAILED — proceeding with caution"
+        rm -f "$CANDIDATE"
+    fi
 fi
 
-# Clean old pre-deploy backups (keep last 5)
-ls -t "$BACKUP_DIR"/pre-deploy_*.sql.gz 2>/dev/null | tail -n +6 | xargs rm -f 2>/dev/null || true
+# Clean old pre-deploy backups (keep last 5 of each format, including any legacy plaintext gzip)
+ls -t "$BACKUP_DIR"/pre-deploy_*.sql.gz.enc 2>/dev/null | tail -n +6 | xargs rm -f 2>/dev/null || true
+ls -t "$BACKUP_DIR"/pre-deploy_*.sql.gz 2>/dev/null | grep -v '\.enc$' | tail -n +6 | xargs rm -f 2>/dev/null || true
 
 # ── Step 2: Pull changes ──
 log_info "Pulling changes..."
 git pull origin "$BRANCH" 2>&1
+
+# Optional: verify the pulled commit carries a trusted GPG signature before we
+# rebuild anything. Requires the deploy container to have gpg + a trusted key.
+if [ "$REQUIRE_GPG" = "1" ]; then
+    log_info "Verifying GPG signature of $REMOTE_HASH..."
+    if ! git verify-commit "$REMOTE_HASH" 2>&1; then
+        log_error "GPG verification failed for $REMOTE_HASH — aborting deploy"
+        log_warn "Rolling back to $LOCAL_HASH to leave the repo in a known state"
+        git reset --hard "$LOCAL_HASH" 2>&1
+        exit 1
+    fi
+    log_ok "GPG signature verified"
+fi
 
 # ── Step 3: Rebuild and restart services ──
 log_info "Rebuilding Docker services..."
@@ -150,13 +180,47 @@ sleep 15
 UNHEALTHY_AFTER=$($COMPOSE_CMD ps --format json 2>/dev/null | grep -c '"unhealthy"' || true)
 if [ "$UNHEALTHY_AFTER" -eq 0 ]; then
     log_ok "Rollback successful. Running on ${LOCAL_HASH:0:8}"
+    exit 1
+fi
+
+# Git rollback didn't recover the services. Attempt automatic DB restore from
+# the encrypted pre-deploy backup — the new release may have applied schema
+# changes that are now incompatible with the previous code.
+log_error "CRITICAL: Git rollback did not restore health — attempting DB restore"
+
+if [ -z "$BACKUP_FILE" ] || [ ! -f "$BACKUP_FILE" ]; then
+    log_error "No pre-deploy backup available. Manual intervention required."
+    exit 1
+fi
+
+if [ -z "$ENCRYPTION_KEY" ]; then
+    log_error "Backup exists but BACKUP_ENCRYPTION_KEY is no longer set — cannot decrypt."
+    log_error "Pre-deploy backup: $BACKUP_FILE"
+    log_error "To restore manually: BACKUP_ENCRYPTION_KEY=... openssl enc -d -aes-256-cbc -pbkdf2 -pass env:BACKUP_ENCRYPTION_KEY -in $BACKUP_FILE | gunzip | docker exec -i $DB_CONTAINER psql -U $DB_USER $DB_NAME"
+    exit 1
+fi
+
+log_warn "Restoring database from $BACKUP_FILE..."
+if BACKUP_ENCRYPTION_KEY="$ENCRYPTION_KEY" \
+    openssl enc -d -aes-256-cbc -pbkdf2 -pass env:BACKUP_ENCRYPTION_KEY -in "$BACKUP_FILE" \
+    | gunzip \
+    | docker exec -i "$DB_CONTAINER" psql -U "$DB_USER" "$DB_NAME" 2>&1; then
+    log_ok "Database restored from pre-deploy backup"
 else
-    log_error "CRITICAL: Rollback also failed! Manual intervention required."
-    # Restore database if backup exists
-    if [ -n "$BACKUP_FILE" ] && [ -f "$BACKUP_FILE" ]; then
-        log_error "Pre-deploy backup available at: $BACKUP_FILE"
-        log_error "To restore: gunzip -c $BACKUP_FILE | docker exec -i $DB_CONTAINER psql -U $DB_USER $DB_NAME"
-    fi
+    log_error "DB RESTORE FAILED — manual intervention required"
+    log_error "Pre-deploy backup: $BACKUP_FILE"
+    exit 1
+fi
+
+# Restart services one more time now that the DB is back on the previous schema
+log_warn "Restarting services after DB restore..."
+$COMPOSE_CMD up -d --build --force-recreate 2>&1
+sleep 15
+UNHEALTHY_FINAL=$($COMPOSE_CMD ps --format json 2>/dev/null | grep -c '"unhealthy"' || true)
+if [ "$UNHEALTHY_FINAL" -eq 0 ]; then
+    log_ok "Full rollback (code + DB) successful. Running on ${LOCAL_HASH:0:8}"
+else
+    log_error "Services still unhealthy after DB restore — manual intervention required"
 fi
 
 exit 1

@@ -43,6 +43,8 @@ const CONFIG = {
   logDir: join(PROJECT_ROOT, 'backups', 'logs'),
   retentionDays: parseInt(process.env.BACKUP_RETENTION_DAYS || '30', 10),
   notificationEmail: process.env.BACKUP_NOTIFICATION_EMAIL || null,
+  // Encryption is mandatory. Generate: openssl rand -base64 32
+  encryptionKey: process.env.BACKUP_ENCRYPTION_KEY || null,
 };
 
 // Parse command line arguments
@@ -102,13 +104,20 @@ async function checkDocker() {
  * Create database backup
  */
 async function createBackup(backupName) {
+  if (!CONFIG.encryptionKey) {
+    throw new Error(
+      'BACKUP_ENCRYPTION_KEY not set. Backups must be encrypted. ' +
+      'Generate a key with `openssl rand -base64 32` and export it before running.'
+    );
+  }
+
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T').join('_').split('-').slice(0, 3).join('') + '_' + new Date().toTimeString().split(' ')[0].replace(/:/g, '');
   const filename = backupName
-    ? `${backupName}_${timestamp}.dump`
-    : `inventaire_auto_${timestamp}.dump`;
+    ? `${backupName}_${timestamp}.dump.enc`
+    : `inventaire_auto_${timestamp}.dump.enc`;
   const backupPath = join(CONFIG.backupDir, filename);
 
-  log(`Starting backup: ${filename}`);
+  log(`Starting backup (encrypted): ${filename}`);
 
   // Ensure backup directory exists
   if (!existsSync(CONFIG.backupDir)) {
@@ -117,21 +126,19 @@ async function createBackup(backupName) {
   }
 
   try {
-    // Execute pg_dump inside Docker container
-    // -Fc = custom format (compressed)
-    // -Z9 = maximum compression
+    // pg_dump inside Docker (-Fc -Z9) piped into openssl AES-256-CBC with PBKDF2.
+    // Key is passed via env (never in argv) so it doesn't appear in `ps`.
     const dumpCommand = `docker exec ${CONFIG.dbContainer} pg_dump -U ${CONFIG.dbUser} -Fc -Z9 ${CONFIG.dbName}`;
-
-    // On Windows, we need to handle binary output differently
-    const isWindows = process.platform === 'win32';
-
-    if (isWindows) {
-      // Windows: redirect to file directly
-      await execAsync(`${dumpCommand} > "${backupPath}"`);
-    } else {
-      // Linux/Mac: use shell redirection
-      await execAsync(`${dumpCommand} > "${backupPath}"`, { shell: '/bin/sh' });
+    const encryptCommand = `openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:BACKUP_ENCRYPTION_KEY -out "${backupPath}"`;
+    const pipeline = `${dumpCommand} | ${encryptCommand}`;
+    const execOptions = {
+      env: { ...process.env, BACKUP_ENCRYPTION_KEY: CONFIG.encryptionKey },
+    };
+    if (process.platform !== 'win32') {
+      execOptions.shell = '/bin/sh';
     }
+
+    await execAsync(pipeline, execOptions);
 
     // Verify backup file exists and has content
     if (!existsSync(backupPath)) {
@@ -184,8 +191,8 @@ function cleanupOldBackups() {
   let freedSpace = 0;
 
   for (const file of files) {
-    // Only process dump files
-    if (!file.endsWith('.dump') && !file.endsWith('.sql.gz')) {
+    // Only process dump files (encrypted .dump.enc, legacy .dump and .sql.gz)
+    if (!file.endsWith('.dump.enc') && !file.endsWith('.dump') && !file.endsWith('.sql.gz')) {
       continue;
     }
 
@@ -236,7 +243,7 @@ function listRecentBackups(count = 10) {
   }
 
   const files = readdirSync(CONFIG.backupDir)
-    .filter(file => file.endsWith('.dump') || file.endsWith('.sql.gz'))
+    .filter(file => file.endsWith('.dump.enc') || file.endsWith('.dump') || file.endsWith('.sql.gz'))
     .map(file => {
       const filePath = join(CONFIG.backupDir, file);
       const stats = statSync(filePath);
