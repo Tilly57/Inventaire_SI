@@ -79,7 +79,7 @@ test.describe('Critical Loan Workflow', () => {
       }
 
       await page.waitForTimeout(500);
-      await clickButton(page, 'Valider');
+      await clickButton(page, 'Enregistrer');
       await page.waitForLoadState('networkidle');
       await page.waitForTimeout(1000);
       console.log('Pickup signature added');
@@ -109,7 +109,7 @@ test.describe('Critical Loan Workflow', () => {
       }
 
       await page.waitForTimeout(500);
-      await clickButton(page, 'Valider');
+      await clickButton(page, 'Enregistrer');
       await page.waitForLoadState('networkidle');
       await page.waitForTimeout(1000);
       console.log('Return signature added');
