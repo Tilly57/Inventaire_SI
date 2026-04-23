@@ -3,6 +3,47 @@
 All notable changes to this project will be documented in this file.
 
 
+# Release v1.3.4 - 2026-04-23
+
+## Summary
+
+<!-- Add a brief summary of this release -->
+
+## Changes
+
+### ✨ Features
+
+
+### 🐛 Bug Fixes
+- fix(audit): resolve 4 CRITICAL findings from April 2026 audit (Sprint 2)
+- fix(security): resolve 5 CRITICAL findings from April 2026 lead-dev audit
+- fix(audit): implement Phase 1 & 2 improvements from April 2026 audit
+
+### 📚 Documentation
+
+
+### 🔧 Improvements
+
+
+### 📦 Dependencies
+- chore(release): merge release/1.3.3 to staging
+- chore(release): bump version to 1.3.3
+- chore(release): merge release/1.3.2 to staging
+- chore(release): bump version to 1.3.2
+
+### All Commits
+- 6b80012 Merge fix/audit-2026-04-sprint2 into staging - Sprint 2 P0 security fixes (C6/C9/C10/C11) (Tilly57)
+- b1f8215 fix(audit): resolve 4 CRITICAL findings from April 2026 audit (Sprint 2) (Tilly57)
+- c063904 chore(release): merge release/1.3.3 to staging (Tilly57)
+- e224eeb chore(release): bump version to 1.3.3 (Tilly57)
+- d5e95d6 Merge fix/audit-2026-04-critical into staging - Sprint 1 P0 security fixes (Tilly57)
+- 845aec6 fix(security): resolve 5 CRITICAL findings from April 2026 lead-dev audit (Tilly57)
+- 8b85073 chore(release): merge release/1.3.2 to staging (Tilly57)
+- 8da6685 chore(release): bump version to 1.3.2 (Tilly57)
+- ae1f0ee Merge branch 'fix/audit-phase1-2-improvements' into staging (Tilly57)
+- 3c7be46 fix(audit): implement Phase 1 & 2 improvements from April 2026 audit (Tilly57)
+
+
 # Release v1.3.3 - 2026-04-22
 
 ## Summary
