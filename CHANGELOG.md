@@ -3,6 +3,34 @@
 All notable changes to this project will be documented in this file.
 
 
+# Release v1.3.5 - 2026-04-23
+
+## Summary
+
+<!-- Add a brief summary of this release -->
+
+## Changes
+
+### ✨ Features
+
+
+### 🐛 Bug Fixes
+
+
+### 📚 Documentation
+
+
+### 🔧 Improvements
+
+
+### 📦 Dependencies
+- chore(ci): bump GitHub Actions to v5 for Node.js 24 compatibility
+
+### All Commits
+- f085ad9 Merge chore/github-actions-v5 into staging - Node 24 compatibility (Tilly57)
+- 6b0f857 chore(ci): bump GitHub Actions to v5 for Node.js 24 compatibility (Tilly57)
+
+
 # Release v1.3.4 - 2026-04-23
 
 ## Summary
