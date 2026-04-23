@@ -3,6 +3,34 @@
 All notable changes to this project will be documented in this file.
 
 
+# Release v1.3.6 - 2026-04-23
+
+## Summary
+
+<!-- Add a brief summary of this release -->
+
+## Changes
+
+### ✨ Features
+
+
+### 🐛 Bug Fixes
+
+
+### 📚 Documentation
+
+
+### 🔧 Improvements
+
+
+### 📦 Dependencies
+- chore(deploy): inject BACKUP_ENCRYPTION_KEY into auto-deploy service
+
+### All Commits
+- 11563f4 Merge chore/backup-encryption-env into staging (Tilly57)
+- 11dc534 chore(deploy): inject BACKUP_ENCRYPTION_KEY into auto-deploy service (Tilly57)
+
+
 # Release v1.3.5 - 2026-04-23
 
 ## Summary
