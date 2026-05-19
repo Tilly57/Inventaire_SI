@@ -16,6 +16,7 @@ import metricsRoutes from './routes/metrics.routes.js';
 import swaggerSpec from './config/swagger.js';
 import logger from './config/logger.js';
 import { csrfTokenGenerator, csrfProtection, getCsrfToken } from './middleware/csrf.js';
+import { serveProtectedFile } from './middleware/serveProtectedFiles.js';
 
 const app = express();
 
@@ -138,6 +139,9 @@ if (process.env.NODE_ENV !== 'production') {
 } else {
   logger.info('📚 Swagger UI disabled in production (security: strict CSP)');
 }
+
+// Protected uploaded files (signatures, etc.) - requires JWT in Authorization header
+app.use('/api/uploads', serveProtectedFile);
 
 // API routes
 app.use('/api', routes);

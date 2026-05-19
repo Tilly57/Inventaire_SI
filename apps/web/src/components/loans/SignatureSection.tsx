@@ -14,9 +14,8 @@ import { formatDate } from '@/lib/utils/formatters'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { SignatureCanvas } from '@/components/common/SignatureCanvas'
-import { LazyImage } from '@/components/common/LazyImage'
+import { AuthenticatedImage } from '@/components/common/AuthenticatedImage'
 import { Pen, Trash2 } from 'lucide-react'
-import { BASE_URL } from '@/lib/utils/constants'
 
 interface SignatureSectionProps {
   title: string
@@ -73,8 +72,8 @@ function SignatureSectionComponent({
       <CardContent>
         {hasSignature ? (
           <div className="space-y-4">
-            <LazyImage
-              src={`${BASE_URL}${signatureUrl}`}
+            <AuthenticatedImage
+              src={signatureUrl!}
               alt={title}
               className="w-full border rounded-lg"
             />
