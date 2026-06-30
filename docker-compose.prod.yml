@@ -156,24 +156,27 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  # Nginx Reverse Proxy (SSL termination)
+  # Nginx INTERNE (routage par chemin) — derrière le proxy edge (Traefik).
+  # Ne publie plus 80/443 et ne fait plus le TLS : l'edge s'en charge.
   nginx:
     image: nginx:alpine
     container_name: inventaire_nginx
     restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
     volumes:
       - ./nginx-proxy.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./certs:/etc/nginx/certs:ro
-      - certbot_www:/var/www/certbot:ro
-      - certbot_conf:/etc/letsencrypt:ro
     depends_on:
       - api
       - web
     networks:
-      - inventaire_network
+      - inventaire_network   # vers api / web / grafana / prometheus
+      - edge                 # ingress via le proxy edge (Traefik)
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=edge"
+      - "traefik.http.routers.inventaire.rule=Host(`www.tillyinventaire.ti`) || Host(`192.168.1.225`) || Host(`192.168.1.226`)"
+      - "traefik.http.routers.inventaire.entrypoints=websecure"
+      - "traefik.http.routers.inventaire.tls=true"
+      - "traefik.http.services.inventaire.loadbalancer.server.port=80"
     logging:
       driver: "json-file"
       options:
@@ -302,6 +305,10 @@ services:
 networks:
   inventaire_network:
     driver: bridge
+  # Réseau neutre partagé avec le proxy edge (créé une fois : docker network create edge).
+  edge:
+    external: true
+    name: edge
 
 volumes:
   postgres_data:
