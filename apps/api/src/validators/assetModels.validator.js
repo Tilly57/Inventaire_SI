@@ -6,13 +6,15 @@ import { z } from 'zod';
 export const createAssetModelSchema = z.object({
   type: z.string().min(1, 'Type requis').max(100, 'Le type ne peut pas dépasser 100 caractères'),
   brand: z.string().min(1, 'Marque requise').max(100, 'La marque ne peut pas dépasser 100 caractères'),
-  modelName: z.string().min(1, 'Nom du modèle requis').max(200, 'Le nom du modèle ne peut pas dépasser 200 caractères')
+  modelName: z.string().min(1, 'Nom du modèle requis').max(200, 'Le nom du modèle ne peut pas dépasser 200 caractères'),
+  quantity: z.number().int('La quantité doit être un entier').min(1, 'La quantité doit être au moins 1').max(100, 'La quantité ne peut pas dépasser 100').optional()
 });
 
 export const updateAssetModelSchema = z.object({
   type: z.string().min(1, 'Type requis').max(100, 'Le type ne peut pas dépasser 100 caractères').optional(),
   brand: z.string().min(1, 'Marque requise').max(100, 'La marque ne peut pas dépasser 100 caractères').optional(),
-  modelName: z.string().min(1, 'Nom du modèle requis').max(200, 'Le nom du modèle ne peut pas dépasser 200 caractères').optional()
+  modelName: z.string().min(1, 'Nom du modèle requis').max(200, 'Le nom du modèle ne peut pas dépasser 200 caractères').optional(),
+  quantity: z.number().int('La quantité doit être un entier').min(1, 'La quantité doit être au moins 1').max(100, 'La quantité ne peut pas dépasser 100').optional()
 });
 
 export const batchDeleteAssetModelsSchema = z.object({
