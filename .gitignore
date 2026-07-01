@@ -5,7 +5,9 @@
 .env.local
 .env.*.local
 .env.production
+.env.staging
 !.env.example
+!.env.staging.example
 
 # API environment files
 apps/api/.env
