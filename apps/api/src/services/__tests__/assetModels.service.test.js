@@ -72,25 +72,23 @@ describe('AssetModels Service', () => {
   });
 
   describe('getAllAssetModels', () => {
-    it('should return all asset models with item counts', async () => {
+    it('should return total owned quantity (unique items + stock)', async () => {
       const mockModels = [
         {
           id: 'model1',
           type: 'Ordinateur portable',
           brand: 'Dell',
           modelName: 'Latitude 5420',
-          _count: {
-            items: 10  // 10 items EN_STOCK
-          }
+          _count: { items: 10 },  // 10 AssetItems (tous statuts)
+          stockItems: []
         },
         {
           id: 'model2',
-          type: 'Écran',
-          brand: 'Samsung',
-          modelName: 'U28E590D',
-          _count: {
-            items: 5
-          }
+          type: 'Câble',
+          brand: 'Generic',
+          modelName: 'USB-C',
+          _count: { items: 0 },  // consommable : aucun AssetItem
+          stockItems: [{ quantity: 50 }]
         }
       ];
 
@@ -103,16 +101,31 @@ describe('AssetModels Service', () => {
         include: {
           _count: {
             select: {
-              items: {
-                where: {
-                  status: 'EN_STOCK'
-                }
-              }
+              items: true
             }
+          },
+          stockItems: {
+            select: { quantity: true }
           }
         }
       });
-      expect(result).toEqual(mockModels);
+      // stockItems retiré de la réponse, _count.items = total possédé
+      expect(result).toEqual([
+        {
+          id: 'model1',
+          type: 'Ordinateur portable',
+          brand: 'Dell',
+          modelName: 'Latitude 5420',
+          _count: { items: 10 }
+        },
+        {
+          id: 'model2',
+          type: 'Câble',
+          brand: 'Generic',
+          modelName: 'USB-C',
+          _count: { items: 50 }
+        }
+      ]);
     });
 
     it('should return empty array when no models exist', async () => {
@@ -123,29 +136,27 @@ describe('AssetModels Service', () => {
       expect(result).toEqual([]);
     });
 
-    it('should only count EN_STOCK items', async () => {
-      mockPrisma.assetModel.findMany.mockResolvedValue([]);
+    it('should fold stock quantity into the item count for consumables', async () => {
+      mockPrisma.assetModel.findMany.mockResolvedValue([
+        {
+          id: 'model3',
+          type: 'Adaptateur',
+          brand: 'Generic',
+          modelName: 'HDMI',
+          _count: { items: 2 },  // ex. 2 AssetItems + 3 de stock
+          stockItems: [{ quantity: 3 }]
+        }
+      ]);
 
-      await getAllAssetModels();
+      const result = await getAllAssetModels();
 
-      expect(mockPrisma.assetModel.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          include: expect.objectContaining({
-            _count: expect.objectContaining({
-              select: expect.objectContaining({
-                items: expect.objectContaining({
-                  where: { status: 'EN_STOCK' }
-                })
-              })
-            })
-          })
-        })
-      );
+      expect(result[0]._count.items).toBe(5);
+      expect(result[0].stockItems).toBeUndefined();
     });
   });
 
   describe('getAssetModelById', () => {
-    it('should return asset model with items', async () => {
+    it('should return asset model with items and total owned quantity', async () => {
       const mockModel = {
         id: 'model1',
         type: 'Ordinateur portable',
@@ -155,7 +166,8 @@ describe('AssetModels Service', () => {
           { id: 'item1', assetTag: 'LAP-001', status: 'EN_STOCK' },
           { id: 'item2', assetTag: 'LAP-002', status: 'PRETE' }
         ],
-        _count: { items: 1 }  // Only EN_STOCK count
+        _count: { items: 2 },  // tous statuts
+        stockItems: [{ quantity: 3 }]
       };
 
       mockPrisma.assetModel.findUnique.mockResolvedValue(mockModel);
@@ -170,16 +182,26 @@ describe('AssetModels Service', () => {
           },
           _count: {
             select: {
-              items: {
-                where: {
-                  status: 'EN_STOCK'
-                }
-              }
+              items: true
             }
+          },
+          stockItems: {
+            select: { quantity: true }
           }
         }
       });
-      expect(result).toEqual(mockModel);
+      // stockItems retiré de la réponse, _count.items = total possédé (2 + 3)
+      expect(result).toEqual({
+        id: 'model1',
+        type: 'Ordinateur portable',
+        brand: 'Dell',
+        modelName: 'Latitude 5420',
+        items: [
+          { id: 'item1', assetTag: 'LAP-001', status: 'EN_STOCK' },
+          { id: 'item2', assetTag: 'LAP-002', status: 'PRETE' }
+        ],
+        _count: { items: 5 }
+      });
     });
 
     it('should throw NotFoundError if model does not exist', async () => {
