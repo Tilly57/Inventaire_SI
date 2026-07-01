@@ -1,0 +1,153 @@
+name: Build & Deploy Images (GHCR)
+
+# Build + push des images api/web vers GHCR, puis déploiement.
+#   - push sur `staging`  → images taggées `staging` + déploiement staging
+#   - push d'un tag `v*`  → images taggées `vX.Y.Z` + `latest` (pour la prod)
+# Le build tourne sur le runner self-hosted OEDIPE (pas de minutes GitHub).
+
+on:
+  push:
+    branches: [staging]
+    tags: ['v*']
+
+concurrency:
+  group: build-images-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  API_IMAGE: ghcr.io/tilly57/inventaire-api
+  WEB_IMAGE: ghcr.io/tilly57/inventaire-web
+
+jobs:
+  # ──────────────────────────────────────────
+  # Build & push des 2 images vers GHCR
+  # ──────────────────────────────────────────
+  build-push:
+    name: Build & push (api + web)
+    runs-on: [self-hosted, oedipe]
+    outputs:
+      image_tag: ${{ steps.meta.outputs.image_tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Compute tags & build metadata
+        id: meta
+        run: |
+          VERSION="$(cat VERSION 2>/dev/null || echo '0.0.0')"
+          echo "app_version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            # Release : vX.Y.Z + latest, environnement production
+            TAG="${GITHUB_REF#refs/tags/}"
+            echo "image_tag=${TAG}" >> "$GITHUB_OUTPUT"
+            echo "api_tags=${API_IMAGE}:${TAG},${API_IMAGE}:latest" >> "$GITHUB_OUTPUT"
+            echo "web_tags=${WEB_IMAGE}:${TAG},${WEB_IMAGE}:latest" >> "$GITHUB_OUTPUT"
+            echo "vite_env=production" >> "$GITHUB_OUTPUT"
+          else
+            # Branche staging : tag `staging`, environnement staging
+            echo "image_tag=staging" >> "$GITHUB_OUTPUT"
+            echo "api_tags=${API_IMAGE}:staging" >> "$GITHUB_OUTPUT"
+            echo "web_tags=${WEB_IMAGE}:staging" >> "$GITHUB_OUTPUT"
+            echo "vite_env=staging" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push API image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./apps/api
+          file: ./apps/api/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.api_tags }}
+          cache-from: type=local,src=/tmp/.buildx-cache-api
+          cache-to: type=local,dest=/tmp/.buildx-cache-api,mode=max
+
+      - name: Build & push Web image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./apps/web
+          file: ./apps/web/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.web_tags }}
+          build-args: |
+            VITE_API_URL=/api
+            VITE_ENV=${{ steps.meta.outputs.vite_env }}
+            VITE_SENTRY_ENVIRONMENT=${{ steps.meta.outputs.vite_env }}
+            VITE_SENTRY_DSN=${{ secrets.VITE_SENTRY_DSN_STAGING }}
+            VITE_APP_VERSION=${{ steps.meta.outputs.app_version }}
+          cache-from: type=local,src=/tmp/.buildx-cache-web
+          cache-to: type=local,dest=/tmp/.buildx-cache-web,mode=max
+
+  # ──────────────────────────────────────────
+  # Déploiement STAGING (branche staging uniquement)
+  # ──────────────────────────────────────────
+  deploy-staging:
+    name: Deploy staging
+    needs: build-push
+    if: github.ref == 'refs/heads/staging'
+    runs-on: [self-hosted, oedipe]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Sync deploy files to /opt/inventaire/staging (hors .env)
+        run: |
+          set -euo pipefail
+          DEST=/opt/inventaire/staging
+          mkdir -p "$DEST"
+          # Synchronise compose + config, SANS jamais toucher au .env serveur (secrets)
+          rsync -a --delete \
+            --exclude='.env' \
+            --include='docker-compose.staging.yml' \
+            --include='nginx-proxy.conf' \
+            --include='monitoring/***' \
+            --exclude='*' \
+            ./ "$DEST/"
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull & deploy (inventaire-staging)
+        run: |
+          set -euo pipefail
+          cd /opt/inventaire/staging
+          docker compose -p inventaire-staging -f docker-compose.staging.yml pull
+          # JAMAIS --remove-orphans (risque de toucher la stack prod)
+          docker compose -p inventaire-staging -f docker-compose.staging.yml up -d
+
+      - name: Health check
+        run: |
+          set -euo pipefail
+          cd /opt/inventaire/staging
+          for i in $(seq 1 12); do
+            UNHEALTHY="$(docker compose -p inventaire-staging -f docker-compose.staging.yml ps \
+              --format '{{.Service}} {{.Health}}' | grep -E 'starting|unhealthy' || true)"
+            if [ -z "$UNHEALTHY" ]; then
+              echo "✅ Tous les services staging sont sains"
+              exit 0
+            fi
+            echo "⏳ En attente de santé ($i/12) : $UNHEALTHY"
+            sleep 10
+          done
+          echo "❌ Des services staging ne sont pas sains après 120s"
+          docker compose -p inventaire-staging -f docker-compose.staging.yml ps
+          exit 1
