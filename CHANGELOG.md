@@ -3,6 +3,52 @@
 All notable changes to this project will be documented in this file.
 
 
+# Release v1.3.8 - 2026-07-01
+
+## Summary
+
+<!-- Add a brief summary of this release -->
+
+## Changes
+
+### ✨ Features
+
+
+### 🐛 Bug Fixes
+- fix(assets): quantité totale des consommables dans getAllAssetModels et getAssetModelById
+- fix(assets,loans): asset model quantity persisted and signatures rendered
+- fix(ci): unblock deployment pipeline (ESM scripts + green E2E + workflow cleanup) (#7)
+
+### 📚 Documentation
+
+
+### 🔧 Improvements
+
+
+### 📦 Dependencies
+- chore(edge): inventaire derriere le proxy edge Traefik (#8)
+- chore(ops): add OEDIPE HTTPS diagnostic/repair script
+- chore(release): merge release/1.3.7 to staging
+- chore(release): bump version to 1.3.7
+- chore(release): merge release/1.3.6 to staging
+- chore(release): bump version to 1.3.6
+- chore(deploy): inject BACKUP_ENCRYPTION_KEY into auto-deploy service
+
+### All Commits
+- 07bf20d fix(assets): quantité totale des consommables dans getAllAssetModels et getAssetModelById (Tilly57)
+- 946d47d chore(edge): inventaire derriere le proxy edge Traefik (#8) (Gruy)
+- 22c1076 chore(ops): add OEDIPE HTTPS diagnostic/repair script (Tilly57)
+- 4dedba4 merge: fix/asset-model-quantity-and-signature into staging (Tilly57)
+- 7b919e9 fix(assets,loans): asset model quantity persisted and signatures rendered (Tilly57)
+- 3104a38 chore(release): merge release/1.3.7 to staging (Tilly57)
+- 59cf3c4 chore(release): bump version to 1.3.7 (Tilly57)
+- 25e9563 fix(ci): unblock deployment pipeline (ESM scripts + green E2E + workflow cleanup) (#7) (Gruy)
+- 3286145 chore(release): merge release/1.3.6 to staging (Tilly57)
+- 42fda78 chore(release): bump version to 1.3.6 (Tilly57)
+- 11563f4 Merge chore/backup-encryption-env into staging (Tilly57)
+- 11dc534 chore(deploy): inject BACKUP_ENCRYPTION_KEY into auto-deploy service (Tilly57)
+
+
 # Release v1.3.7 - 2026-04-23
 
 ## Summary
