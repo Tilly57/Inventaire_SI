@@ -79,17 +79,24 @@ export async function getAllAssetModels() {
     include: {
       _count: {
         select: {
-          items: {
-            where: {
-              status: 'EN_STOCK'  // Count only available items
-            }
-          }
+          items: true  // Tous les AssetItems (tous statuts) = quantité totale possédée
         }
+      },
+      stockItems: {
+        select: { quantity: true }  // Quantité de stock (consommables)
       }
     }
   });
 
-  return assetModels;
+  // Quantité totale affichée = équipements uniques (tous statuts)
+  // + quantité de stock des consommables. Les consommables n'ont pas d'AssetItem
+  // (seulement un StockItem), sans quoi ils s'affichaient à 0 après création.
+  return assetModels.map(({ stockItems, ...model }) => ({
+    ...model,
+    _count: {
+      items: model._count.items + stockItems.reduce((sum, s) => sum + s.quantity, 0)
+    }
+  }));
 }
 
 /**
@@ -114,12 +121,11 @@ export async function getAssetModelById(id) {
       },
       _count: {
         select: {
-          items: {
-            where: {
-              status: 'EN_STOCK'  // Count only available items
-            }
-          }
+          items: true  // Tous les AssetItems (tous statuts) = quantité totale possédée
         }
+      },
+      stockItems: {
+        select: { quantity: true }  // Quantité de stock (consommables)
       }
     }
   });
@@ -128,7 +134,15 @@ export async function getAssetModelById(id) {
     throw new NotFoundError('Modèle d\'équipement non trouvé');
   }
 
-  return assetModel;
+  // Quantité totale affichée = équipements uniques (tous statuts)
+  // + quantité de stock des consommables (cohérent avec getAllAssetModels).
+  const { stockItems, ...model } = assetModel;
+  return {
+    ...model,
+    _count: {
+      items: model._count.items + stockItems.reduce((sum, s) => sum + s.quantity, 0)
+    }
+  };
 }
 
 /**
